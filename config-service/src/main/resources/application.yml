@@ -22,6 +22,3 @@ encrypt:
     location: file:${KEYSTORE_PATH}
     password: ${KEYSTORE_PASSWORD}
     alias: ${KEY_ALIAS}
-
-
-
