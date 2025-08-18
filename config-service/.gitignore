@@ -37,6 +37,8 @@ out/
 .vscode/
 
 
+
+
 ### yml
 secure.yml
 
@@ -47,3 +49,8 @@ secure.yml
 ### privateKey
 config_server_rsa.txt
 
+
+
+
+### dev
+application-dev.yml
