@@ -23,8 +23,8 @@ public class EmailAuthController {
     public ResponseEntity<Boolean> verify(@RequestBody EmailVerificationConfirmRequest req) {
         boolean ok = emailService.verifyEmailCode(req);
         return ResponseEntity.ok(ok);
+
     }
-    @GetMapping("/api/auth/ping")
-    public String ping(){ return "ok"; }
+}
 
 

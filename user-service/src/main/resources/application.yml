@@ -20,31 +20,24 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: your-email@gmail.com
-    password: your-app-password
+    username: wjdtmddnjs312@gmail.com     # ← 실제 Gmail 주소(환경변수/ConfigServer)
+    password: oymh hgzd gwse cqlk    # ← '앱 비밀번호'(2FA 켠 뒤 생성)
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+            required: true               # ← STARTTLS 강제
+          ssl:
+            trust: smtp.gmail.com        # ← PKIX 회피용(프록시 없으면 이걸로 충분)
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 server:
   port: 8081
 
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${SPRING_MAIL_USERNAME}
-    password: ${SPRING_MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          timeout: 5000
-          starttls:
-            enable: true
-
 jwt:
   secret: petfulSecretKeyForJWTTokenGeneration2024
-  expiration: 86400000 # 24시간
+  expiration: 86400000
