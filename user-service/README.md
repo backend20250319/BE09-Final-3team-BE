@@ -5,16 +5,18 @@ Spring Boot 기반의 사용자 인증 서비스입니다. 회원가입과 로�
 ## 🚀 기능
 
 - **회원가입**: 이메일, 비밀번호, 이름, 닉네임, 전화번호, 주소, 생년월일을 사용한 회원가입
-- **이메일 인증**: 회원가입 시 이메일 인증 기능
+- **이메일 인증**: Redis를 사용한 안전한 이메일 인증 기능 (5분 만료, 시도 횟수 제한)
 - **로그인**: 이메일과 비밀번호를 사용한 로그인
 - **JWT 인증**: 로그인 시 JWT 토큰 발급
 - **비밀번호 암호화**: BCrypt를 사용한 비밀번호 암호화
 - **데이터베이스 저장**: MySQL을 사용한 사용자 정보 저장
+- **Redis 캐싱**: 이메일 인증 코드 및 세션 관리
 
 ## 📋 요구사항
 
 - Java 17
 - MySQL 8.0+
+- Redis 6.0+
 - Gradle
 - Config Server (별도 서비스)
 
@@ -30,7 +32,7 @@ CREATE DATABASE petful_user;
 
 ### 2. 애플리케이션 설정
 
-`src/main/resources/application.yml` 파일에서 데이터베이스 연결 정보와 이메일 설정을 수정합니다:
+`src/main/resources/application.yml` 파일에서 데이터베이스 연결 정보, Redis 설정, 이메일 설정을 수정합니다:
 
 ```yaml
 spring:
@@ -50,6 +52,19 @@ spring:
           auth: true
           starttls:
             enable: true
+
+  redis:
+    host: localhost
+    port: 6379
+    password:
+    database: 0
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
 ```
 
 ### 3. 애플리케이션 실행
@@ -114,12 +129,13 @@ Content-Type: application/json
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "message": "회원가입이 성공적으로 완료되었습니다.",
+  "message": "회원가입이 성공적으로 완료되었습니다. 로그인 후 서비스를 이용하세요.",
   "email": "user@example.com",
   "name": "홍길동"
 }
 ```
+
+> 💡 **참고**: 회원가입 시 사용자 정보가 MySQL 데이터베이스에 저장되며, 비밀번호는 BCrypt로 암호화됩니다.
 
 ### 로그인
 
@@ -142,6 +158,42 @@ Content-Type: application/json
   "email": "user@example.com",
   "name": "홍길동"
 }
+```
+
+### 토큰 검증
+
+```
+POST /api/auth/validate-token
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+**응답:**
+
+```json
+{
+  "valid": true,
+  "email": "user@example.com",
+  "name": "홍길동",
+  "role": "User",
+  "message": "토큰이 유효합니다."
+}
+```
+
+### 보호된 엔드포인트 (JWT 토큰 필요)
+
+```
+GET /api/auth/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+
+GET /api/auth/my-info
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+
+POST /api/auth/logout
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ```
 
 ### 테스트
@@ -196,7 +248,14 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    nickname VARCHAR(255) NOT NULL,
     phone VARCHAR(255) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    detailed_address VARCHAR(255),
+    birth_year INT,
+    birth_month INT,
+    birth_day INT,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     role VARCHAR(255) NOT NULL,
     created_at DATETIME,
     updated_at DATETIME

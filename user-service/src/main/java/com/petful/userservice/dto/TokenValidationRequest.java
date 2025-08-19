@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponse {
-    private String token;  // 로그인 시에만 제공
-    private String message;
-    private String email;
-    private String name;
+public class TokenValidationRequest {
+    private String token;
 }

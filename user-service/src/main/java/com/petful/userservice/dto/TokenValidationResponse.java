@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponse {
-    private String token;  // 로그인 시에만 제공
-    private String message;
+public class TokenValidationResponse {
+    private boolean valid;
     private String email;
     private String name;
+    private String role;
+    private String message;
 }

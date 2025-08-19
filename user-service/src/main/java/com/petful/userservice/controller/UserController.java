@@ -5,6 +5,8 @@ import com.petful.userservice.dto.EmailVerificationConfirmRequest;
 import com.petful.userservice.dto.EmailVerificationRequest;
 import com.petful.userservice.dto.LoginRequest;
 import com.petful.userservice.dto.SignupRequest;
+import com.petful.userservice.dto.TokenValidationRequest;
+import com.petful.userservice.dto.TokenValidationResponse;
 import com.petful.userservice.service.EmailService;
 import com.petful.userservice.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -46,45 +48,47 @@ public class UserController {
         }
     }
 
-    @PostMapping("/send-verification")
-    public ResponseEntity<AuthResponse> sendVerificationEmail(@RequestBody EmailVerificationRequest request) {
+    @PostMapping("/validate-token")
+    public ResponseEntity<TokenValidationResponse> validateToken(@RequestBody TokenValidationRequest request) {
         try {
-            emailService.sendVerificationEmail(request);
-            return ResponseEntity.ok(AuthResponse.builder()
-                    .message("인증 이메일이 발송되었습니다.")
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(AuthResponse.builder()
-                            .message("인증 이메일 발송에 실패했습니다: " + e.getMessage())
-                            .build());
-        }
-    }
-
-    @PostMapping("/verify-email")
-    public ResponseEntity<AuthResponse> verifyEmail(@RequestBody EmailVerificationConfirmRequest request) {
-        try {
-            boolean isVerified = emailService.verifyEmailCode(request);
-            if (isVerified) {
-                return ResponseEntity.ok(AuthResponse.builder()
-                        .message("이메일 인증이 완료되었습니다.")
-                        .build());
+            TokenValidationResponse response = userService.validateToken(request.getToken());
+            if (response.isValid()) {
+                return ResponseEntity.ok(response);
             } else {
-                return ResponseEntity.badRequest()
-                        .body(AuthResponse.builder()
-                                .message("인증 코드가 올바르지 않습니다.")
-                                .build());
+                return ResponseEntity.badRequest().body(response);
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(AuthResponse.builder()
-                            .message("이메일 인증에 실패했습니다: " + e.getMessage())
+                    .body(TokenValidationResponse.builder()
+                            .valid(false)
+                            .message("토큰 검증에 실패했습니다: " + e.getMessage())
                             .build());
         }
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<String> test() {
-        return ResponseEntity.ok("User Service is running!");
+
+    @GetMapping("/profile")
+    public ResponseEntity<AuthResponse> getProfile() {
+        // 이 엔드포인트는 JWT 토큰이 필요합니다
+        return ResponseEntity.ok(AuthResponse.builder()
+                .message("프로필 조회 성공")
+                .build());
+    }
+
+    @GetMapping("/my-info")
+    public ResponseEntity<AuthResponse> getMyInfo() {
+        // 이 엔드포인트는 JWT 토큰이 필요합니다
+        return ResponseEntity.ok(AuthResponse.builder()
+                .message("내 정보 조회 성공")
+                .build());
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<AuthResponse> logout() {
+        // 이 엔드포인트는 JWT 토큰이 필요합니다
+        // 실제로는 클라이언트에서 토큰을 삭제하는 방식으로 처리
+        return ResponseEntity.ok(AuthResponse.builder()
+                .message("로그아웃 성공")
+                .build());
     }
 }

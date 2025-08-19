@@ -20,20 +20,33 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: wjdtmddnjs312@gmail.com     # ← 실제 Gmail 주소(환경변수/ConfigServer)
-    password: oymh hgzd gwse cqlk    # ← '앱 비밀번호'(2FA 켠 뒤 생성)
+    username: wjdtmddnjs312@gmail.com # ← 실제 Gmail 주소(환경변수/ConfigServer)
+    password: oymh hgzd gwse cqlk # ← '앱 비밀번호'(2FA 켠 뒤 생성)
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-            required: true               # ← STARTTLS 강제
+            required: true # ← STARTTLS 강제
           ssl:
-            trust: smtp.gmail.com        # ← PKIX 회피용(프록시 없으면 이걸로 충분)
+            trust: smtp.gmail.com # ← PKIX 회피용(프록시 없으면 이걸로 충분)
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+
+  redis:
+    host: localhost
+    port: 6379
+    password:
+    database: 0
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
 
 server:
   port: 8081
