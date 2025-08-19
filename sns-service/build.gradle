@@ -40,6 +40,10 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    //jsonPath
+    implementation 'com.jayway.jsonpath:json-path:2.9.0'
+
 }
 
 dependencyManagement {

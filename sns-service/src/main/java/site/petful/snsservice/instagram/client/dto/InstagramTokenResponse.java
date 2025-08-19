@@ -1,4 +1,4 @@
-package site.petful.snsservice.instagram.dto;
+package site.petful.snsservice.instagram.client.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
