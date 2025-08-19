@@ -1,7 +1,7 @@
-package com.lhw.notificationservice.service;
+package site.petful.notificationservice.service;
 
-import com.lhw.notificationservice.entity.Notification;
-import com.lhw.notificationservice.repository.NotificationRepository;
+import site.petful.notificationservice.entity.Notification;
+import site.petful.notificationservice.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
