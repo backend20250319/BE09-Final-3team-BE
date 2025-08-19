@@ -10,14 +10,17 @@ import site.petful.snsservice.instagram.repository.InstagramRepository;
 @Service
 public class InstagramService {
 
+    private final AesEncryptService aesEncryptService;
     private final InstagramRepository instagramRepository;
     private final WebClient webClient;
     private final String clientId;
     private final String clientSecret;
 
-    public InstagramService(InstagramRepository instagramRepository, WebClient webClient,
+    public InstagramService(AesEncryptService aesEncryptService,
+        InstagramRepository instagramRepository, WebClient webClient,
         @Value("${instagram.api.client_id}") String clientId,
         @Value("${instagram.api.client_secret}") String clientSecret) {
+        this.aesEncryptService = aesEncryptService;
         this.instagramRepository = instagramRepository;
         this.webClient = webClient;
         this.clientId = clientId;
@@ -26,8 +29,6 @@ public class InstagramService {
 
     public void connect(String token) {
         // WebClient를 사용하여 API를 호출합니다.
-        System.out.println(clientId);
-        System.out.println(clientSecret);
 
         InstagramTokenResponse instagramTokenResponse = webClient.get()
             .uri(uriBuilder -> uriBuilder
@@ -41,8 +42,15 @@ public class InstagramService {
             .bodyToMono(InstagramTokenResponse.class) // 응답 본문을 String 형태로 변환합니다.
             .block();
 
+        String encrypted = aesEncryptService.encrypt(instagramTokenResponse.getAccess_token());
+
         //TODO 여기 userId 수정
-        InstagramToken instagramToken = new InstagramToken(1L, instagramTokenResponse);
+        InstagramToken instagramToken = new InstagramToken(1L, encrypted,
+            instagramTokenResponse.getExpires_in());
         instagramRepository.save(instagramToken);
+
+        System.out.println("[origin] " + instagramTokenResponse.getAccess_token());
+        System.out.println("[encrypted] " + encrypted);
+        System.out.println("[decrypted] " + aesEncryptService.decrypt(encrypted));
     }
 }
