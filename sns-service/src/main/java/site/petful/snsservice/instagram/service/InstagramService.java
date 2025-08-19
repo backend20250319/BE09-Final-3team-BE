@@ -24,7 +24,8 @@ public class InstagramService {
         // WebClient를 사용하여 API를 호출합니다.
         System.out.println(clientId);
         System.out.println(clientSecret);
-        return webClient.get()
+
+        String result = webClient.get()
             .uri(uriBuilder -> uriBuilder
                 .path("/oauth/access_token") // 요청할 세부 경로
                 .queryParam("grant_type", "fb_exchange_token")
@@ -36,5 +37,6 @@ public class InstagramService {
             .bodyToMono(String.class) // 응답 본문을 String 형태로 변환합니다.
             .block();
 
+        return result;
     }
 }
