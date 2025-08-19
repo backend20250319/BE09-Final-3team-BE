@@ -1,4 +1,4 @@
-package com.lhw.notificationservice.entity;
+package site.petful.notificationservice.entity;
 
 
 import jakarta.persistence.*;

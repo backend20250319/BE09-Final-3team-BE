@@ -1,0 +1,30 @@
+package site.petful.notificationservice.messaging;
+
+
+import site.petful.notificationservice.application.IdempotencyService;
+import site.petful.notificationservice.application.NotificationWriteService;
+import site.petful.notificationservice.dto.EventMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class DomainEventConsumer {
+    private final NotificationWriteService notificationWriteService;
+    private final IdempotencyService idempotencyService;
+
+    @RabbitListener(queues = "${app.messaging.queue}")
+    public void onEvent(EventMessage eventMessage){
+        String idemKey = eventMessage.eventId();
+        if(!idempotencyService.tryAcquire(idemKey, Duration.ofHours(12))){
+            log.info("dup drop{}",idemKey);
+            return;
+        }
+        notificationWriteService.createFromEvent(eventMessage);
+    }
+}
