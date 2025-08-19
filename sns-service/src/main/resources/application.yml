@@ -5,8 +5,3 @@ spring:
   application:
     name: sns-service
 
-
-instagram:
-  api:
-    client_id: 731276039762812
-    client_secret: c44dd595513e55ffd720b3c9fdfeb0f7

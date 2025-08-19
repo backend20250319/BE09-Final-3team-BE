@@ -1,4 +1,4 @@
-package site.petful.snsservice.instagram.config;
+package site.petful.snsservice.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

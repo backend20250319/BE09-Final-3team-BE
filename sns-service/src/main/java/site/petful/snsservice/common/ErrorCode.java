@@ -1,4 +1,4 @@
-package site.petful.snsservice.instagram.common;
+package site.petful.snsservice.common;
 
 import lombok.Getter;
 
