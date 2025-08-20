@@ -30,12 +30,15 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // ✅ 게이트웨이 리라이트 결과에 맞춰 공개
+                        .requestMatchers("/auth/**").permitAll()
+                        // (겸사겸사 문서/헬스도 공개)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/actuator/health").permitAll()
+                        // 필요 시 기존 규칙도 유지해 두면 양쪽 다 대응 가능
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -43,16 +46,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
+        DaoAuthenticationProvider p = new DaoAuthenticationProvider();
+        p.setUserDetailsService(userDetailsService);
+        p.setPasswordEncoder(passwordEncoder());
+        return p;
     }
 
     @Bean
