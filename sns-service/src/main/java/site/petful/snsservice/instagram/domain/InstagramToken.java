@@ -24,7 +24,6 @@ public class InstagramToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long userId;
-
     @Column(name = "token", length = 512)
     private String token;
     private LocalDateTime expireAt;

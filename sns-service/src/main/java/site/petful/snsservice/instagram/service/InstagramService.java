@@ -58,9 +58,8 @@ public class InstagramService {
         for (String instagramId : instagramIds) {
             System.out.println(instagramId);
             InstagramProfileResponse instagramProfileResponse = syncInstagramProfile(
-                Long.parseLong(instagramId), accessToken);
+                Long.parseLong(instagramId), accessToken, userId);
 
-            System.out.println(instagramProfileResponse);
             profiles.add(instagramProfileResponse);
         }
 
@@ -69,13 +68,13 @@ public class InstagramService {
 
 
     public InstagramProfileResponse syncInstagramProfile(Long instagramId,
-        String accessToken) {
+        String accessToken, Long userId) {
 
         String fields = "username,name,profile_picture_url,biography,followers_count,follows_count,media_count,website";
         InstagramProfileResponse response = instagramApiClient.fetchInstagramProfile(instagramId,
             accessToken, fields);
 
-        InstagramProfile profile = new InstagramProfile(response);
+        InstagramProfile profile = new InstagramProfile(response, userId);
 
         profile = instagramProfileRepository.save(profile);
 

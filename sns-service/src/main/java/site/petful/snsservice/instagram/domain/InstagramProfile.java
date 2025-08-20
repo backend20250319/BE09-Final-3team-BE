@@ -14,23 +14,25 @@ public class InstagramProfile {
 
     @Id
     private Long id;
+    private Long userNo;
     private String userName;
     private String name;
     @Column(name = "profile_picture_url", length = 512)
-    private String profile_picture_url;
-    private Integer followers_count;
-    private Integer follows_count;
-    private Integer media_count;
+    private String profilePictureUrl;
+    private Integer followersCount;
+    private Integer followsCount;
+    private Integer mediaCount;
 
 
-    public InstagramProfile(InstagramProfileResponse response) {
+    public InstagramProfile(InstagramProfileResponse response, Long user_no) {
         this.id = response.id();
         this.userName = response.username();
         this.name = response.name();
-        this.profile_picture_url = response.profile_picture_url();
-        this.followers_count = response.followers_count();
-        this.follows_count = response.follows_count();
-        this.media_count = response.media_count();
+        this.profilePictureUrl = response.profile_picture_url();
+        this.followersCount = response.followers_count();
+        this.followsCount = response.follows_count();
+        this.mediaCount = response.media_count();
+        this.userNo = user_no;
     }
 
     public InstagramProfileResponse toResponse() {
@@ -38,10 +40,10 @@ public class InstagramProfile {
             id,
             userName,
             name,
-            profile_picture_url,
-            followers_count,
-            follows_count,
-            media_count
+            profilePictureUrl,
+            followersCount,
+            followsCount,
+            mediaCount
         );
     }
 }

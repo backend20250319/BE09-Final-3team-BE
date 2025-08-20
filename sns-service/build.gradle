@@ -44,6 +44,11 @@ dependencies {
     //jsonPath
     implementation 'com.jayway.jsonpath:json-path:2.9.0'
 
+    // batch
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+    testImplementation 'org.springframework.batch:spring-batch-test'
+
+
 }
 
 dependencyManagement {

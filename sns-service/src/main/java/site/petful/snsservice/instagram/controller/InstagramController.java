@@ -22,12 +22,12 @@ public class InstagramController {
 
     @PostMapping("/connect")
     public ResponseEntity<ApiResponse<String>> connectInstagram(@RequestParam String token) {
-        // TODO [유저] 정보도 가져와야됌 쭉 들어가면서 수정
+        // TODO [유저] 정보도 가져와야됌 쭉 들어가면서 수정 userNo로 저장
         String encryptedToken = instagramService.connect(token);
         return ResponseEntity.ok(ApiResponseGenerator.success(encryptedToken));
     }
 
-    //TODO [유저] 여기 userId 수정 쭉 들어가면서
+    //TODO [유저] 여기 userId 수정 쭉 들어가면서 userNo로 저장
     @PostMapping("/profiles")
     public ResponseEntity<ApiResponse<List<InstagramProfileResponse>>> syncProfiles(
         @RequestParam Long userId) {
