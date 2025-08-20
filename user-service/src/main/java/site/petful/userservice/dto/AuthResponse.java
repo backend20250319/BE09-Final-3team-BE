@@ -10,7 +10,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthResponse {
-    private String token;  // 로그인 시에만 제공
+    private String accessToken;
+    private String refreshToken;
+    private Long accessExpiresAt;   // epoch millis
+    private Long refreshExpiresAt;  // epoch millis
+
     private String message;
     private String email;
     private String name;

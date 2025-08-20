@@ -5,14 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// SignupResponse.java
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class TokenValidationResponse {
-    private boolean valid;
+@AllArgsConstructor
+public class SignupResponse {
+    private Long userNo;      // 있으면
     private String email;
     private String name;
-    private String role;
     private String message;
 }
