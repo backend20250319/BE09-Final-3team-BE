@@ -4,7 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import site.petful.healthservice.medical.exception.InvalidFileException;
+import site.petful.healthservice.common.exception.BusinessException;
+import site.petful.healthservice.common.response.ErrorCode;
 import site.petful.healthservice.medical.ocr.ClovaOcrClient;
 
 import java.io.File;
@@ -72,18 +73,18 @@ public class MedicationService {
     
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new InvalidFileException("업로드된 파일이 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "업로드된 파일이 없습니다.");
         }
         
         // 파일 크기 체크 (10MB 제한)
         if (file.getSize() > 10 * 1024 * 1024) {
-            throw new InvalidFileException("파일 크기가 10MB를 초과합니다.");
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "파일 크기가 10MB를 초과합니다.");
         }
         
         // 이미지 파일 형식 체크
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            throw new InvalidFileException("이미지 파일만 업로드 가능합니다.");
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "이미지 파일만 업로드 가능합니다.");
         }
     }
 }
