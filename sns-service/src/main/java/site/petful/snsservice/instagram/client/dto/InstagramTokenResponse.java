@@ -1,16 +1,9 @@
 package site.petful.snsservice.instagram.client.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+public record InstagramTokenResponse(
+    String access_token,
+    String token_type,
+    Long expires_in
+) {
 
-
-@Getter
-@Setter
-@AllArgsConstructor
-public class InstagramTokenResponse {
-
-    private final String access_token;
-    private final String token_type;
-    private final Long expires_in;
 }
