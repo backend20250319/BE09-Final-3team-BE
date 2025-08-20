@@ -16,7 +16,7 @@ public class SecurityConfig {
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers("/auth/**").permitAll()
-                .pathMatchers("/actuator/**").permitAll()
+                .pathMatchers("/api/v1/**").permitAll()
                 .anyExchange().permitAll() // Gateway 필터에서 인증 처리
             )
             .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
