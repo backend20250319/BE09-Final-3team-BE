@@ -577,6 +577,3 @@ FodyWeavers.xsd
 
 #my-test-app
 my-test-app/
-
-# File uploads directory
-uploads/
