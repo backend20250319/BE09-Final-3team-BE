@@ -7,11 +7,7 @@ import site.petful.userservice.domain.Role;
 import site.petful.userservice.domain.User;
 import site.petful.userservice.dto.SignupRequest;
 import site.petful.userservice.dto.SignupResponse;
-import site.petful.userservice.dto.TokenValidationResponse;
 import site.petful.userservice.repository.UserRepository;
-import site.petful.userservice.security.JwtUtil;
-
-import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +15,6 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;   // validateToken()에서 사용
 
     @Override
     public SignupResponse signup(SignupRequest request) {
@@ -81,39 +76,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public TokenValidationResponse validateToken(String token) {
-        try {
-            String email = jwtUtil.extractUsername(token);
-            if (email == null) {
-                return TokenValidationResponse.builder()
-                        .valid(false).message("토큰에 이메일(subject)이 없습니다.").build();
-            }
-
-            Date exp = jwtUtil.extractExpiration(token);
-            if (exp == null || exp.before(new Date())) {
-                return TokenValidationResponse.builder()
-                        .valid(false).message("토큰이 만료되었습니다.").build();
-            }
-
-            User user = userRepository.findByEmail(email).orElse(null);
-            if (user == null) {
-                return TokenValidationResponse.builder()
-                        .valid(false).message("사용자를 찾을 수 없습니다.").build();
-            }
-
-            return TokenValidationResponse.builder()
-                    .valid(true)
-                    .email(user.getEmail())
-                    .name(user.getName())
-                    .role(user.getUserType().name()) // role -> userType으로 변경
-                    .message("토큰이 유효합니다.")
-                    .build();
-
-        } catch (Exception e) {
-            return TokenValidationResponse.builder()
-                    .valid(false)
-                    .message("토큰 검증 중 오류가 발생했습니다: " + e.getMessage())
-                    .build();
-        }
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
     }
 }

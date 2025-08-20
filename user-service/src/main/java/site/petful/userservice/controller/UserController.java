@@ -47,8 +47,11 @@ public class UserController {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
+        // User 객체를 가져와서 토큰 생성
+        site.petful.userservice.domain.User user = userService.findByEmail(request.getEmail());
+        
         long now = System.currentTimeMillis();
-        String access  = authService.issueAccess(auth.getName());
+        String access  = authService.issueAccess(user); // User 객체로 토큰 생성
         String refresh = authService.issueRefresh(auth.getName());
 
         return ResponseEntity.ok(
@@ -83,22 +86,6 @@ public class UserController {
         );
     }
 
-    /** 액세스 토큰 검증 (기존 유지) */
-    @PostMapping("/validate-token")
-    public ResponseEntity<TokenValidationResponse> validateToken(@RequestBody TokenValidationRequest request) {
-        try {
-            TokenValidationResponse response = userService.validateToken(request.getToken());
-            if (response.isValid()) return ResponseEntity.ok(response);
-            return ResponseEntity.badRequest().body(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(TokenValidationResponse.builder()
-                            .valid(false)
-                            .message("토큰 검증에 실패했습니다: " + e.getMessage())
-                            .build());
-        }
-    }
-
     /** 보호된 예시 엔드포인트 */
     @GetMapping("/profile")
     public ResponseEntity<AuthResponse> getProfile() {
@@ -114,5 +101,16 @@ public class UserController {
     @PostMapping("/logout")
     public ResponseEntity<AuthResponse> logout() {
         return ResponseEntity.ok(AuthResponse.builder().message("로그아웃 성공").build());
+    }
+
+    /** 토큰 내용 확인용 테스트 엔드포인트 */
+    @PostMapping("/decode-token")
+    public ResponseEntity<?> decodeToken(@RequestBody String token) {
+        try {
+            io.jsonwebtoken.Claims claims = authService.getJwtUtil().parseAccessClaims(token);
+            return ResponseEntity.ok(claims);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("토큰 디코딩 실패: " + e.getMessage());
+        }
     }
 }

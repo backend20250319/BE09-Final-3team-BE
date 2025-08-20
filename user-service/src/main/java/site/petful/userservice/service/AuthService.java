@@ -3,6 +3,7 @@ package site.petful.userservice.service;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import site.petful.userservice.domain.User;
 import site.petful.userservice.security.CustomUserDetailsService;
@@ -45,8 +46,9 @@ public class AuthService {
         }
         String username = claims.getSubject();
         // 유저 유효성 확인(삭제/잠금 등)
-        userDetailsService.loadUserByUsername(username);
-        return jwtUtil.generateAccessToken(username);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        User user = (User) userDetails; // User는 UserDetails를 구현하므로 캐스팅 가능
+        return jwtUtil.generateAccessToken(user);
     }
 
     /** (선택) rolling refresh가 필요할 때만 호출 */
@@ -61,4 +63,7 @@ public class AuthService {
     // 컨트롤러에서 쿠키 TTL 설정할 때 사용
     public long accessTtlMinutes() { return accessExpMin; }
     public long refreshTtlDays() { return refreshExpDays; }
+    
+    // JwtUtil getter (테스트용)
+    public JwtUtil getJwtUtil() { return jwtUtil; }
 }
