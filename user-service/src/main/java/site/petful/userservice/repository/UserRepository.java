@@ -14,6 +14,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
-    // ❌ 불필요: JpaRepository가 이미 save 제공
-    // User save(User user);
 }
