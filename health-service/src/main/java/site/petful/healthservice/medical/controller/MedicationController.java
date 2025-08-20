@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import site.petful.healthservice.medical.common.ApiResponse;
 import site.petful.healthservice.medical.common.ApiResponseGenerator;
 import site.petful.healthservice.medical.common.ErrorCode;
+import site.petful.healthservice.medical.ocr.ClovaOcrClient;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +28,8 @@ public class MedicationController {
 
     @Value("${storage.medication-dir:uploads/medication}")
     private String medicationDir;
+
+    private final ClovaOcrClient clovaOcrClient;
 
     @PostMapping("/upload")
     public ResponseEntity<ApiResponse<String>> uploadMedication(@RequestParam("file") MultipartFile file) {
@@ -56,6 +59,26 @@ public class MedicationController {
         } catch (IOException e) {
             // 실패 응답
             return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.OPERATION_FAILED, "파일 저장 실패", null));
+        }
+    }
+
+    @PostMapping("/ocr")
+    public ResponseEntity<ApiResponse<String>> extractText(@RequestParam("file") MultipartFile file) {
+        File temp = null;
+        try {
+            String original = Objects.requireNonNull(file.getOriginalFilename(), "filename");
+            String safeOriginal = new File(original).getName();
+            String ext = safeOriginal.contains(".") ? safeOriginal.substring(safeOriginal.lastIndexOf('.')) : "";
+            temp = File.createTempFile("ocr_", ext);
+            file.transferTo(temp);
+
+            String result = clovaOcrClient.extractTextFromImage(temp);
+            return ResponseEntity.ok(ApiResponseGenerator.success(result));
+        } catch (Exception e) {
+            // 상세 원인(e.getMessage())을 data에 담아 반환하여 디버깅을 돕는다
+            return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.NETWORK_ERROR, e.getMessage(), null));
+        } finally {
+            if (temp != null && temp.exists()) temp.delete();
         }
     }
 }
