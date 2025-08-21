@@ -19,8 +19,6 @@ spring:
           search-paths: /**
           private-key: ${SSH_KEY}
 
-
-
 encrypt:
   key-store:
     location: file:${KEYSTORE_PATH}
