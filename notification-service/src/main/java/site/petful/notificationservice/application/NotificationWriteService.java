@@ -1,5 +1,6 @@
 package site.petful.notificationservice.application;
 
+import lombok.extern.slf4j.Slf4j;
 import site.petful.notificationservice.dto.EventMessage;
 import site.petful.notificationservice.entity.Notification;
 import site.petful.notificationservice.repository.NotificationRepository;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationWriteService {

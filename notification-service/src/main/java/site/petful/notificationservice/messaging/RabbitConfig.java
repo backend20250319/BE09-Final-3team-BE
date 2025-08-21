@@ -1,44 +1,56 @@
+// RabbitConfig.java
 package site.petful.notificationservice.messaging;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @EnableRabbit
 @Configuration
+@EnableConfigurationProperties(MessagingProps.class)
 public class RabbitConfig {
-    @Value("${app.messaging.exchange}")
-    private String exchangeName;
-    @Value("${app.messaging.queue}")
-    private String queueName;
-    @Value("${app.messaging.keys:}")
-    private List<String> routingKeys;
+
+    private final MessagingProps props;
+    public RabbitConfig(MessagingProps props) { this.props = props; }
 
     @Bean
-    TopicExchange notiExchange() {return new TopicExchange(exchangeName,true,false);}
+    TopicExchange notiExchange() {
+        return ExchangeBuilder.topicExchange(props.getExchange())
+                .durable(true)
+                .build();
+    }
+
     @Bean
-    Queue notiQueue() {return QueueBuilder.durable(queueName).build();}
+    Queue notiQueue() {
+        return QueueBuilder.durable(props.getQueue())
+                .build(); // durable=true, autoDelete=false, exclusive=false
+    }
 
     @Bean
     Declarables bindings(TopicExchange ex, Queue q) {
         List<Declarable> ds = new ArrayList<>();
-        for (String raw : routingKeys) {
-            String key = raw.trim();
+        for (String raw : props.getKeys()) {
+            String key = raw == null ? "" : raw.trim();
             if (!key.isEmpty()) ds.add(BindingBuilder.bind(q).to(ex).with(key));
         }
         return new Declarables(ds);
+    }
+
+    @Bean
+    AmqpAdmin amqpAdmin(ConnectionFactory cf) {
+        RabbitAdmin admin = new RabbitAdmin(cf);
+        admin.setAutoStartup(true);
+        return admin;
     }
 
     @Bean
@@ -61,6 +73,7 @@ public class RabbitConfig {
         f.setMessageConverter(conv);
         f.setConcurrentConsumers(2);
         f.setMaxConcurrentConsumers(8);
+        f.setMissingQueuesFatal(false);
         return f;
     }
 }

@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("api/notifications")
+@RequestMapping("notifications")
 @RequiredArgsConstructor
 public class NotificationController {
     private final NotificationReadService notificationService;
@@ -18,7 +18,7 @@ public class NotificationController {
     public Slice<Notification> list(
     @RequestParam  Long userId,
     @RequestParam(defaultValue = "0")int page,
-    @RequestParam(defaultValue = "30")int size){
+    @RequestParam(defaultValue = "5")int size){
         return notificationService.listVisible(userId, page, size);
     }
 
