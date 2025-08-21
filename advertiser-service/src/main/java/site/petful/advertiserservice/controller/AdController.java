@@ -39,4 +39,16 @@ public class AdController {
                     .body(ApiResponseGenerator.fail(ErrorCode.AD_INTERNAL_SERVER_ERROR));
         }
     }
+
+    // 2. 광고(캠페인) 단일 조회
+    @GetMapping("/{adNo}")
+    public ResponseEntity<ApiResponse<?>> getAd(@PathVariable Long adNo) {
+        try {
+            AdResponse response = adService.getAd(adNo);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
 }

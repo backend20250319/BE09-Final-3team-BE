@@ -31,6 +31,14 @@ public class AdService {
         return AdResponse.from(saved);
     }
 
+    // 2. 광고(캠페인) 단일 조회
+    public AdResponse getAd(Long adNo) {
+
+        Advertisement ad = adRepository.findByAdNo(adNo)
+                .orElseThrow(() -> new RuntimeException("광고를 찾을 수 없습니다."));
+        return AdResponse.from(ad);
+    }
+
     private void register(Advertisement ad, AdRequest request, Advertiser advertiser) {
         ad.setTitle(request.getTitle());
         ad.setContent(request.getContent());
