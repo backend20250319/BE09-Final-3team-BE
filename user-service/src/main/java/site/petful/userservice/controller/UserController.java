@@ -16,7 +16,6 @@ import java.time.Duration;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // 게이트웨이에서 전역 CORS를 관리한다면 삭제해도 됨
 public class UserController {
 
     private final UserService userService;              // 회원가입/유저 관련
@@ -61,6 +60,7 @@ public class UserController {
                         .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
                         .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
                         .email(request.getEmail())
+                        .name(user.getNickname()) // 닉네임 추가
                         .message("로그인 성공")
                         .build()
         );

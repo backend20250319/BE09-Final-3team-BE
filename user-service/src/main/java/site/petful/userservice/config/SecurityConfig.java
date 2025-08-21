@@ -110,24 +110,9 @@ public class SecurityConfig {
         };
     }
 
-    // --- CORS(개발 기본값: localhost:3000 허용) ---
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(List.of(
-                "http://localhost:3000", // FE 로컬
-                "http://127.0.0.1:3000"
-                // 필요시 도메인 추가
-        ));
-
-        c.addAllowedHeader("*");
-        c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        c.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","X-Requested-With"));
-        c.setAllowCredentials(true);
-        c.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
-        src.registerCorsConfiguration("/**", c);
-        return src;
-    }
+    // CORS 설정 제거 - 게이트웨이에서 전역 CORS 처리
+    // @Bean
+    // public CorsConfigurationSource corsConfigurationSource() {
+    //     // 게이트웨이에서 CORS를 처리하므로 백엔드에서는 설정하지 않음
+    // }
 }
