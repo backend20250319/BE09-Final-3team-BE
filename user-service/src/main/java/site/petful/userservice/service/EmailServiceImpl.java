@@ -2,6 +2,7 @@ package site.petful.userservice.service;
 
 import site.petful.userservice.dto.EmailVerificationConfirmRequest;
 import site.petful.userservice.dto.EmailVerificationRequest;
+import site.petful.userservice.repository.UserRepository;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,7 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
     private final RedisTemplate<String, String> redisTemplate;
+    private final UserRepository userRepository;
 
     // 환경 변수/설정 파일로 분리 권장
     @Value("${mail.from:no-reply@petful.app}")
@@ -47,7 +49,13 @@ public class EmailServiceImpl implements EmailService {
     public void sendVerificationEmail(EmailVerificationRequest request) {
         final String email = normalize(request.getEmail());
 
-        // 재전송 간격 제한
+        // 이메일 중복 체크
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalStateException("이미 가입된 이메일입니다. 다른 이메일을 사용하거나 로그인해주세요.");
+        }
+
+        // 재전송 간격 제한 (테스트 단계에서 주석처리)
+        /*
         String lastSentKey = LAST_SENT_PREFIX + email;
         String lastSentTime = redisTemplate.opsForValue().get(lastSentKey);
         if (lastSentTime != null) {
@@ -56,6 +64,7 @@ public class EmailServiceImpl implements EmailService {
                 throw new IllegalStateException("재전송 제한: 잠시 후 다시 시도하라");
             }
         }
+        */
 
         String code = generate6DigitCode();
         String codeKey = VERIFICATION_CODE_PREFIX + email;
@@ -64,7 +73,7 @@ public class EmailServiceImpl implements EmailService {
         // Redis에 인증 코드 저장 (TTL 설정)
         redisTemplate.opsForValue().set(codeKey, code, Duration.ofSeconds(codeTtlSeconds));
         redisTemplate.opsForValue().set(attemptsKey, "0", Duration.ofSeconds(codeTtlSeconds));
-        redisTemplate.opsForValue().set(lastSentKey, LocalDateTime.now().toString(), Duration.ofSeconds(codeTtlSeconds));
+        // redisTemplate.opsForValue().set(lastSentKey, LocalDateTime.now().toString(), Duration.ofSeconds(codeTtlSeconds)); // 재전송 제한 주석처리
 
         log.info("인증 코드 저장 완료: {}", email);
 
@@ -122,7 +131,7 @@ public class EmailServiceImpl implements EmailService {
             // 초과 시 정리 후 실패
             redisTemplate.delete(codeKey);
             redisTemplate.delete(attemptsKey);
-            redisTemplate.delete(LAST_SENT_PREFIX + email);
+            // redisTemplate.delete(LAST_SENT_PREFIX + email); // 재전송 제한 주석처리
             log.warn("인증 시도 횟수 초과: {}", email);
             return false;
         }
@@ -131,7 +140,7 @@ public class EmailServiceImpl implements EmailService {
         if (storedCode.equals(userInput)) {
             redisTemplate.delete(codeKey);
             redisTemplate.delete(attemptsKey);
-            redisTemplate.delete(LAST_SENT_PREFIX + email);
+            // redisTemplate.delete(LAST_SENT_PREFIX + email); // 재전송 제한 주석처리
             log.info("이메일 인증 성공: {}", email);
             return true;
         }
