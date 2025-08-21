@@ -14,7 +14,6 @@ import site.petful.userservice.domain.User;
 import java.security.Key;
 import java.time.Duration;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -54,28 +53,6 @@ public class JwtUtil {
     /* ======================
      * Access token (인증용)
      * ====================== */
-    public String generateAccessToken(String subject) {
-        long now = System.currentTimeMillis();
-        return Jwts.builder()
-                .setSubject(subject)
-                .claim(CLAIM_TYP, TYP_ACCESS)
-                .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + Duration.ofMinutes(accessExpMin).toMillis()))
-                .signWith(accessKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    public String generateAccessToken(String subject, Map<String, Object> extraClaims) {
-        long now = System.currentTimeMillis();
-        return Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(subject)
-                .claim(CLAIM_TYP, TYP_ACCESS)
-                .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + Duration.ofMinutes(accessExpMin).toMillis()))
-                .signWith(accessKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
 
     /** userNo와 userType을 포함한 Access 토큰 생성 */
     public String generateAccessToken(String subject, Long userNo, String userType) {
@@ -91,14 +68,13 @@ public class JwtUtil {
                 .compact();
     }
 
-    /** User 객체로부터 Access 토큰 생성 */
+    /** User 객체로부터 Access 토큰 생성 (래퍼) */
     public String generateAccessToken(User user) {
-        return generateAccessToken(user.getEmail(), user.getUserNo(), user.getUserType().name());
-    }
-
-    /** 기존 호환: UserDetails로 Access 발급 */
-    public String generateToken(UserDetails userDetails) {
-        return generateAccessToken(userDetails.getUsername());
+        return generateAccessToken(
+                user.getEmail(),
+                user.getUserNo(),
+                user.getUserType().name()
+        );
     }
 
     /** Access 파싱 (+ typ 검증) */
@@ -142,14 +118,14 @@ public class JwtUtil {
     }
 
     /* ======================
-     * 공통/호환 메서드들
+     * 공통/호환 메서드들 (Access 기준)
      * ====================== */
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject); // Access 기준
+        return extractClaim(token, Claims::getSubject);
     }
 
     public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration); // Access 기준
+        return extractClaim(token, Claims::getExpiration);
     }
 
     /** 토큰에서 userNo 추출 (Number/String 모두 안전 변환) */

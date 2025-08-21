@@ -19,21 +19,17 @@ public class AuthService {
     @Value("${jwt.access-exp-min}")   private long accessExpMin;
     @Value("${jwt.refresh-exp-days}") private long refreshExpDays;
 
-    /** 로그인 시 Access/Refresh 각각 생성 (필요한 쪽만 골라 쓰면 됨) */
-    public String issueAccess(String username) {
-        return jwtUtil.generateAccessToken(username);
-    }
-
-    /** User 객체로부터 userNo와 userRole을 포함한 Access 토큰 생성 */
+    /** User 객체로부터 userNo/userType을 포함한 Access 토큰 생성 */
     public String issueAccess(User user) {
         return jwtUtil.generateAccessToken(user);
     }
 
-    /** userNo와 userRole을 직접 지정하여 Access 토큰 생성 */
+    /** userNo와 userType을 직접 지정하여 Access 토큰 생성 */
     public String issueAccess(String username, Long userNo, String userRole) {
         return jwtUtil.generateAccessToken(username, userNo, userRole);
     }
 
+    /** username으로 Refresh 토큰 생성 */
     public String issueRefresh(String username) {
         return jwtUtil.generateRefreshToken(username);
     }
@@ -45,9 +41,14 @@ public class AuthService {
             throw new IllegalStateException("refresh token expired");
         }
         String username = claims.getSubject();
+
         // 유저 유효성 확인(삭제/잠금 등)
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        User user = (User) userDetails; // User는 UserDetails를 구현하므로 캐스팅 가능
+        if (!(userDetails instanceof User)) {
+            throw new IllegalStateException("Unexpected UserDetails type");
+        }
+        User user = (User) userDetails;
+
         return jwtUtil.generateAccessToken(user);
     }
 
@@ -63,7 +64,7 @@ public class AuthService {
     // 컨트롤러에서 쿠키 TTL 설정할 때 사용
     public long accessTtlMinutes() { return accessExpMin; }
     public long refreshTtlDays() { return refreshExpDays; }
-    
+
     // JwtUtil getter (테스트용)
     public JwtUtil getJwtUtil() { return jwtUtil; }
 }
