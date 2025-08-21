@@ -19,6 +19,9 @@ import java.util.List;
 @Component("Authentication")
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
+    private static final String HDR_USER_NO = "X-User-No";
+    private static final String HDR_USER_TYPE = "X-User-Type";
+
     private final JwtUtil jwtUtil;
     private final AntPathMatcher matcher = new AntPathMatcher();
 
@@ -66,13 +69,13 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
             String token = authHeader.substring(7).trim(); // "Bearer " 제거 후 공백 제거
 
-            // 4) 토큰 유효성/만료 검사 (예외 방어)
+            // 4) 토큰 유효성/만료 검사
             try {
                 if (!jwtUtil.validateToken(token)) {
                     log.debug("JWT validation failed");
                     return cfg.required ? unauthorized(exchange) : chain.filter(exchange);
                 }
-                if (jwtUtil.isTokenExpired(token)) { // validateToken이 만료 포함하면 이 줄은 제거 가능
+                if (jwtUtil.isTokenExpired(token)) {
                     log.debug("JWT expired");
                     return cfg.required ? unauthorized(exchange) : chain.filter(exchange);
                 }
@@ -81,22 +84,28 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 return cfg.required ? unauthorized(exchange) : chain.filter(exchange);
             }
 
-            // 5) 사용자 ID 추출 및 헤더에 추가
-            String userId = null;
+            // 5) userNo, userType 추출 및 헤더에 추가
+            String userNo = null;
+            String userType = null;
             try {
-                userId = jwtUtil.getUserIdFromToken(token);
+                userNo = jwtUtil.getUserNoFromToken(token);
+                userType = jwtUtil.getUserTypeFromToken(token);
             } catch (Exception ex) {
-                log.debug("Failed to extract userId from token: {}", ex.getMessage());
+                log.debug("Failed to extract claims from token: {}", ex.getMessage());
             }
-            if (userId == null || userId.isBlank()) {
+
+            // 두 값 모두 필수로 보고 체크 (원하면 정책에 맞게 완화 가능)
+            if (userNo == null || userNo.isBlank() || userType == null || userType.isBlank()) {
+                log.debug("Missing required claims: userNo='{}', userType='{}'", userNo, userType);
                 return cfg.required ? unauthorized(exchange) : chain.filter(exchange);
             }
 
             ServerHttpRequest modifiedRequest = request.mutate()
-                    .header("X-User-ID", userId)
+                    .header(HDR_USER_NO, userNo)
+                    .header(HDR_USER_TYPE, userType)
                     .build();
 
-            log.debug("Authentication ok, userId={}", userId);
+            log.debug("Authentication ok, userNo={}, userType={}", userNo, userType);
             return chain.filter(exchange.mutate().request(modifiedRequest).build());
         };
     }
@@ -104,7 +113,6 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     private boolean isWhitelisted(List<String> patterns, String path) {
         if (patterns == null) return false;
         for (String p : patterns) {
-            // AntPathMatcher가 exact 패턴도 지원하므로 일괄 match로 단순화
             if (matcher.match(p, path)) return true;
         }
         return false;
@@ -112,8 +120,6 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
     private Mono<Void> unauthorized(org.springframework.web.server.ServerWebExchange exchange) {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        // (선택) 캐시 금지 헤더를 넣고 싶으면 아래 추가
-        // exchange.getResponse().getHeaders().add("Cache-Control", "no-store");
         return exchange.getResponse().setComplete();
     }
 }

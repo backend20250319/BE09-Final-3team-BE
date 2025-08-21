@@ -18,7 +18,6 @@ import java.time.Duration;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // 게이트웨이에서 전역 CORS를 관리한다면 삭제해도 됨
 public class UserController {
 
     private final UserService userService;              // 회원가입/유저 관련
@@ -44,6 +43,13 @@ public class UserController {
         // User 객체를 가져와서 토큰 생성
         site.petful.userservice.domain.User user = userService.findByEmail(request.getEmail());
         
+        // 디버깅용 로그 추가
+        System.out.println("로그인 사용자 정보:");
+        System.out.println("Email: " + user.getEmail());
+        System.out.println("Name: " + user.getName());
+        System.out.println("Nickname: " + user.getNickname());
+        System.out.println("UserNo: " + user.getUserNo());
+        
         long now = System.currentTimeMillis();
         String access  = authService.issueAccess(user); // User 객체로 토큰 생성
         String refresh = authService.issueRefresh(auth.getName());
@@ -54,6 +60,7 @@ public class UserController {
                 .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
                 .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
                 .email(request.getEmail())
+                .name(user.getNickname() != null ? user.getNickname() : user.getName()) // 닉네임이 없으면 이름 사용
                 .message("로그인 성공")
                 .build();
 
