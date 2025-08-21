@@ -1,16 +1,13 @@
 package site.petful.userservice.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import site.petful.userservice.common.ApiResponse;
 import site.petful.userservice.common.ApiResponseGenerator;
-import site.petful.userservice.common.ErrorCode;
 import site.petful.userservice.dto.*;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
@@ -33,75 +30,54 @@ public class UserController {
      */
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<SignupResponse>> signup(@Valid @RequestBody SignupRequest request) {
-        try {
-            SignupResponse res = userService.signup(request);
-            return ResponseEntity.status(201).body(ApiResponseGenerator.success(res));
-        } catch (DuplicateKeyException e) {
-            return ResponseEntity.status(409)
-                    .body(ApiResponseGenerator.fail(ErrorCode.DUPLICATE_EMAIL));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponseGenerator.fail(ErrorCode.SIGNUP_FAILED, e.getMessage()));
-        }
+        SignupResponse res = userService.signup(request);
+        return ResponseEntity.status(201).body(ApiResponseGenerator.success(res));
     }
 
     /** /auth/login */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
-        try {
-            Authentication auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
 
-            // User 객체를 가져와서 토큰 생성
-            site.petful.userservice.domain.User user = userService.findByEmail(request.getEmail());
-            
-            long now = System.currentTimeMillis();
-            String access  = authService.issueAccess(user); // User 객체로 토큰 생성
-            String refresh = authService.issueRefresh(auth.getName());
+        // User 객체를 가져와서 토큰 생성
+        site.petful.userservice.domain.User user = userService.findByEmail(request.getEmail());
+        
+        long now = System.currentTimeMillis();
+        String access  = authService.issueAccess(user); // User 객체로 토큰 생성
+        String refresh = authService.issueRefresh(auth.getName());
 
-            AuthResponse authResponse = AuthResponse.builder()
-                    .accessToken(access)
-                    .refreshToken(refresh)
-                    .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
-                    .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
-                    .email(request.getEmail())
-                    .message("로그인 성공")
-                    .build();
+        AuthResponse authResponse = AuthResponse.builder()
+                .accessToken(access)
+                .refreshToken(refresh)
+                .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
+                .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
+                .email(request.getEmail())
+                .message("로그인 성공")
+                .build();
 
-            return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
-        } catch (BadCredentialsException e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponseGenerator.fail(ErrorCode.LOGIN_FAILED, "이메일 또는 비밀번호가 올바르지 않습니다."));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponseGenerator.fail(ErrorCode.LOGIN_FAILED, e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
     }
 
     /** /auth/refresh : 클라이언트가 보낸 RT로 새 AT(+롤링 RT) 발급 */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshRequest req) {
-        try {
-            long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-            String newAccess  = authService.refreshAccess(req.getRefreshToken());
-            // 필요 시 롤링(새 RT 발급). 재사용 원하면 rotateRefresh 호출을 제거하면 됨.
-            String newRefresh = authService.rotateRefresh(req.getRefreshToken());
+        String newAccess  = authService.refreshAccess(req.getRefreshToken());
+        // 필요 시 롤링(새 RT 발급). 재사용 원하면 rotateRefresh 호출을 제거하면 됨.
+        String newRefresh = authService.rotateRefresh(req.getRefreshToken());
 
-            AuthResponse authResponse = AuthResponse.builder()
-                    .accessToken(newAccess)
-                    .refreshToken(newRefresh)
-                    .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
-                    .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
-                    .message("토큰 재발급 성공")
-                    .build();
+        AuthResponse authResponse = AuthResponse.builder()
+                .accessToken(newAccess)
+                .refreshToken(newRefresh)
+                .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
+                .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
+                .message("토큰 재발급 성공")
+                .build();
 
-            return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponseGenerator.fail(ErrorCode.REFRESH_TOKEN_INVALID, e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
     }
 
     /** 보호된 예시 엔드포인트 */
@@ -124,12 +100,7 @@ public class UserController {
     /** 토큰 내용 확인용 테스트 엔드포인트 */
     @PostMapping("/decode-token")
     public ResponseEntity<ApiResponse<Object>> decodeToken(@RequestBody String token) {
-        try {
-            io.jsonwebtoken.Claims claims = authService.getJwtUtil().parseAccessClaims(token);
-            return ResponseEntity.ok(ApiResponseGenerator.success(claims));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_TOKEN, "토큰 디코딩 실패: " + e.getMessage()));
-        }
+        io.jsonwebtoken.Claims claims = authService.getJwtUtil().parseAccessClaims(token);
+        return ResponseEntity.ok(ApiResponseGenerator.success(claims));
     }
 }
