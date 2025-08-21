@@ -21,8 +21,12 @@ public class DomainEventConsumer {
     @RabbitListener(queues = "${app.messaging.queue}")
     public void onEvent(EventMessage eventMessage){
         String idemKey = eventMessage.eventId();
-        if(!idempotencyService.tryAcquire(idemKey, Duration.ofHours(12))){
-            log.info("dup drop{}",idemKey);
+        if (idemKey == null || idemKey.isBlank()) {
+            log.warn("Received event with null or blank eventId: {}", eventMessage);
+            return;
+        }
+        if (!idempotencyService.tryAcquire(idemKey, Duration.ofHours(12))) {
+            log.info("Duplicate event dropped: {}", idemKey);
             return;
         }
         notificationWriteService.createFromEvent(eventMessage);
