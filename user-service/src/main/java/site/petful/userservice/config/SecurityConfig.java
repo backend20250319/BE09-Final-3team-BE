@@ -18,13 +18,11 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import site.petful.userservice.security.CustomUserDetailsService;
 import site.petful.userservice.security.JwtAuthenticationFilter;
 
-import java.util.List;
+
 
 @Configuration
 @EnableWebSecurity
@@ -47,7 +45,7 @@ public class SecurityConfig {
 
         http
                 // CORS & CSRF
-                .cors(cors -> cors.disable())  // 게이트웨이에서 CORS 처리하므로 비활성화
+                .cors(cors -> cors.disable()) // CORS 비활성화 (Gateway에서 처리)
                 .csrf(csrf -> csrf.disable())
 
                 // 예외 응답을 JSON으로 일관화
@@ -109,10 +107,4 @@ public class SecurityConfig {
             response.getWriter().write("{\"message\":\"Forbidden\"}");
         };
     }
-
-    // CORS 설정 제거 - 게이트웨이에서 전역 CORS 처리
-    // @Bean
-    // public CorsConfigurationSource corsConfigurationSource() {
-    //     // 게이트웨이에서 CORS를 처리하므로 백엔드에서는 설정하지 않음
-    // }
 }
