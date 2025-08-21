@@ -8,6 +8,8 @@ import site.petful.advertiserservice.entity.Advertiser;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
@@ -65,5 +67,14 @@ public class Advertisement {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "advertiser_no")
     private Advertiser advertiser;
+
+    @OneToMany(mappedBy = "advertisement", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Mission> mission = new ArrayList<>();
+
+    @OneToMany(mappedBy = "advertisement", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Keyword> keyword = new ArrayList<>();
+
+    @OneToMany(mappedBy = "advertisement", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Requirement> requirement = new ArrayList<>();
 
 }

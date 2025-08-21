@@ -7,6 +7,8 @@ import site.petful.advertiserservice.entity.advertisement.Advertisement;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -28,6 +30,10 @@ public class AdResponse {
     private String reason;
     private AdvertiserResponse advertiser;
 
+    private List<MissionResponse> mission;
+    private List<KeywordResponse> keyword;
+    private List<RequirementResponse> requirement;
+
     public static AdResponse from(Advertisement ad) {
         AdResponse res = new AdResponse();
         res.setTitle(ad.getTitle());
@@ -44,6 +50,25 @@ public class AdResponse {
         res.setAdUrl(ad.getAdUrl());
         res.setCreatedAt(ad.getCreatedAt());
         res.setReason(ad.getReason());
+
+        if (ad.getMission() != null) {
+            res.mission = ad.getMission().stream()
+                    .map(MissionResponse::from)
+                    .collect(Collectors.toList());
+        }
+
+        if (ad.getKeyword() != null) {
+            res.keyword = ad.getKeyword().stream()
+                    .map(KeywordResponse::from)
+                    .collect(Collectors.toList());
+        }
+
+        if (ad.getRequirement() != null) {
+            res.requirement = ad.getRequirement().stream()
+                    .map(RequirementResponse::from)
+                    .collect(Collectors.toList());
+        }
+
         res.advertiser = AdvertiserResponse.from(ad.getAdvertiser());
 
         return res;

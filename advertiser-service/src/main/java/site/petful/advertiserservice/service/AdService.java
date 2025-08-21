@@ -5,10 +5,12 @@ import org.springframework.stereotype.Service;
 import site.petful.advertiserservice.dto.advertisement.AdRequest;
 import site.petful.advertiserservice.dto.advertisement.AdResponse;
 import site.petful.advertiserservice.entity.Advertiser;
-import site.petful.advertiserservice.entity.advertisement.AdStatus;
-import site.petful.advertiserservice.entity.advertisement.Advertisement;
+import site.petful.advertiserservice.entity.advertisement.*;
 import site.petful.advertiserservice.repository.AdRepository;
 import site.petful.advertiserservice.repository.AdvertiserRepository;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,5 +45,32 @@ public class AdService {
         ad.setAdStatus(ad.getAdStatus() == null ? AdStatus.PENDING : ad.getAdStatus());
         ad.setAdUrl(request.getAdUrl());
         ad.setAdvertiser(advertiser);
+
+        List<Mission> missions = request.getMission().stream()
+                .map(mr -> {
+                    Mission m = new Mission();
+                    m.setContent(mr.getContent());
+                    m.setAdvertisement(ad);
+                    return m;
+                }).collect(Collectors.toList());
+        ad.setMission(missions);
+
+        List<Keyword> keywords = request.getKeyword().stream()
+                .map(kr -> {
+                    Keyword k = new Keyword();
+                    k.setContent(kr.getContent());
+                    k.setAdvertisement(ad);
+                    return k;
+                }).collect(Collectors.toList());
+        ad.setKeyword(keywords);
+
+        List<Requirement> reqs = request.getRequirement().stream()
+                .map(rr -> {
+                    Requirement r = new Requirement();
+                    r.setContent(rr.getContent());
+                    r.setAdvertisement(ad);
+                    return r;
+                }).collect(Collectors.toList());
+        ad.setRequirement(reqs);
     }
 }

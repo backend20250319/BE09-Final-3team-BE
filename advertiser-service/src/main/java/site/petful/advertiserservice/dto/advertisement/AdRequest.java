@@ -1,9 +1,9 @@
 package site.petful.advertiserservice.dto.advertisement;
 
 import lombok.Getter;
-import site.petful.advertiserservice.entity.advertisement.AdStatus;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 public class AdRequest {
@@ -18,4 +18,9 @@ public class AdRequest {
     private LocalDate campaignEnd;
     private Integer members;
     private String adUrl;
+
+    private List<MissionRequest> mission;
+    private List<KeywordRequest> keyword;
+    private List<RequirementRequest> requirement;
+
 }
