@@ -47,7 +47,7 @@ public class SecurityConfig {
 
         http
                 // CORS & CSRF
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.disable())  // 게이트웨이에서 CORS 처리하므로 비활성화
                 .csrf(csrf -> csrf.disable())
 
                 // 예외 응답을 JSON으로 일관화
@@ -63,6 +63,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 프리플라이트 허용
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers("/error").permitAll()                  // (선택) 기본 에러 핸들러 공개
+
                         .anyRequest().authenticated()
                 )
 
@@ -117,6 +119,8 @@ public class SecurityConfig {
                 "http://127.0.0.1:3000"
                 // 필요시 도메인 추가
         ));
+
+        c.addAllowedHeader("*");
         c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         c.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","X-Requested-With"));
         c.setAllowCredentials(true);
