@@ -10,12 +10,12 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="notification")
+@Table(name="Notification")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 public class Notification {
-    @Id
+    @Idㅣㅁ
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "noticifation_no")
     private Long id;
