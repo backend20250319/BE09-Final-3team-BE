@@ -18,7 +18,7 @@ public class CommunityController {
 
     private final CommunityService communityService;
 
-    @GetMapping("{id}/register")
+    @PostMapping("{id}/register")
     public ApiResponse<Void> newRegistration(
             @RequestParam Long userId,
             @RequestBody PostCreateRequest request
