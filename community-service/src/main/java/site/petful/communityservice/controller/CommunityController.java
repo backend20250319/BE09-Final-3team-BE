@@ -3,6 +3,7 @@ package site.petful.communityservice.controller;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.communityservice.common.ApiResponse;
 import site.petful.communityservice.common.ApiResponseGenerator;
@@ -18,16 +19,17 @@ public class CommunityController {
 
     private final CommunityService communityService;
 
-    @PostMapping("{id}/register")
+    @PostMapping("/register")
     public ApiResponse<Void> newRegistration(
-            @RequestParam Long userId,
+            @RequestHeader(value = "X-User-No",   required = false) Long userNo,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
             @RequestBody PostCreateRequest request
-        ){
-        if(userId == null){
+    ) {
+        if(userNo == null){
             return ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST,"해당 유저가 존재하지 않습니다.");
         }
-        PostDto dto = communityService.registNewPost(userId, request);
-        return ApiResponseGenerator.success(); // code=2000, message="OK"
+        PostDto dto = communityService.registNewPost(userNo, request);
+        return ApiResponseGenerator.success();
     }
 
 }
