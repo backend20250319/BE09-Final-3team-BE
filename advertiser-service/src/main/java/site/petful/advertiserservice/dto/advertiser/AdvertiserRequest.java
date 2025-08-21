@@ -1,12 +1,8 @@
-package site.petful.advertiserservice.dto;
+package site.petful.advertiserservice.dto.advertiser;
 
 import lombok.*;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class AdvertiserRequest {
 
     private String name;
@@ -14,6 +10,5 @@ public class AdvertiserRequest {
     private String website;
     private String email;
     private String description;
-    private String reason;
-    private Long profileNo;
+
 }

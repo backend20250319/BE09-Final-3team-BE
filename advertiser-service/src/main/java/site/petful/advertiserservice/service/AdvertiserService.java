@@ -3,8 +3,8 @@ package site.petful.advertiserservice.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import site.petful.advertiserservice.dto.AdvertiserRequest;
-import site.petful.advertiserservice.dto.AdvertiserResponse;
+import site.petful.advertiserservice.dto.advertiser.AdvertiserRequest;
+import site.petful.advertiserservice.dto.advertiser.AdvertiserResponse;
 import site.petful.advertiserservice.entity.Advertiser;
 import site.petful.advertiserservice.repository.AdvertiserRepository;
 
@@ -13,7 +13,6 @@ import site.petful.advertiserservice.repository.AdvertiserRepository;
 public class AdvertiserService {
 
     private final AdvertiserRepository advertiserRepository;
-    // private final ImageServiceClient imageServiceClient;
 
     // 1. 광고주 프로필 정보 조회
     public AdvertiserResponse getAdvertiser(Long advertiserNo) {
@@ -30,22 +29,11 @@ public class AdvertiserService {
         Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
                 .orElseThrow(() -> new RuntimeException("해당 광고주는 존재하지 않습니다."));
 
-        /*if (imageFile != null && !imageFile.isEmpty()) {
-            if (advertiser.getProfileNo() == null) {
-                // 새 이미지를 업로드해서 새로운 번호 생성
-                Long newImageId = imageServiceClient.uploadImage(imageFile);
-                advertiser.setProfileNo(newImageId);
-            } else {
-                // 기존에 저장된 이미지가 존재할 시, 해당 번호에 새로운 이미지로 덮어쓰기
-                imageServiceClient.updateImage(advertiser.getProfileNo(), imageFile);
-            }
-        }*/
         if(updateRequest.getName() != null) advertiser.setName(updateRequest.getName());
         if(updateRequest.getPhone() != null) advertiser.setPhone(updateRequest.getPhone());
         if(updateRequest.getWebsite() != null) advertiser.setWebsite(updateRequest.getWebsite());
         if(updateRequest.getEmail() != null) advertiser.setEmail(updateRequest.getEmail());
         if(updateRequest.getDescription() != null) advertiser.setDescription(updateRequest.getDescription());
-        if(updateRequest.getReason() != null) advertiser.setReason(updateRequest.getReason());
 
         Advertiser saved = advertiserRepository.save(advertiser);
 

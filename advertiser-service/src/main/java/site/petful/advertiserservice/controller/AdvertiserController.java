@@ -8,8 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.common.ErrorCode;
-import site.petful.advertiserservice.dto.AdvertiserRequest;
-import site.petful.advertiserservice.dto.AdvertiserResponse;
+import site.petful.advertiserservice.dto.advertiser.AdvertiserRequest;
+import site.petful.advertiserservice.dto.advertiser.AdvertiserResponse;
 import site.petful.advertiserservice.service.AdvertiserService;
 
 @RestController
@@ -30,7 +30,7 @@ public class AdvertiserController {
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseGenerator.fail(ErrorCode.NOT_FOUND, e.getMessage()));
+                    .body(ApiResponseGenerator.fail(ErrorCode.ADVERTISER_NOT_FOUND));
         }
     }
 
@@ -45,7 +45,7 @@ public class AdvertiserController {
             return ResponseEntity.ok(ApiResponseGenerator.success(updatedResponse));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseGenerator.fail(ErrorCode.NOT_FOUND, e.getMessage()));
+                    .body(ApiResponseGenerator.fail(ErrorCode.ADVERTISER_NOT_FOUND));
         }
     }
 }
