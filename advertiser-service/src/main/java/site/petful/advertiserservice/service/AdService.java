@@ -68,6 +68,16 @@ public class AdService {
     }
 
     // 2-4. adStatus별 광고(캠페인) 전체 조회
+    public AdsResponse getAllAdsByAdStatus(AdStatus adStatus) {
+
+        List<Advertisement> ads = adRepository.findByAdStatus(adStatus);
+
+        if (ads.isEmpty()) {
+            throw new RuntimeException(ErrorCode.AD_NOT_MATCHED.getDefaultMessage());
+        }
+
+        return AdsResponse.from(ads);
+    }
 
     // 3-1. 광고(캠페인) 수정 - 광고주
     public AdResponse updateAd(Long adNo, AdRequest request) {

@@ -14,4 +14,6 @@ public interface AdRepository extends JpaRepository<Advertisement, Long> {
     List<Advertisement> findByAdvertiser(Advertiser advertiser);
 
     List<Advertisement> findByAdvertiserAndAdStatus(Advertiser advertiser, AdStatus adStatus);
+
+    List<Advertisement> findByAdStatus(AdStatus adStatus);
 }

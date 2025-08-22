@@ -83,6 +83,16 @@ public class AdController {
     }
 
     // 2-4. adStatus별 광고(캠페인) 전체 조회
+    @GetMapping("/adStatus")
+    public ResponseEntity<ApiResponse<?>> getAllAdsByAdStatus(@RequestParam AdStatus adStatus) {
+        try {
+            AdsResponse response = adService.getAllAdsByAdStatus(adStatus);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_MATCHED));
+        }
+    }
 
     // 3-1. 광고(캠페인) 수정 - 광고주
     @PutMapping("/{adNo}")
