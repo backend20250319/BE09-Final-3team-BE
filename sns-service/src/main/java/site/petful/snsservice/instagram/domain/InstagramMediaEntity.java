@@ -8,12 +8,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.petful.snsservice.instagram.dto.InstagramMediaDto;
 
 
 @Entity
 @Table(name = "instagram_media")
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 public class InstagramMediaEntity {
@@ -49,7 +51,7 @@ public class InstagramMediaEntity {
     }
 
 
-    public InstagramMediaDto toInstagramMediaDto() {
+    public InstagramMediaDto toDto() {
         return new InstagramMediaDto(id, caption, mediaType, mediaUrl, permalink, timestamp,
             isCommentEnabled, likeCount, commentsCount);
     }
