@@ -42,9 +42,14 @@ public class AdService {
     }
 
     // 2-2. 광고(캠페인) 전체 조회
+    public AdsResponse getAllAds() {
+
+        List<Advertisement> ads = adRepository.findAll();
+        return AdsResponse.from(ads);
+    }
 
     // 2-3. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
-    public AdsResponse getAllAds(Long advertiserNo, AdStatus adStatus) {
+    public AdsResponse getAllAdsByAdvertiser(Long advertiserNo, AdStatus adStatus) {
         Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
 

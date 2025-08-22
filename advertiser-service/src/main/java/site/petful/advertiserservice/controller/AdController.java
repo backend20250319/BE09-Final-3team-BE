@@ -55,13 +55,18 @@ public class AdController {
     }
 
     // 2-2. 광고(캠페인) 전체 조회
+    @GetMapping
+    public ResponseEntity<ApiResponse<?>> getAllAds() {
+        AdsResponse response = adService.getAllAds();
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
 
     // 2-3. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
-    @GetMapping
-    public ResponseEntity<ApiResponse<?>> getAllAds(@RequestParam Long advertiserNo,
+    @GetMapping("/advertiser")
+    public ResponseEntity<ApiResponse<?>> getAllAdsByAdvertiser(@RequestParam Long advertiserNo,
                                                     @RequestParam(required = false) AdStatus adStatus) {
         try {
-            AdsResponse response = adService.getAllAds(advertiserNo, adStatus);
+            AdsResponse response = adService.getAllAdsByAdvertiser(advertiserNo, adStatus);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             String errorMessage = e.getMessage();
