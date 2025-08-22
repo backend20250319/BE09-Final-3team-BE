@@ -3,6 +3,7 @@ package site.petful.advertiserservice.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserRequest;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserResponse;
 import site.petful.advertiserservice.entity.Advertiser;
@@ -18,7 +19,7 @@ public class AdvertiserService {
     public AdvertiserResponse getAdvertiser(Long advertiserNo) {
 
         Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
-                .orElseThrow(() -> new RuntimeException("해당 광고주는 존재하지 않습니다."));
+                .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
 
         return AdvertiserResponse.from(advertiser);
     }
@@ -27,7 +28,7 @@ public class AdvertiserService {
     public AdvertiserResponse updateAdvertiser(Long advertiserNo, AdvertiserRequest updateRequest, MultipartFile imageFile) {
 
         Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
-                .orElseThrow(() -> new RuntimeException("해당 광고주는 존재하지 않습니다."));
+                .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
 
         if(updateRequest.getName() != null) advertiser.setName(updateRequest.getName());
         if(updateRequest.getPhone() != null) advertiser.setPhone(updateRequest.getPhone());
