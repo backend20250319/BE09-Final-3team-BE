@@ -1,6 +1,6 @@
 package site.petful.snsservice.instagram.client.dto;
 
-public record InstagramTokenResponse(
+public record InstagramTokenResponseDto(
     String access_token,
     String token_type,
     Long expires_in

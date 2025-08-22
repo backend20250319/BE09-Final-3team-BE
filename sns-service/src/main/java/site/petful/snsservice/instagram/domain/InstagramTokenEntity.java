@@ -6,6 +6,7 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +15,12 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
+@Table(name = "instagram_token")
 @RequiredArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Setter
 @Getter
-public class InstagramToken {
+public class InstagramTokenEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +33,7 @@ public class InstagramToken {
     private LocalDateTime createdAt;
 
 
-    public InstagramToken(Long userId, String token, Long expiresIn) {
+    public InstagramTokenEntity(Long userId, String token, Long expiresIn) {
         this.userId = userId;
         this.token = token;
         this.expireAt = LocalDateTime.now().plusSeconds(expiresIn);

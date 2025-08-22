@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
-import site.petful.snsservice.instagram.client.dto.InstagramProfileResponse;
+import site.petful.snsservice.instagram.client.dto.InstagramProfileResponseDto;
+import site.petful.snsservice.instagram.dto.InstagramMediaDto;
 import site.petful.snsservice.instagram.service.InstagramService;
 
 @RestController
@@ -29,22 +30,19 @@ public class InstagramController {
 
     //TODO [유저] 여기 userId 수정 쭉 들어가면서 userNo로 저장
     @PostMapping("/profiles")
-    public ResponseEntity<ApiResponse<List<InstagramProfileResponse>>> syncProfiles(
+    public ResponseEntity<ApiResponse<List<InstagramProfileResponseDto>>> syncProfiles(
         @RequestParam Long userId) {
         return ResponseEntity.ok(
             ApiResponseGenerator.success(instagramService.syncInstagramProfiles(userId)));
     }
 
 
-/*
-    //TODO [유저] 여기 userId 수정 쭉 들어가면서
-    @PostMapping("/profiles/{instagramId}")
-    public ResponseEntity<ApiResponse<List<String>>> syncProfile(@PathVariable Long instagramId,
-        @RequestParam Long userId) {
-        return ResponseEntity.ok(
-            ApiResponseGenerator.success(
-                instagramService.syncInstagramProfile(userId, instagramId)));
-    }
-*/
+    @PostMapping("/media")
+    public ResponseEntity<ApiResponse<List<InstagramMediaDto>>> syncInstagramMedia(
+        @RequestParam Long userId, @RequestParam Long instagramId) {
 
+        List<InstagramMediaDto> mediaList = instagramService.syncInstagramMedia(userId,
+            instagramId);
+        return ResponseEntity.ok(ApiResponseGenerator.success(mediaList));
+    }
 }
