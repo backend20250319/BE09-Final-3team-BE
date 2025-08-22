@@ -55,7 +55,15 @@ public class PostController {
             @RequestHeader(value = "X-User-Type",required = false) String userType,
             @PathVariable Long postId
     ){
-        PostDetail detail = postService.postDetail(userNo,postId);
-        return ApiResponseGenerator.success(detail);
+        return ApiResponseGenerator.success(postService.getPostDetail(userNo,postId));
+    }
+
+    @DeleteMapping("/{id}/delete")
+    public ApiResponse<Void> deletePost(
+            @RequestHeader(value = "X-User-No",required = false) Long userNo,
+            @RequestHeader(value = "X-User-Type",required = false) String userType,
+            @PathVariable Long postId
+    ){
+        return ApiResponseGenerator.success(postService.deletePost(userNo,postId));
     }
 }

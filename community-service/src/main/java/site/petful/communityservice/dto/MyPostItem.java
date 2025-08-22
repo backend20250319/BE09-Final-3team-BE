@@ -17,14 +17,15 @@ public class MyPostItem {
     private String contentPeview;
     private String type;
     private LocalDateTime createdAt;
-    public static MyPostItem from(Post p){
+    private int commentCount;
+    public static MyPostItem from(Post p , int commentCount){
         String preview = p.getContent();
         if(preview != null && preview.length() > 100 ) {
             preview = preview.substring(0, 100) + "... ";
         }
         return new MyPostItem(
                 p.getId(), p.getTitle(), preview,
-                p.getType().name(),p.getCreatedAt()
+                p.getType().name(),p.getCreatedAt(),commentCount
         );
     }
 }
