@@ -7,6 +7,7 @@ import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertisement.AdRequest;
+import site.petful.advertiserservice.dto.advertisement.AdRequestByAdmin;
 import site.petful.advertiserservice.dto.advertisement.AdResponse;
 import site.petful.advertiserservice.dto.advertisement.AdsResponse;
 import site.petful.advertiserservice.entity.advertisement.AdStatus;
@@ -95,12 +96,12 @@ public class AdController {
     }
 
     // 3-1. 광고(캠페인) 수정 - 광고주
-    @PutMapping("/{adNo}")
-    public ResponseEntity<ApiResponse<?>> updateAd(
+    @PutMapping("/advertiser/{adNo}")
+    public ResponseEntity<ApiResponse<?>> updateAdByAdvertiser(
             @PathVariable Long adNo,
             @RequestBody AdRequest request) {
         try {
-            AdResponse response = adService.updateAd(adNo, request);
+            AdResponse response = adService.updateAdByAdvertiser(adNo, request);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -109,6 +110,18 @@ public class AdController {
     }
 
     // 3-2. 광고(캠페인) 수정 (AdStatus: APPROVED/REJECTED, (선택:반려 사유 추가)) - 관리자
+    @PutMapping("/admin/{adNo}")
+    public ResponseEntity<ApiResponse<?>> updateAdByAdmin(
+            @PathVariable Long adNo,
+            @RequestBody AdRequestByAdmin request){
+        try {
+            AdResponse response = adService.updateAdByAdmin(adNo, request);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
 
     // 4. 광고(캠페인) 삭제
     @DeleteMapping("/{adNo}")

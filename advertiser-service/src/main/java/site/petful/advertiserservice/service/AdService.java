@@ -80,7 +80,7 @@ public class AdService {
     }
 
     // 3-1. 광고(캠페인) 수정 - 광고주
-    public AdResponse updateAd(Long adNo, AdRequest request) {
+    public AdResponse updateAdByAdvertiser(Long adNo, AdRequest request) {
         Advertisement ad = adRepository.findByAdNo(adNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage()));
 
@@ -91,6 +91,18 @@ public class AdService {
     }
 
     // 3-2. 광고(캠페인) 수정 (AdStatus: APPROVED/REJECTED, (선택:반려 사유 추가)) - 관리자
+    public AdResponse updateAdByAdmin(Long adNo, AdRequestByAdmin request) {
+        Advertisement ad = adRepository.findByAdNo(adNo)
+                .orElseThrow(() -> new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage()));
+
+        ad.setAdStatus(request.getAdStatus());
+        if (request.getReason() != null && !request.getReason().trim().isEmpty()) {
+            ad.setReason(request.getReason());
+        }
+        Advertisement updatedAd = adRepository.save(ad);
+
+        return AdResponse.from(updatedAd);
+    }
 
     // 4. 광고(캠페인) 삭제
     public void deleteAd(Long adNo) {
