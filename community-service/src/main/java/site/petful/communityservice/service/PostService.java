@@ -12,9 +12,11 @@ import site.petful.communityservice.dto.*;
 import site.petful.communityservice.entity.Comment;
 import site.petful.communityservice.entity.Post;
 import site.petful.communityservice.entity.PostType;
+import site.petful.communityservice.entity.Status;
 import site.petful.communityservice.repository.CommentRepository;
 import site.petful.communityservice.repository.PostRepository;
 
+import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,22 +35,40 @@ public class PostService {
                 saved.getContent(), saved.getCreatedAt(),saved.getType());
     }
 
-    public Page<MyPostItem> getMyPosts(Long userNo, Integer page, Integer size, PostType type) {
+    public Page<PostItem> getPosts(Integer page, Integer size, PostType type) {
         Pageable pageable = PageRequest.of(
                 page == null ? 0 : page,
-                size == null ? 20 : size,
+                size == null ? 5 : size,
                 Sort.by(Sort.Direction.DESC,"createdAt")
         );
 
         Page<Post> posts = (type==null)
-                ? postRepository.findByUserId(userNo,pageable)
-                : postRepository.findByUserIdAndType(userNo,type,pageable);
+                ? postRepository.findByStatus("PUBLISHED",pageable)
+                : postRepository.findByStatusAndType("PUBLISHED",pageable,type);
 
         return posts.map(p -> {
                 int cnt = commentRepository.countByPostId(p.getId());
-                return MyPostItem.from(p, cnt);
+                return PostItem.from(p, cnt);
                 }
               );
+    }
+
+    public Page<PostItem> getMyPosts(Long userNo, Integer page, Integer size, PostType type) {
+        Pageable pageable = PageRequest.of(
+                page == null ? 0 : page,
+                size == null ? 5 : size,
+                Sort.by(Sort.Direction.DESC,"createdAt")
+        );
+
+        Page<Post> posts = (type==null)
+                ? postRepository.findByUserIdAndStatus(userNo,"PUBLISHED",pageable)
+                : postRepository.findByUserIdAndStatusAndType(userNo,"PUBLISHED",pageable,type);
+
+        return posts.map(p -> {
+                    int cnt = commentRepository.countByPostId(p.getId());
+                    return PostItem.from(p, cnt);
+                }
+        );
     }
 
     public PostDetail getPostDetail(Long userNo, Long postId) {
@@ -87,9 +107,14 @@ public class PostService {
     }
 
     @Transactional
-    public Void deletePost(Long userNo, Long postId) {
+    public Void deletePost(Long userNo, Long postId) throws AccessDeniedException {
         Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("삭제할 게시물이 존재하지 않습니다.d"));
-        postRepository.delete(post);
+        if(!post.getUserId().equals(userNo)){
+            throw new AccessDeniedException("게시물을 삭제할 권한이 없습니다.");
+        }
+        post.setStatus(Status.DELETED);
+        postRepository.save(post);
         return null;
     }
+
 }
