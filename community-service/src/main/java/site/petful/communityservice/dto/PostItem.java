@@ -11,20 +11,21 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-public class MyPostItem {
+public class PostItem {
     private Long id;
     private String title;
     private String contentPeview;
     private String type;
     private LocalDateTime createdAt;
-    public static MyPostItem from(Post p){
+    private int commentCount;
+    public static PostItem from(Post p , int commentCount){
         String preview = p.getContent();
         if(preview != null && preview.length() > 100 ) {
             preview = preview.substring(0, 100) + "... ";
         }
-        return new MyPostItem(
+        return new PostItem(
                 p.getId(), p.getTitle(), preview,
-                p.getType().name(),p.getCreatedAt()
+                p.getType().name(),p.getCreatedAt(),commentCount
         );
     }
 }
