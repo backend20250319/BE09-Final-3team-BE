@@ -3,18 +3,19 @@ package site.petful.notificationservice.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="notification")
+@Table(name="Notification")
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter
+@Getter
 public class Notification {
-    @Id
+    @Idㅣㅁ
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "noticifation_no")
     private Long id;
@@ -42,5 +43,11 @@ public class Notification {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    public void hide() {
+        if (Boolean.TRUE.equals(this.hidden)) return;
+        this.hidden = true;
+        this.hiddenAt = LocalDateTime.now();
+    }
 
 }

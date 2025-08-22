@@ -4,23 +4,27 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import site.petful.userservice.domain.User;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
-import io.jsonwebtoken.io.Decoders;
-import site.petful.userservice.domain.User;
 
 @Component
 public class JwtUtil {
+
+    private static final String CLAIM_TYP = "typ";
+    private static final String TYP_ACCESS = "access";
+    private static final String TYP_REFRESH = "refresh";
+    private static final String CLAIM_USER_NO = "userNo";
+    private static final String CLAIM_USER_TYPE = "userType";
 
     // application.yml
     @Value("${jwt.access-secret}")
@@ -36,74 +40,54 @@ public class JwtUtil {
     private long refreshExpDays;
 
     /* ======================
-     * Key helpers (0.11.5)
+     * Key helpers (jjwt 0.11.x)
      * ====================== */
     private Key accessKey()  {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessSecret.trim()));  // ← BASE64
+        // Base64 인코딩된 시크릿을 사용한다고 가정
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessSecret.trim()));
     }
     private Key refreshKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshSecret.trim())); // ← BASE64
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshSecret.trim()));
     }
-
-
 
     /* ======================
      * Access token (인증용)
      * ====================== */
-    public String generateAccessToken(String subject) {
+
+    /** userNo와 userType을 포함한 Access 토큰 생성 */
+    public String generateAccessToken(String subject, Long userNo, String userType) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
                 .setSubject(subject)
-                .claim("typ", "access")
+                .claim(CLAIM_TYP, TYP_ACCESS)
+                .claim(CLAIM_USER_NO, userNo)
+                .claim(CLAIM_USER_TYPE, userType)
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + Duration.ofMinutes(accessExpMin).toMillis()))
                 .signWith(accessKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String generateAccessToken(String subject, Map<String, Object> extraClaims) {
-        long now = System.currentTimeMillis();
-        return Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(subject)
-                .claim("typ", "access")
-                .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + Duration.ofMinutes(accessExpMin).toMillis()))
-                .signWith(accessKey(), SignatureAlgorithm.HS256)
-                .compact();
+    /** User 객체로부터 Access 토큰 생성 (래퍼) */
+    public String generateAccessToken(User user) {
+        return generateAccessToken(
+                user.getEmail(),
+                user.getUserNo(),
+                user.getUserType().name()
+        );
     }
 
-    /** userNo와 userRole을 포함한 Access 토큰 생성 */
-    public String generateAccessToken(String subject, Long userNo, String userRole) {
-        long now = System.currentTimeMillis();
-        return Jwts.builder()
-                .setSubject(subject)
-                .claim("typ", "access")
-                .claim("userNo", userNo)
-                .claim("userRole", userRole)
-                .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + Duration.ofMinutes(accessExpMin).toMillis()))
-                .signWith(accessKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    /** User 객체로부터 Access 토큰 생성 */
-    public String generateAccessToken(site.petful.userservice.domain.User user) {
-        return generateAccessToken(user.getEmail(), user.getUserNo(), user.getUserType().name());
-    }
-
-    /** 기존 호환: UserDetails로 Access 발급 */
-    public String generateToken(UserDetails userDetails) {
-        return generateAccessToken(userDetails.getUsername());
-    }
-
-    /** Access 파싱 */
+    /** Access 파싱 (+ typ 검증) */
     public Claims parseAccessClaims(String token) {
         Jws<Claims> jws = Jwts.parserBuilder()
                 .setSigningKey(accessKey())
                 .build()
                 .parseClaimsJws(token);
-        return jws.getBody();
+        Claims claims = jws.getBody();
+        if (!TYP_ACCESS.equals(claims.get(CLAIM_TYP))) {
+            throw new IllegalArgumentException("Not an access token");
+        }
+        return claims;
     }
 
     /* ======================
@@ -113,7 +97,7 @@ public class JwtUtil {
         long now = System.currentTimeMillis();
         return Jwts.builder()
                 .setSubject(subject)
-                .claim("typ", "refresh")
+                .claim(CLAIM_TYP, TYP_REFRESH)
                 .setId(UUID.randomUUID().toString()) // jti
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(now + Duration.ofDays(refreshExpDays).toMillis()))
@@ -127,31 +111,42 @@ public class JwtUtil {
                 .build()
                 .parseClaimsJws(token);
         Claims c = jws.getBody();
-        if (!"refresh".equals(c.get("typ"))) {
+        if (!TYP_REFRESH.equals(c.get(CLAIM_TYP))) {
             throw new IllegalArgumentException("Not a refresh token");
         }
         return c;
     }
 
     /* ======================
-     * 공통/호환 메서드들
+     * 공통/호환 메서드들 (Access 기준)
      * ====================== */
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject); // Access 기준
+        return extractClaim(token, Claims::getSubject);
     }
 
     public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration); // Access 기준
+        return extractClaim(token, Claims::getExpiration);
     }
 
-    /** 토큰에서 userNo 추출 */
+    /** 토큰에서 userNo 추출 (Number/String 모두 안전 변환) */
     public Long extractUserNo(String token) {
-        return extractClaim(token, claims -> claims.get("userNo", Long.class));
+        return extractClaim(token, claims -> {
+            Object v = claims.get(CLAIM_USER_NO);
+            if (v == null) return null;
+            if (v instanceof Number) return ((Number) v).longValue();
+            return Long.parseLong(v.toString());
+        });
     }
 
-    /** 토큰에서 userRole 추출 */
+    /** 토큰에서 userType 추출 */
+    public String extractUserType(String token) {
+        return extractClaim(token, claims -> claims.get(CLAIM_USER_TYPE, String.class));
+    }
+
+    /** 과거 명칭 유지(내부적으로 userType을 반환) */
+    @Deprecated
     public String extractUserRole(String token) {
-        return extractClaim(token, claims -> claims.get("userRole", String.class));
+        return extractUserType(token);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -163,12 +158,33 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
+    /** 사용자명 검증이 필요한 경우 */
     public Boolean validateToken(String token, UserDetails userDetails) {
         try {
             Claims c = parseAccessClaims(token);
-            boolean typeOk = "access".equals(c.get("typ"));
+            boolean typeOk = TYP_ACCESS.equals(c.get(CLAIM_TYP));
             String username = c.getSubject();
             return typeOk && username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** 액세스 토큰 기본 검증(서명/만료/typ) */
+    public boolean validateAccessToken(String token) {
+        try {
+            Claims c = parseAccessClaims(token);
+            return !isExpired(c);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** 리프레시 토큰 기본 검증(서명/만료/typ) */
+    public boolean validateRefreshToken(String refreshToken) {
+        try {
+            Claims c = parseRefreshClaims(refreshToken);
+            return !isExpired(c);
         } catch (Exception e) {
             return false;
         }

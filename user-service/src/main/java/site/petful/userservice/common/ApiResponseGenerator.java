@@ -38,4 +38,8 @@ public class ApiResponseGenerator {
         return new ApiResponse<>(code, msg, messageCode, null);
     }
 
+    public static <T> ApiResponse<T> fail(ErrorCode code, String msg, T data) {
+        return new ApiResponse<>(code, msg, data);
+    }
+
 }

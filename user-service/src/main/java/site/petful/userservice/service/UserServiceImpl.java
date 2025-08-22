@@ -3,6 +3,7 @@ package site.petful.userservice.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import site.petful.userservice.common.ErrorCode;
 import site.petful.userservice.domain.Role;
 import site.petful.userservice.domain.User;
 import site.petful.userservice.dto.SignupRequest;
@@ -20,21 +21,21 @@ public class UserServiceImpl implements UserService {
     public SignupResponse signup(SignupRequest request) {
         // 입력 검증
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            throw new IllegalArgumentException("이메일은 필수 입력 항목입니다.");
+            throw new IllegalArgumentException(ErrorCode.INVALID_REQUEST.getDefaultMessage() + " - 이메일은 필수 입력 항목입니다.");
         }
         if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-            throw new IllegalArgumentException("비밀번호는 필수 입력 항목입니다.");
+            throw new IllegalArgumentException(ErrorCode.INVALID_REQUEST.getDefaultMessage() + " - 비밀번호는 필수 입력 항목입니다.");
         }
         if (request.getName() == null || request.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("이름은 필수 입력 항목입니다.");
+            throw new IllegalArgumentException(ErrorCode.INVALID_REQUEST.getDefaultMessage() + " - 이름은 필수 입력 항목입니다.");
         }
         if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
-            throw new IllegalArgumentException("전화번호는 필수 입력 항목입니다.");
+            throw new IllegalArgumentException(ErrorCode.INVALID_REQUEST.getDefaultMessage() + " - 전화번호는 필수 입력 항목입니다.");
         }
 
         // 이메일 중복
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalStateException("이미 존재하는 이메일입니다.");
+            throw new IllegalStateException(ErrorCode.DUPLICATE_EMAIL.getDefaultMessage());
         }
 
         // 사용자 저장
@@ -70,7 +71,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void markEmailVerified(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_FOUND.getDefaultMessage()));
         user.setEmailVerified(true);
         userRepository.save(user);
     }
@@ -78,6 +79,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_FOUND.getDefaultMessage()));
     }
 }

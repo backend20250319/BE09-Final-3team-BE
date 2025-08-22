@@ -18,13 +18,11 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import site.petful.userservice.security.CustomUserDetailsService;
 import site.petful.userservice.security.JwtAuthenticationFilter;
 
-import java.util.List;
+
 
 @Configuration
 @EnableWebSecurity
@@ -47,7 +45,7 @@ public class SecurityConfig {
 
         http
                 // CORS & CSRF
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.disable()) // CORS 비활성화 (Gateway에서 처리)
                 .csrf(csrf -> csrf.disable())
 
                 // 예외 응답을 JSON으로 일관화
@@ -63,6 +61,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 프리플라이트 허용
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers("/error").permitAll()                  // (선택) 기본 에러 핸들러 공개
+
                         .anyRequest().authenticated()
                 )
 
@@ -106,24 +106,5 @@ public class SecurityConfig {
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("{\"message\":\"Forbidden\"}");
         };
-    }
-
-    // --- CORS(개발 기본값: localhost:3000 허용) ---
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(List.of(
-                "http://localhost:3000", // FE 로컬
-                "http://127.0.0.1:3000"
-                // 필요시 도메인 추가
-        ));
-        c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        c.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","X-Requested-With"));
-        c.setAllowCredentials(true);
-        c.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
-        src.registerCorsConfiguration("/**", c);
-        return src;
     }
 }

@@ -1,6 +1,11 @@
 spring:
   config:
-    import:
-      configserver:http://localhost:8888
+    import: configserver:http://localhost:8888
   application:
     name: user-service
+  # Validation 설정
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false

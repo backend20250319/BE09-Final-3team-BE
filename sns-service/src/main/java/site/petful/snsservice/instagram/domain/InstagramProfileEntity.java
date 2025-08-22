@@ -3,16 +3,19 @@ package site.petful.snsservice.instagram.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import site.petful.snsservice.instagram.client.dto.InstagramProfileResponse;
+import site.petful.snsservice.instagram.client.dto.InstagramProfileResponseDto;
 
 @Entity
+@Table(name = "instagram_profile")
 @NoArgsConstructor
 @AllArgsConstructor
-public class InstagramProfile {
+public class InstagramProfileEntity {
 
     @Id
+    @Column(name = "id")
     private Long id;
     private Long userNo;
     private String userName;
@@ -24,7 +27,7 @@ public class InstagramProfile {
     private Integer mediaCount;
 
 
-    public InstagramProfile(InstagramProfileResponse response, Long user_no) {
+    public InstagramProfileEntity(InstagramProfileResponseDto response, Long user_no) {
         this.id = response.id();
         this.userName = response.username();
         this.name = response.name();
@@ -35,8 +38,8 @@ public class InstagramProfile {
         this.userNo = user_no;
     }
 
-    public InstagramProfileResponse toResponse() {
-        return new InstagramProfileResponse(
+    public InstagramProfileResponseDto toInstagramProfileDto() {
+        return new InstagramProfileResponseDto(
             id,
             userName,
             name,

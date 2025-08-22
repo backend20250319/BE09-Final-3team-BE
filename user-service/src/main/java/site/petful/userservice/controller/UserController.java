@@ -1,22 +1,26 @@
 package site.petful.userservice.controller;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DuplicateKeyException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import site.petful.userservice.common.ApiResponse;
+import site.petful.userservice.common.ApiResponseGenerator;
 import site.petful.userservice.dto.*;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
-
+import site.petful.userservice.common.ErrorCode;
+import jakarta.validation.Valid;
 import java.time.Duration;
 
+@Slf4j
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // 게이트웨이에서 전역 CORS를 관리한다면 삭제해도 됨
 public class UserController {
 
     private final UserService userService;              // 회원가입/유저 관련
@@ -27,90 +31,85 @@ public class UserController {
      * 회원가입
      */
     @PostMapping("/signup")
-    public ResponseEntity<SignupResponse> signup(@RequestBody SignupRequest request) {
-        try {
-            SignupResponse res = userService.signup(request);  // ← 반환 타입 SignupResponse
-            return ResponseEntity.status(201).body(res);       // 201 Created
-        } catch (DuplicateKeyException e) {
-            return ResponseEntity.status(409)
-                    .body(SignupResponse.builder().message("이미 존재하는 이메일입니다.").build());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(SignupResponse.builder().message(e.getMessage()).build());
-        }
+    public ResponseEntity<ApiResponse<SignupResponse>> signup(@Valid @RequestBody SignupRequest request) {
+        SignupResponse res = userService.signup(request);
+        return ResponseEntity.status(201).body(ApiResponseGenerator.success(res));
     }
 
-    /** /auth/login */
+    /**
+     * /auth/login
+     */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+        // 인증
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
+        final String username = auth.getName(); // 보통 email
 
-        // User 객체를 가져와서 토큰 생성
-        site.petful.userservice.domain.User user = userService.findByEmail(request.getEmail());
-        
+        // 유저 조회 후 Access/Refresh 발급
+        site.petful.userservice.domain.User user = userService.findByEmail(username);
+
+        log.debug("로그인 사용자 정보 email={}, name={}, nickname={}, userNo={}",
+                user.getEmail(), user.getName(), user.getNickname(), user.getUserNo());
+
+        String access = authService.issueAccess(user);     // userNo/userType 포함
+        String refresh = authService.issueRefresh(username);
+
         long now = System.currentTimeMillis();
-        String access  = authService.issueAccess(user); // User 객체로 토큰 생성
-        String refresh = authService.issueRefresh(auth.getName());
+        AuthResponse authResponse = AuthResponse.builder()
+                .accessToken(access)
+                .refreshToken(refresh)
+                .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
+                .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
+                .email(username)
+                .name(user.getNickname() != null ? user.getNickname() : user.getName())
+                .message("로그인 성공")
+                .build();
 
-        return ResponseEntity.ok(
-                AuthResponse.builder()
-                        .accessToken(access)
-                        .refreshToken(refresh)
-                        .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
-                        .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
-                        .email(request.getEmail())
-                        .message("로그인 성공")
-                        .build()
-        );
+        return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
     }
 
-    /** /auth/refresh : 클라이언트가 보낸 RT로 새 AT(+롤링 RT) 발급 */
+    /**
+     * /auth/refresh : 클라이언트가 보낸 RT로 새 AT(+선택적 롤링 RT) 발급
+     */
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshRequest req) {
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshRequest req) {
         long now = System.currentTimeMillis();
 
-        String newAccess  = authService.refreshAccess(req.getRefreshToken());
-        // 필요 시 롤링(새 RT 발급). 재사용 원하면 rotateRefresh 호출을 제거하면 됨.
+        String newAccess = authService.refreshAccess(req.getRefreshToken());
+        // 필요 시에만 롤링. 정책상 롤링을 사용하지 않으려면 아래 한 줄을 제거/주석 처리하면 된다.
         String newRefresh = authService.rotateRefresh(req.getRefreshToken());
 
-        return ResponseEntity.ok(
-                AuthResponse.builder()
-                        .accessToken(newAccess)
-                        .refreshToken(newRefresh)
-                        .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
-                        .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
-                        .message("토큰 재발급 성공")
-                        .build()
-        );
+        AuthResponse authResponse = AuthResponse.builder()
+                .accessToken(newAccess)
+                .refreshToken(newRefresh)
+                .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
+                .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
+                .message("토큰 재발급 성공")
+                .build();
+
+        return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
     }
 
-    /** 보호된 예시 엔드포인트 */
+    /**
+     * 보호된 예시 엔드포인트
+     */
     @GetMapping("/profile")
-    public ResponseEntity<AuthResponse> getProfile() {
-        return ResponseEntity.ok(AuthResponse.builder().message("프로필 조회 성공").build());
+    public ResponseEntity<ApiResponse<String>> getProfile() {
+        return ResponseEntity.ok(ApiResponseGenerator.success("프로필 조회 성공"));
     }
 
     @GetMapping("/my-info")
-    public ResponseEntity<AuthResponse> getMyInfo() {
-        return ResponseEntity.ok(AuthResponse.builder().message("내 정보 조회 성공").build());
+    public ResponseEntity<ApiResponse<String>> getMyInfo() {
+        return ResponseEntity.ok(ApiResponseGenerator.success("내 정보 조회 성공"));
     }
 
-    /** 로그아웃(무상태) */
+    /**
+     * 로그아웃(무상태)
+     */
     @PostMapping("/logout")
-    public ResponseEntity<AuthResponse> logout() {
-        return ResponseEntity.ok(AuthResponse.builder().message("로그아웃 성공").build());
-    }
-
-    /** 토큰 내용 확인용 테스트 엔드포인트 */
-    @PostMapping("/decode-token")
-    public ResponseEntity<?> decodeToken(@RequestBody String token) {
-        try {
-            io.jsonwebtoken.Claims claims = authService.getJwtUtil().parseAccessClaims(token);
-            return ResponseEntity.ok(claims);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("토큰 디코딩 실패: " + e.getMessage());
-        }
+    public ResponseEntity<ApiResponse<String>> logout() {
+        return ResponseEntity.ok(ApiResponseGenerator.success("로그아웃 성공"));
     }
 }
