@@ -36,6 +36,9 @@ public class InstagramTokenEntity {
     public InstagramTokenEntity(Long userId, String token, Long expiresIn) {
         this.userId = userId;
         this.token = token;
+        if (expiresIn == null) {
+            expiresIn = 60 * 24 * 60 * 60L;
+        }
         this.expireAt = LocalDateTime.now().plusSeconds(expiresIn);
     }
 
