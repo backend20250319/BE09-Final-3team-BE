@@ -35,6 +35,9 @@ public class Post {
     @Column(name="type" , nullable = false , length = 30)
     private PostType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name="status", nullable = true)
+    private Status status;
     public Post(Long userId, String title, String content, PostType type) {
         this.userId = userId;
         this.title = title;
