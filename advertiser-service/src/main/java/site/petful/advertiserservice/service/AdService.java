@@ -79,6 +79,24 @@ public class AdService {
         return AdsResponse.from(ads);
     }
 
+    // 2-5. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회 - 체험단
+    public AdsGroupedResponse getAllAdsByAdStatusGrouped() {
+        List<Advertisement> allAds = adRepository.findAll();
+
+        List<Advertisement> recruitingAds = allAds.stream()
+                .filter(ad -> ad.getAdStatus() == AdStatus.APPROVED)
+                .collect(Collectors.toList());
+
+        List<Advertisement> endedAds = allAds.stream()
+                .filter(ad -> ad.getAdStatus() == AdStatus.CLOSED
+                        || ad.getAdStatus() == AdStatus.TRIAL
+                        || ad.getAdStatus() == AdStatus.ENDED)
+                .collect(Collectors.toList());
+
+        return AdsGroupedResponse.from(recruitingAds, endedAds);
+    }
+
+
     // 3-1. 광고(캠페인) 수정 - 광고주
     public AdResponse updateAdByAdvertiser(Long adNo, AdRequest request) {
         Advertisement ad = adRepository.findByAdNo(adNo)
