@@ -7,5 +7,5 @@ import site.petful.campaignservice.entity.ApplicantStatus;
 public class ApplicantRequest {
 
     private String content;
-    private ApplicantStatus status;
+
 }

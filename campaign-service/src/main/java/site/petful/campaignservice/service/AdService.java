@@ -10,7 +10,6 @@ import site.petful.campaignservice.dto.advertisement.AppliedAdsResponse;
 import site.petful.campaignservice.dto.campaign.PetResponse;
 import site.petful.campaignservice.entity.Applicant;
 import site.petful.campaignservice.entity.advertisement.Advertisement;
-import site.petful.campaignservice.repository.AdRepository;
 import site.petful.campaignservice.repository.CampaignRepository;
 import site.petful.campaignservice.repository.PetRepository;
 
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdService {
 
-    private final AdRepository adRepository;
     private final PetRepository petRepository;
     private final AdvertiserFeignClient advertiserFeignClient;
     private final CampaignRepository campaignRepository;
