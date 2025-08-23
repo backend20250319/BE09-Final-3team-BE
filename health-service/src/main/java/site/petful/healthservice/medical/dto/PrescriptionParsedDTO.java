@@ -17,9 +17,5 @@ public class PrescriptionParsedDTO {
         private String administration;  // 복용법/용법
         private String frequency;       // 횟수 (하루 3번, 1회 등)
         private String prescriptionDays; // 처방일수
-        private String recommendedProduct; // 권장 제품명
-        private String salesQuantity;   // 판매 수량
-        private String remarks;         // 비고
-        private Double confidence;      // OCR 신뢰도
     }
 }
