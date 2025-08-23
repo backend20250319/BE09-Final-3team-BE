@@ -19,6 +19,7 @@ import site.petful.healthservice.medical.service.MedicationScheduleService;
 import site.petful.healthservice.medical.dto.PrescriptionParsedDTO;
 import site.petful.healthservice.common.entity.Calendar;
 import site.petful.healthservice.medical.dto.MedicationRequestDTO;
+import site.petful.healthservice.medical.dto.MedicationResponseDTO;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -41,6 +42,61 @@ public class MedicationController {
         return ResponseEntity.ok(ApiResponseGenerator.success("Health Service is running"));
     }
 
+    /**
+     * 복용약/영양제 일정 조회 (기간/서브타입 필터)
+     */
+    @GetMapping("/read")
+    public ResponseEntity<ApiResponse<java.util.List<MedicationResponseDTO>>> listMedications(
+            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @RequestParam(value = "from", required = false) String from,
+            @RequestParam(value = "to", required = false) String to,
+            @RequestParam(value = "subType", required = false) String subType
+    ) {
+        try {
+            Long effectiveUserNo = (userNo != null) ? userNo : 1L;
+            java.time.LocalDateTime start = (from == null || from.isBlank())
+                    ? java.time.LocalDate.now().minusMonths(1).atStartOfDay()
+                    : java.time.LocalDate.parse(from).atStartOfDay();
+            java.time.LocalDateTime end = (to == null || to.isBlank())
+                    ? java.time.LocalDate.now().plusMonths(1).atTime(23,59,59)
+                    : java.time.LocalDate.parse(to).atTime(23,59,59);
+
+            // 캘린더에서 사용자/기간으로 조회 후, MEDICATION만 필터
+            java.util.List<Calendar> items = medicationScheduleService
+                    .getCalendarRepository()
+                    .findByUserNoAndDateRange(effectiveUserNo, start, end);
+
+            java.util.stream.Stream<Calendar> stream = items.stream()
+                    .filter(c -> c.getMainType() == site.petful.healthservice.common.enums.CalendarMainType.MEDICATION);
+            if (subType != null && !subType.isBlank()) {
+                stream = stream.filter(c -> c.getSubType().name().equalsIgnoreCase(subType));
+            }
+
+            java.util.List<MedicationResponseDTO> result = stream
+                    .map(c -> MedicationResponseDTO.builder()
+                            .calNo(c.getCalNo())
+                            .title(c.getTitle())
+                            .startDate(c.getStartDate())
+                            .endDate(c.getEndDate())
+                            .alarmTime(c.getAlarmTime())
+                            .mainType(c.getMainType().name())
+                            .subType(c.getSubType().name())
+                            .medicationName(c.getMedicationName())
+                            .dosage(c.getDosage())
+                            .frequency(c.getFrequency())
+                            .durationDays(c.getDurationDays())
+                            .instructions(c.getInstructions())
+                            .build())
+                    .toList();
+
+            return ResponseEntity.ok(ApiResponseGenerator.success(result));
+        } catch (BusinessException e) {
+            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(e.getErrorCode(), e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.OPERATION_FAILED, "복용약 조회 실패"));
+        }
+    }
+
     @PostMapping("/ocr")
     public ResponseEntity<ApiResponse<PrescriptionParsedDTO>> extractText(@RequestParam("file") MultipartFile file) {
         try {
@@ -58,7 +114,7 @@ public class MedicationController {
     /**
      * 복용약/영양제 일정 생성 (캘린더 기반)
      */
-    @PostMapping("/medications")
+    @PostMapping("/create")
     public ResponseEntity<ApiResponse<Long>> createMedication(
             @RequestHeader(value = "X-User-Id", required = false) Long userNo,
             @RequestBody MedicationRequestDTO request
@@ -83,8 +139,22 @@ public class MedicationController {
             java.time.LocalDate base = (request.getStartDate() == null)
                     ? java.time.LocalDate.now() : request.getStartDate();
 
+            // 서브타입 매핑
+            site.petful.healthservice.common.enums.CalendarSubType subTypeEnum =
+                    (request.getSubType() != null && request.getSubType().equalsIgnoreCase("SUPPLEMENT"))
+                            ? site.petful.healthservice.common.enums.CalendarSubType.SUPPLEMENT
+                            : site.petful.healthservice.common.enums.CalendarSubType.PILL;
+
             java.util.List<Calendar> saved = medicationScheduleService
-                    .registerMedicationSchedules(dto, effectiveUserNo, base);
+                    .registerMedicationSchedules(dto, effectiveUserNo, base, subTypeEnum);
+
+            // 알림 시기 반영: reminderDaysBefore (당일=0, 1/2/3일 전)
+            if (request.getReminderDaysBefore() != null && !saved.isEmpty()) {
+                java.util.List<Integer> reminders = java.util.List.of(request.getReminderDaysBefore());
+                for (Calendar c : saved) {
+                    c.updateReminders(reminders);
+                }
+            }
 
             Long calNo = saved.isEmpty() ? null : saved.get(0).getCalNo();
             return ResponseEntity.ok(ApiResponseGenerator.success(calNo));

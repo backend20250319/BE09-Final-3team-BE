@@ -18,4 +18,5 @@ public class MedicationRequestDTO {
     private Integer durationDays;
     private LocalDate startDate;
     private String subType;
+    private Integer reminderDaysBefore;
 }

@@ -23,6 +23,8 @@ public class MedicationScheduleService {
 
     private final CalendarRepository calendarRepository;
 
+    public CalendarRepository getCalendarRepository() { return calendarRepository; }
+
     /**
      * 파싱된 처방전 정보를 기반으로 투약 일정을 생성/저장합니다.
      * - main_type: MEDICATION
@@ -33,6 +35,16 @@ public class MedicationScheduleService {
     public List<Calendar> registerMedicationSchedules(PrescriptionParsedDTO parsed,
                                                       Long userNo,
                                                       LocalDate baseDate) {
+        return registerMedicationSchedules(parsed, userNo, baseDate, CalendarSubType.PILL);
+    }
+
+    /**
+     * 서브타입을 지정하여 일정을 생성/저장합니다.
+     */
+    public List<Calendar> registerMedicationSchedules(PrescriptionParsedDTO parsed,
+                                                      Long userNo,
+                                                      LocalDate baseDate,
+                                                      CalendarSubType subType) {
         List<Calendar> created = new ArrayList<>();
         if (parsed == null || parsed.getMedications() == null || parsed.getMedications().isEmpty()) {
             return created;
@@ -49,8 +61,8 @@ public class MedicationScheduleService {
             int durationDays = extractDays(med.getPrescriptionDays());
             if (durationDays <= 0) durationDays = 1;
 
-            int timesPerDay = extractTimesPerDay(frequencyText);
-            if (timesPerDay <= 0) timesPerDay = 1;
+            FrequencyInfo freqInfo = parseFrequency(frequencyText);
+            int timesPerDay = freqInfo.timesPerDay > 0 ? freqInfo.timesPerDay : 1;
 
             List<LocalTime> slots = defaultSlots(timesPerDay);
             if (isPostMeal(administration)) {
@@ -66,13 +78,13 @@ public class MedicationScheduleService {
                     .startDate(startDateTime)
                     .endDate(endDateTime)
                     .mainType(CalendarMainType.MEDICATION)
-                    .subType(CalendarSubType.PILL)
+                    .subType(subType != null ? subType : CalendarSubType.PILL)
                     .allDay(false)
                     .description(administration)
                     .alarmTime(startDateTime)
                     .userNo(userNo)
-                    .recurrenceType(RecurrenceType.DAILY)
-                    .recurrenceInterval(1)
+                    .recurrenceType(freqInfo.recurrenceType)
+                    .recurrenceInterval(freqInfo.interval)
                     .recurrenceEndDate(endDateTime)
                     .medicationName(drugName)
                     .dosage(dosage)
@@ -104,14 +116,43 @@ public class MedicationScheduleService {
         return 0;
     }
 
-    private int extractTimesPerDay(String frequency) {
-        if (frequency == null) return 0;
-        // "하루 2회", "하루2회" 등 지원
-        Matcher m = Pattern.compile("하루\\s*(\\d+)회").matcher(frequency);
-        if (m.find()) {
-            try { return Integer.parseInt(m.group(1)); } catch (NumberFormatException ignored) { }
+    private FrequencyInfo parseFrequency(String frequency) {
+        // 지원: 하루 N회, 주에 1번, 주에 N번, 월에 1번
+        FrequencyInfo info = new FrequencyInfo();
+        if (frequency == null) {
+            info.recurrenceType = RecurrenceType.DAILY; info.interval = 1; info.timesPerDay = 1; return info;
         }
-        return 0;
+        String f = frequency.replaceAll("\\s+", "");
+        f = f.replace("한번", "1번").replace("두번", "2번").replace("세번", "3번");
+        f = f.replace("1회", "1번").replace("2회", "2번").replace("3회", "3번");
+        Matcher mDay = Pattern.compile("하루(\\d+)번").matcher(f);
+        if (mDay.find()) {
+            info.timesPerDay = parseIntSafe(mDay.group(1), 1);
+            info.recurrenceType = RecurrenceType.DAILY;
+            info.interval = 1;
+            return info;
+        }
+        Matcher mWeek = Pattern.compile("주에(\\d+)번").matcher(f);
+        if (mWeek.find()) {
+            // 주간 빈도: interval은 해당 주기(1주), timesPerDay는 1로 간주
+            info.timesPerDay = 1;
+            info.recurrenceType = RecurrenceType.WEEKLY;
+            info.interval = 1; // 캘린더 엔티티는 개별 등록이므로 interval=1, 실제 N번은 UI가 요일 지정 시 분할 생성으로 처리 예정
+            return info;
+        }
+        Matcher mMonth = Pattern.compile("월에(\\d+)번").matcher(f);
+        if (mMonth.find()) {
+            info.timesPerDay = 1;
+            info.recurrenceType = RecurrenceType.MONTHLY;
+            info.interval = 1;
+            return info;
+        }
+        // 기본값
+        info.timesPerDay = 1; info.recurrenceType = RecurrenceType.DAILY; info.interval = 1; return info;
+    }
+
+    private int parseIntSafe(String s, int def) {
+        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
     }
 
     private boolean isPostMeal(String administration) {
@@ -134,6 +175,12 @@ public class MedicationScheduleService {
         List<LocalTime> out = new ArrayList<>(src.size());
         for (LocalTime t : src) out.add(t.plusMinutes(minutes));
         return out;
+    }
+
+    private static class FrequencyInfo {
+        RecurrenceType recurrenceType = RecurrenceType.DAILY;
+        int interval = 1;
+        int timesPerDay = 1;
     }
 }
 
