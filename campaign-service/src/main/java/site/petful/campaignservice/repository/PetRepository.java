@@ -6,6 +6,7 @@ import site.petful.campaignservice.dto.campaign.PetResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -21,6 +22,12 @@ public class PetRepository {
 
     public PetResponse findByPetNo(Long petNo) {
         return pets.get(petNo);
+    }
+
+    public List<PetResponse> findByPetNos(List<Long> petNos) {
+        return petNos.stream()
+                .map(pets::get)
+                .collect(Collectors.toList());
     }
 
     public List<PetResponse> findByUserNo(Long userNo) {
