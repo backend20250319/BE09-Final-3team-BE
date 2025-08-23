@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -112,7 +113,7 @@ public class MedicationController {
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<Long>> createMedication(
             @RequestHeader(value = "X-User-Id", required = false) Long userNo,
-            @RequestBody MedicationRequestDTO request
+            @Valid @RequestBody MedicationRequestDTO request
     ) {
             Long effectiveUserNo = (userNo != null) ? userNo : 1L;
 
