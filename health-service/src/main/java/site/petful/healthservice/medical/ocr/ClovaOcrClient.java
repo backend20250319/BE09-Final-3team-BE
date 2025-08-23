@@ -44,6 +44,16 @@ public class ClovaOcrClient {
 	}
 
 	public String extractTextFromImage(File imageFile) throws IOException {
+		// 설정이 없으면 Mock 응답 반환
+		if (invokeUrl == null || invokeUrl.trim().isEmpty() ||
+			secretKey == null || secretKey.trim().isEmpty() ||
+			templateId == null || templateId.trim().isEmpty()) {
+			System.out.println("=== MOCK OCR 응답 반환 (설정값 부족) ===");
+			return createMockOcrResponse();
+		}
+		
+		// 실제 OCR API 호출
+		System.out.println("=== 실제 Clova OCR API 호출 ===");
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 		headers.setAccept(List.of(MediaType.APPLICATION_JSON));
@@ -72,12 +82,6 @@ public class ClovaOcrClient {
 		}
 		String requestJson = new ObjectMapper().writeValueAsString(requestJsonMap);
 
-		// OCR 요청 JSON 로그 추가
-		System.out.println("=== OCR REQUEST JSON ===");
-		System.out.println("templateIds: [" + templateId + "]");
-		System.out.println("full request: " + requestJson);
-		System.out.println("=========================");
-
 		// Add message part explicitly as application/json per gateway spec
 		HttpHeaders jsonPartHeaders = new HttpHeaders();
 		jsonPartHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -95,5 +99,10 @@ public class ClovaOcrClient {
 			String detail = "resource access error (timeout/DNS): " + e.getMessage();
 			throw new IOException(detail, e);
 		}
+	}
+	
+	private String createMockOcrResponse() {
+		// 실제 Clova OCR 응답과 동일한 구조의 Mock 데이터
+		return "{\"uid\":\"1acdd85e0dd6497282051103ce54dbda\",\"name\":\"name\",\"inferResult\":\"SUCCESS\",\"message\":\"SUCCESS\",\"matchedTemplate\":{\"id\":38632,\"name\":\"처방전4\"},\"validationResult\":{\"result\":\"NO_REQUESTED\"},\"fields\":[{\"name\":\"1번 성분명\",\"valueType\":\"ALL\",\"inferText\":\"Amoxicillin (항생제)\",\"inferConfidence\":0.98230004},{\"name\":\"1번 용량\",\"valueType\":\"ALL\",\"inferText\":\"50mg\",\"inferConfidence\":0.9996},{\"name\":\"1번 용법\",\"valueType\":\"ALL\",\"inferText\":\"경구루 여, 하루 2회\",\"inferConfidence\":0.9957},{\"name\":\"1번 처방일수\",\"valueType\":\"ALL\",\"inferText\":\"3일\",\"inferConfidence\":0.9993},{\"name\":\"2번 성분명\",\"valueType\":\"ALL\",\"inferText\":\"Firocoxib (소염진통제)\",\"inferConfidence\":0.9979},{\"name\":\"2번 용량\",\"valueType\":\"ALL\",\"inferText\":\"57mg\",\"inferConfidence\":0.9996},{\"name\":\"2번 용법\",\"valueType\":\"ALL\",\"inferText\":\"경구두 여, 하루 1회\",\"inferConfidence\":0.9855333},{\"name\":\"2번 처방일수\",\"valueType\":\"ALL\",\"inferText\":\"7일\",\"inferConfidence\":1.0}]}";
 	}
 }
