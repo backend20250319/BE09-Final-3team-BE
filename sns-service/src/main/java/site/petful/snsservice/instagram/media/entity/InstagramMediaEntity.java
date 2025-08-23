@@ -1,0 +1,62 @@
+package site.petful.snsservice.instagram.media.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.time.OffsetDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import site.petful.snsservice.instagram.media.dto.InstagramMediaDto;
+import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
+
+
+@Entity
+@Table(name = "instagram_media")
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+public class InstagramMediaEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String caption;
+    private String mediaType;
+    @Column(name = "profile_picture_url", length = 512)
+    private String mediaUrl;
+    private String permalink;
+    private OffsetDateTime timestamp;
+    private Boolean isCommentEnabled;
+    private Long likeCount;
+    private Long commentsCount;
+    @ManyToOne
+    @JoinColumn(name = "instagram_id")
+    private InstagramProfileEntity instagramProfile;
+
+
+    public InstagramMediaEntity(InstagramMediaDto instagramMediaDto,
+        InstagramProfileEntity instagramProfile) {
+        this.id = instagramMediaDto.id();
+        this.caption = instagramMediaDto.caption();
+        this.mediaType = instagramMediaDto.mediaType();
+        this.mediaUrl = instagramMediaDto.mediaUrl();
+        this.permalink = instagramMediaDto.permalink();
+        this.timestamp = instagramMediaDto.timestamp();
+        this.isCommentEnabled = instagramMediaDto.isCommentEnabled();
+        this.likeCount = instagramMediaDto.likeCount();
+        this.commentsCount = instagramMediaDto.commentsCount();
+        this.instagramProfile = instagramProfile;
+    }
+
+
+    public InstagramMediaDto toDto() {
+        return new InstagramMediaDto(id, caption, mediaType, mediaUrl, permalink, timestamp,
+            isCommentEnabled, likeCount, commentsCount);
+    }
+}
