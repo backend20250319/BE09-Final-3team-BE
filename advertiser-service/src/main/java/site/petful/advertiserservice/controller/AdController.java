@@ -127,7 +127,7 @@ public class AdController {
         }
     }
 
-    // 3-3. 광고(캠페인 수정) (applicants 1 증가) - 체험단
+    // 3-3. 광고(캠페인) 수정 (applicants 1 증가) - 체험단
     @PutMapping("/campaign/{adNo}")
     public ResponseEntity<ApiResponse<?>> updateAdByCampaign(@PathVariable Long adNo){
         try {

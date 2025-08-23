@@ -9,6 +9,7 @@ import site.petful.campaignservice.common.ErrorCode;
 import site.petful.campaignservice.dto.campaign.ApplicantResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantsResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantRequest;
+import site.petful.campaignservice.entity.ApplicantStatus;
 import site.petful.campaignservice.service.CampaignService;
 
 @RestController
@@ -66,9 +67,9 @@ public class CampaignController {
     @PutMapping("/advertiser/{applicantNo}")
     public ResponseEntity<ApiResponse<?>> updateApplicantByAdvertiser(
             @PathVariable Long applicantNo,
-            @RequestBody ApplicantRequest request) {
+            @RequestParam ApplicantStatus status) {
         try {
-            ApplicantResponse response = campaignService.updateApplicantByAdvertiser(applicantNo, request);
+            ApplicantResponse response = campaignService.updateApplicantByAdvertiser(applicantNo, status);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -69,7 +69,7 @@ public class CampaignService {
                 .map(applicant -> ApplicantResponse.from(applicant, petMap.get(applicant.getPetNo())))
                 .collect(Collectors.toList());
 
-        return ApplicantsResponse.from(ad, applicantResponses);
+        return ApplicantsResponse.from(applicantResponses);
     }
 
     // 3-1. 체험단 추가 내용 수정 - 체험단
@@ -88,12 +88,12 @@ public class CampaignService {
 
 
     // 3-2. 체험단 applicantStatus 수정 - 광고주
-    public ApplicantResponse updateApplicantByAdvertiser(Long applicantNo, ApplicantRequest request) {
+    public ApplicantResponse updateApplicantByAdvertiser(Long applicantNo, ApplicantStatus status) {
 
         Applicant applicant = campaignRepository.findApplicantByApplicantNo(applicantNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.APPLICANT_NOT_FOUND.getDefaultMessage()));
 
-        applicant.setStatus(request.getStatus());
+        applicant.setStatus(status);
         Applicant saved = campaignRepository.save(applicant);
 
         PetResponse petResponse = petRepository.findByPetNo(saved.getPetNo());
