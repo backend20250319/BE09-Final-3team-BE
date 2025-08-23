@@ -1,7 +1,8 @@
 package site.petful.advertiserservice.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertisement.*;
 import site.petful.advertiserservice.entity.Advertiser;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AdService {
 
     private final AdvertiserRepository advertiserRepository;
@@ -34,6 +36,7 @@ public class AdService {
     }
 
     // 2-1. 광고(캠페인) 단일 조회
+    @Transactional(readOnly = true)
     public AdResponse getAd(Long adNo) {
 
         Advertisement ad = adRepository.findByAdNo(adNo)
@@ -42,6 +45,7 @@ public class AdService {
     }
 
     // 2-2. 광고(캠페인) 전체 조회
+    @Transactional(readOnly = true)
     public AdsResponse getAllAds() {
 
         List<Advertisement> ads = adRepository.findAll();
@@ -49,6 +53,7 @@ public class AdService {
     }
 
     // 2-3. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
+    @Transactional(readOnly = true)
     public AdsResponse getAllAdsByAdvertiser(Long advertiserNo, AdStatus adStatus) {
         Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
@@ -68,6 +73,7 @@ public class AdService {
     }
 
     // 2-4. adStatus별 광고(캠페인) 전체 조회
+    @Transactional(readOnly = true)
     public AdsResponse getAllAdsByAdStatus(AdStatus adStatus) {
 
         List<Advertisement> ads = adRepository.findByAdStatus(adStatus);
@@ -80,6 +86,7 @@ public class AdService {
     }
 
     // 2-5. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회 - 체험단
+    @Transactional(readOnly = true)
     public AdsGroupedResponse getAllAdsByAdStatusGrouped() {
         List<Advertisement> allAds = adRepository.findAll();
 
@@ -119,6 +126,18 @@ public class AdService {
         }
         Advertisement updatedAd = adRepository.save(ad);
 
+        return AdResponse.from(updatedAd);
+    }
+
+    // 3-3. 광고(캠페인 수정) (applicants 1 증가) - 체험단
+    public AdResponse updateAdByCampaign(Long adNo) {
+        int updatedCount = adRepository.incrementApplicants(adNo);
+        if (updatedCount == 0) {
+            throw new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage());
+        }
+
+        Advertisement updatedAd = adRepository.findByAdNo(adNo)
+                .orElseThrow(() -> new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage()));
         return AdResponse.from(updatedAd);
     }
 
@@ -273,4 +292,5 @@ public class AdService {
         }
         ad.setRequirement(existingRequirements);
     }
+
 }
