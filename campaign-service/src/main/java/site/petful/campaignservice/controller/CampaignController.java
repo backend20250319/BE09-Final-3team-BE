@@ -1,12 +1,11 @@
 package site.petful.campaignservice.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ApiResponseGenerator;
-import site.petful.campaignservice.dto.advertisement.AdsGroupedResponse;
+import site.petful.campaignservice.dto.campaign.CampaignRequest;
+import site.petful.campaignservice.dto.campaign.CampaignResponse;
 import site.petful.campaignservice.service.CampaignService;
 
 @RestController
@@ -19,11 +18,13 @@ public class CampaignController {
         this.campaignService = campaignService;
     }
 
-    // 1. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회
-    @GetMapping("/ad")
-    public ResponseEntity<ApiResponse<?>> getAdsGrouped() {
-        AdsGroupedResponse adsGrouped = campaignService.getAdsByStatusGrouped();
-        return ResponseEntity.ok(ApiResponseGenerator.success(adsGrouped));
+    // 1. 체험단 신청
+    @PostMapping("/apply")
+    public ResponseEntity<ApiResponse<?>> applyCampaign(
+            @RequestParam Long adNo,
+            @RequestParam Long petNo,
+            @RequestBody CampaignRequest request) {
+        CampaignResponse response = campaignService.applyAd(adNo, petNo, request);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
-
 }
