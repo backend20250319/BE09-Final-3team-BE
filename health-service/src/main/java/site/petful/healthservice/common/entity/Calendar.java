@@ -61,6 +61,13 @@ public class Calendar {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Column(name = "deleted", nullable = false)
+    @Builder.Default
+    private Boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Column(name = "user_no", nullable = false)
     private Long userNo;
 
@@ -141,5 +148,25 @@ public class Calendar {
             this.reminderDaysBefore.addAll(reminderDaysBefore);
         }
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateSubType(CalendarSubType subType) {
+        if (subType != null) {
+            this.subType = subType;
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    public void softDelete() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void ensureDeletedFlag() {
+        if (this.deleted == null) {
+            this.deleted = false;
+            this.updatedAt = LocalDateTime.now();
+        }
     }
 }
