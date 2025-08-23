@@ -151,6 +151,11 @@ public class MedicationScheduleService {
         info.timesPerDay = 1; info.recurrenceType = RecurrenceType.DAILY; info.interval = 1; return info;
     }
 
+    // 아래 공개 메서드들은 컨트롤러의 부분 업데이트 계산에 재사용합니다.
+    public FrequencyInfo parseFrequencyPublic(String f) { return parseFrequency(f); }
+    public java.util.List<java.time.LocalTime> getDefaultSlotsPublic(int times) { return defaultSlots(times); }
+    public java.util.List<java.time.LocalTime> addMinutesPublic(java.util.List<java.time.LocalTime> src, int minutes) { return addMinutes(src, minutes); }
+
     private int parseIntSafe(String s, int def) {
         try { return Integer.parseInt(s); } catch (Exception e) { return def; }
     }
@@ -177,10 +182,14 @@ public class MedicationScheduleService {
         return out;
     }
 
-    private static class FrequencyInfo {
-        RecurrenceType recurrenceType = RecurrenceType.DAILY;
-        int interval = 1;
-        int timesPerDay = 1;
+    public static class FrequencyInfo {
+        private RecurrenceType recurrenceType = RecurrenceType.DAILY;
+        private int interval = 1;
+        private int timesPerDay = 1;
+
+        public RecurrenceType getRecurrenceType() { return recurrenceType; }
+        public int getInterval() { return interval; }
+        public int getTimesPerDay() { return timesPerDay; }
     }
 }
 

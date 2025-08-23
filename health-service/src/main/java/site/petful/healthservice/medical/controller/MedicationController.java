@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -17,6 +18,7 @@ import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.medical.service.MedicationService;
 import site.petful.healthservice.medical.service.MedicationScheduleService;
 import site.petful.healthservice.medical.dto.PrescriptionParsedDTO;
+import site.petful.healthservice.common.enums.CalendarSubType;
 import site.petful.healthservice.common.entity.Calendar;
 import site.petful.healthservice.medical.dto.MedicationRequestDTO;
 import site.petful.healthservice.medical.dto.MedicationResponseDTO;
@@ -140,10 +142,10 @@ public class MedicationController {
                     ? java.time.LocalDate.now() : request.getStartDate();
 
             // 서브타입 매핑
-            site.petful.healthservice.common.enums.CalendarSubType subTypeEnum =
+            CalendarSubType subTypeEnum =
                     (request.getSubType() != null && request.getSubType().equalsIgnoreCase("SUPPLEMENT"))
-                            ? site.petful.healthservice.common.enums.CalendarSubType.SUPPLEMENT
-                            : site.petful.healthservice.common.enums.CalendarSubType.PILL;
+                            ? CalendarSubType.SUPPLEMENT
+                            : CalendarSubType.PILL;
 
             java.util.List<Calendar> saved = medicationScheduleService
                     .registerMedicationSchedules(dto, effectiveUserNo, base, subTypeEnum);
@@ -162,6 +164,78 @@ public class MedicationController {
             return ResponseEntity.ok(ApiResponseGenerator.failGeneric(e.getErrorCode(), e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.OPERATION_FAILED, "복용약 등록 실패"));
+        }
+    }
+
+    /**
+     * 복용약/영양제 일정 수정 (부분 업데이트 허용)
+     */
+    @PatchMapping("/update")
+    public ResponseEntity<ApiResponse<Long>> updateMedication(
+            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @RequestParam("calNo") Long calNo,
+            @RequestBody MedicationRequestDTO request
+    ) {
+        try {
+            Long effectiveUserNo = (userNo != null) ? userNo : 1L;
+
+            // 조회 및 소유자 검증
+            java.util.Optional<Calendar> opt = medicationScheduleService.getCalendarRepository().findById(calNo);
+            if (opt.isEmpty()) {
+                return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.NOT_FOUND, "일정을 찾을 수 없습니다."));
+            }
+            Calendar entity = opt.get();
+            if (!entity.getUserNo().equals(effectiveUserNo)) {
+                return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다."));
+            }
+
+            // 부분 업데이트: 요청에 있는 값만 반영
+            String title = request.getMedicationName() != null || request.getDosage() != null
+                    ? (request.getMedicationName() == null ? entity.getMedicationName() : request.getMedicationName()) +
+                      (request.getDosage() == null ? (entity.getDosage() == null ? "" : " " + entity.getDosage()) : " " + request.getDosage())
+                    : entity.getTitle();
+
+            java.time.LocalDate base = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
+            Integer duration = request.getDurationDays() != null ? request.getDurationDays() : entity.getDurationDays();
+            String admin = request.getAdministration() != null ? request.getAdministration() : entity.getInstructions();
+            String freq = request.getFrequency() != null ? request.getFrequency() : entity.getFrequency();
+
+            // 빈도/시간 재계산
+            var freqInfo = medicationScheduleService.parseFrequencyPublic(freq);
+            java.util.List<java.time.LocalTime> slots = medicationScheduleService.getDefaultSlotsPublic(freqInfo.getTimesPerDay());
+            if (admin != null && admin.contains("식후")) slots = medicationScheduleService.addMinutesPublic(slots, 30);
+
+            java.time.LocalDateTime startDt = java.time.LocalDateTime.of(base, slots.get(0));
+            java.time.LocalDate endDay = base.plusDays(Math.max(0, duration - 1));
+            java.time.LocalDateTime endDt = java.time.LocalDateTime.of(endDay, slots.get(slots.size() - 1));
+
+            entity.updateSchedule(title, startDt, endDt, admin, startDt);
+            entity.updateMedicationInfo(
+                    request.getMedicationName() != null ? request.getMedicationName() : entity.getMedicationName(),
+                    request.getDosage() != null ? request.getDosage() : entity.getDosage(),
+                    freq,
+                    duration,
+                    admin
+            );
+            entity.updateRecurrence(freqInfo.getRecurrenceType(), freqInfo.getInterval(), endDt);
+
+            // 서브타입 변경
+            if (request.getSubType() != null) {
+                CalendarSubType sub = request.getSubType().equalsIgnoreCase("SUPPLEMENT") ? CalendarSubType.SUPPLEMENT : CalendarSubType.PILL;
+                entity.updateSubType(sub);
+            }
+
+            // 알림 변경
+            if (request.getReminderDaysBefore() != null) {
+                entity.updateReminders(java.util.List.of(request.getReminderDaysBefore()));
+            }
+
+            medicationScheduleService.getCalendarRepository().save(entity);
+            return ResponseEntity.ok(ApiResponseGenerator.success(entity.getCalNo()));
+        } catch (BusinessException e) {
+            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(e.getErrorCode(), e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.OPERATION_FAILED, "복용약 수정 실패"));
         }
     }
 

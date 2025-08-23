@@ -142,4 +142,11 @@ public class Calendar {
         }
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void updateSubType(CalendarSubType subType) {
+        if (subType != null) {
+            this.subType = subType;
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
 }
