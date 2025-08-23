@@ -23,58 +23,70 @@ public class InstagramInsightsService {
     private final InstagramProfileRepository instagramProfileRepository;
     private final InstagramInsightRepository instagramInsightRepository;
 
+    private static final String INSIGHT_METRICS = "shares,likes,comments,views,reach";
+
+    public void syncInsightRecentOneMonth(Long instagramId, Long userId) {
+        syncInsights(instagramId, userId, 1);
+    }
+
+
     public void syncInsightRecentSixMonth(Long instagramId, Long userId) {
-        String metric = "shares,likes,comments,views,reach";
+        syncInsights(instagramId, userId, 6);
+    }
+
+
+    private void syncInsights(Long instagramId, Long userId, int monthsToSync) {
         String accessToken = instagramTokenService.getAccessTokenByUserId(userId);
-        InstagramProfileEntity profileEntity = instagramProfileRepository.findById(
-            instagramId).orElseThrow(() ->
-            new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
+        InstagramProfileEntity profileEntity = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() -> new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
 
-        List<InstagramInsightEntity> entities = new ArrayList<>();
-
+        List<InstagramInsightEntity> entitiesToSave = new ArrayList<>();
         LocalDate currentDate = LocalDate.now();
-        // 최근 12개월을 반달씩 나누어 처리 (총 24개 요청)
-        for (int i = 0; i < 12; i++) {
+
+        for (int i = 0; i < monthsToSync; i++) {
             LocalDate targetMonth = currentDate.minusMonths(i);
-            // 각 월의 두 번째 반 (16일~월말) - 최신부터 처리
-            long secondHalfSince = DateTimeUtils.getSecondHalfOfMonthStart(targetMonth);
-            long secondHalfUntil = DateTimeUtils.getSecondHalfOfMonthEnd(targetMonth);
-
-            System.out.printf("두 번째 반 - since: %d, until: %d (%s 16일~말일)%n",
-                secondHalfSince, secondHalfUntil, targetMonth.toString().substring(0, 7));
-
-            InstagramInsightsResponseDto secondHalfResponse = instagramApiClient.fetchInstagramInsights(
-                instagramId,
-                accessToken,
-                secondHalfSince,
-                secondHalfUntil,
-                metric
-            );
-
-            entities.add(new InstagramInsightEntity(secondHalfResponse, profileEntity,
-                DateTimeUtils.fromUnixTimeToLocalDateTime(secondHalfSince),
-                DateTimeUtils.fromUnixTimeToLocalDateTime(secondHalfUntil)));
-
-            // 각 월의 첫 번째 반 (1일~15일)
-            long firstHalfSince = DateTimeUtils.getFirstHalfOfMonthStart(targetMonth);
-            long firstHalfUntil = DateTimeUtils.getFirstHalfOfMonthEnd(targetMonth);
-
-            System.out.printf("첫 번째 반 - since: %d, until: %d (%s 1일~15일)%n",
-                firstHalfSince, firstHalfUntil, targetMonth.toString().substring(0, 7));
-
-            InstagramInsightsResponseDto firstHalfResponse = instagramApiClient.fetchInstagramInsights(
-                instagramId,
-                accessToken,
-                firstHalfSince,
-                firstHalfUntil,
-                metric
-            );
-
-            entities.add(new InstagramInsightEntity(firstHalfResponse, profileEntity,
-                DateTimeUtils.fromUnixTimeToLocalDateTime(firstHalfSince),
-                DateTimeUtils.fromUnixTimeToLocalDateTime(firstHalfUntil)));
+            entitiesToSave.addAll(
+                fetchInsightsForMonth(instagramId, accessToken, profileEntity, targetMonth));
         }
 
-        entities = instagramInsightRepository.saveAll(entities);
+        instagramInsightRepository.saveAll(entitiesToSave);
+    }
+
+    private List<InstagramInsightEntity> fetchInsightsForMonth(Long instagramId, String accessToken,
+        InstagramProfileEntity profileEntity, LocalDate targetMonth) {
+        List<InstagramInsightEntity> monthlyInsights = new ArrayList<>();
+        String monthString = targetMonth.toString().substring(0, 7);
+
+        long firstHalfSince = DateTimeUtils.getFirstHalfOfMonthStart(targetMonth);
+        long firstHalfUntil = DateTimeUtils.getFirstHalfOfMonthEnd(targetMonth);
+        System.out.printf("첫 번째 반 - since: %d, until: %d (%s 1일~15일)%n", firstHalfSince,
+            firstHalfUntil, monthString);
+        monthlyInsights.add(
+            fetchInsightForPeriod(instagramId, accessToken, profileEntity, firstHalfSince,
+                firstHalfUntil));
+
+        long secondHalfSince = DateTimeUtils.getSecondHalfOfMonthStart(targetMonth);
+        long secondHalfUntil = DateTimeUtils.getSecondHalfOfMonthEnd(targetMonth);
+        System.out.printf("두 번째 반 - since: %d, until: %d (%s 16일~말일)%n", secondHalfSince,
+            secondHalfUntil, monthString);
+        monthlyInsights.add(
+            fetchInsightForPeriod(instagramId, accessToken, profileEntity, secondHalfSince,
+                secondHalfUntil));
+
+        return monthlyInsights;
+    }
+
+    private InstagramInsightEntity fetchInsightForPeriod(Long instagramId, String accessToken,
+        InstagramProfileEntity profileEntity, long since, long until) {
+        InstagramInsightsResponseDto response = instagramApiClient.fetchInstagramInsights(
+            instagramId,
+            accessToken,
+            since,
+            until,
+            INSIGHT_METRICS
+        );
+        return new InstagramInsightEntity(response, profileEntity,
+            DateTimeUtils.fromUnixTimeToLocalDateTime(since),
+            DateTimeUtils.fromUnixTimeToLocalDateTime(until));
     }
 }

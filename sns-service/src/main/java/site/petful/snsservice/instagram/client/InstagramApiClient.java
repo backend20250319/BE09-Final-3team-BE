@@ -39,7 +39,8 @@ public interface InstagramApiClient {
         @RequestParam("access_token") String accessToken,
         @RequestParam("fields") String fields,
         @RequestParam("after") String after,
-        @RequestParam("limit") int limit
+        @RequestParam("limit") int limit,
+        @RequestParam("since") Long since
     );
 
     @GetMapping("/{media_id}/comments")

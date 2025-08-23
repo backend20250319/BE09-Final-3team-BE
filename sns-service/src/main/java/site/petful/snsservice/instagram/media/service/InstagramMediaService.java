@@ -41,7 +41,7 @@ public class InstagramMediaService {
 
             InstagramMediaResponseDto response = instagramApiClient.fetchInstagramMedia(
                 instagramId,
-                accessToken, fields, after, 25);
+                accessToken, fields, after, 25, null);
 
             allMediaDto.addAll(response.getData());
 

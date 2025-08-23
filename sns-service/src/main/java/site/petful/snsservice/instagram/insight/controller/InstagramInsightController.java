@@ -11,7 +11,7 @@ import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.insight.service.InstagramInsightsService;
 
 @Controller
-@RequestMapping("/instagram/insights")
+@RequestMapping("/instagram/insight")
 @RequiredArgsConstructor
 public class InstagramInsightController {
 
@@ -26,4 +26,5 @@ public class InstagramInsightController {
 
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
+
 }
