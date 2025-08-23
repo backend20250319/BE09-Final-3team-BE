@@ -13,7 +13,6 @@ public class AdvertiserResponse {
     private String website;
     private String email;
     private String description;
-    private String reason;
 
     public static AdvertiserResponse from(Advertiser advertiser) {
         AdvertiserResponse res = new AdvertiserResponse();
@@ -22,7 +21,6 @@ public class AdvertiserResponse {
         res.setWebsite(advertiser.getWebsite());
         res.setEmail(advertiser.getEmail());
         res.setDescription(advertiser.getDescription());
-        res.setReason(advertiser.getReason());
 
         return res;
     }
