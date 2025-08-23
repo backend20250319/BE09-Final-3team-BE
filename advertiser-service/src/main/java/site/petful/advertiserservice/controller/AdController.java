@@ -6,10 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.common.ErrorCode;
-import site.petful.advertiserservice.dto.advertisement.AdRequest;
-import site.petful.advertiserservice.dto.advertisement.AdRequestByAdmin;
-import site.petful.advertiserservice.dto.advertisement.AdResponse;
-import site.petful.advertiserservice.dto.advertisement.AdsResponse;
+import site.petful.advertiserservice.dto.advertisement.*;
 import site.petful.advertiserservice.entity.advertisement.AdStatus;
 import site.petful.advertiserservice.service.AdService;
 
@@ -93,6 +90,13 @@ public class AdController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_MATCHED));
         }
+    }
+
+    // 2-5. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회 - 체험단
+    @GetMapping("/adStatus/grouped")
+    public ResponseEntity<ApiResponse<?>> getAllAdsByAdStatusGrouped() {
+        AdsGroupedResponse response = adService.getAllAdsByAdStatusGrouped();
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 
     // 3-1. 광고(캠페인) 수정 - 광고주
