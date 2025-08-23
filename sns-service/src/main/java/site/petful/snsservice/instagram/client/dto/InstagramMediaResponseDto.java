@@ -3,7 +3,7 @@ package site.petful.snsservice.instagram.client.dto;
 import java.util.ArrayList;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import site.petful.snsservice.instagram.dto.InstagramMediaDto;
+import site.petful.snsservice.instagram.media.dto.InstagramMediaDto;
 
 @Getter
 @AllArgsConstructor

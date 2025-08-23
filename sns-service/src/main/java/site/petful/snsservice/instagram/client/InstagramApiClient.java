@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import site.petful.snsservice.instagram.client.dto.InstagramCommentResponseDto;
+import site.petful.snsservice.instagram.client.dto.InstagramInsightsResponseDto;
 import site.petful.snsservice.instagram.client.dto.InstagramMediaResponseDto;
 import site.petful.snsservice.instagram.client.dto.InstagramProfileResponseDto;
 import site.petful.snsservice.instagram.client.dto.InstagramTokenResponseDto;
@@ -38,7 +39,8 @@ public interface InstagramApiClient {
         @RequestParam("access_token") String accessToken,
         @RequestParam("fields") String fields,
         @RequestParam("after") String after,
-        @RequestParam("limit") int limit
+        @RequestParam("limit") int limit,
+        @RequestParam("since") Long since
     );
 
     @GetMapping("/{media_id}/comments")
@@ -48,6 +50,15 @@ public interface InstagramApiClient {
         @RequestParam("fields") String fields,
         @RequestParam("after") String after,
         @RequestParam("limit") int limit
+    );
+
+    @GetMapping("/{instagramId}/insights?period=day&metric_type=total_value")
+    InstagramInsightsResponseDto fetchInstagramInsights(
+        @PathVariable("instagramId") Long instagramId,
+        @RequestParam("access_token") String accessToken,
+        @RequestParam("since") Long since,
+        @RequestParam("until") Long until,
+        @RequestParam("metric") String metric
     );
 
 

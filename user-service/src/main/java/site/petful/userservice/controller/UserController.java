@@ -7,9 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import site.petful.userservice.common.ApiResponse;
 import site.petful.userservice.common.ApiResponseGenerator;
+import site.petful.userservice.domain.User;
 import site.petful.userservice.dto.*;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
@@ -91,18 +93,27 @@ public class UserController {
 
         return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
     }
-
     /**
-     * 보호된 예시 엔드포인트
+     * 현재 로그인한 사용자 정보 조회
+     * GET /auth/me
      */
-    @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<String>> getProfile() {
-        return ResponseEntity.ok(ApiResponseGenerator.success("프로필 조회 성공"));
-    }
-
-    @GetMapping("/my-info")
-    public ResponseEntity<ApiResponse<String>> getMyInfo() {
-        return ResponseEntity.ok(ApiResponseGenerator.success("내 정보 조회 성공"));
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        User user = userService.findByEmail(email);
+        
+        UserInfoResponse userInfo = UserInfoResponse.builder()
+                .userNo(user.getUserNo())
+                .email(user.getEmail())
+                .name(user.getName())
+                .nickname(user.getNickname())
+                .phone(user.getPhone())
+                .role(user.getUserType().name())
+                .build();
+        
+        return ResponseEntity.ok(ApiResponseGenerator.success(userInfo));
     }
 
     /**
