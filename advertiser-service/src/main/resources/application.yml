@@ -3,4 +3,4 @@ spring:
     import:
       configserver:http://localhost:8888
   application:
-    name: sns-service
+    name: advertiser-service

@@ -3,14 +3,14 @@ package site.petful.snsservice.instagram.client.dto;
 import java.util.ArrayList;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import site.petful.snsservice.instagram.dto.InstagramMediaDto;
+import site.petful.snsservice.instagram.media.dto.InstagramMediaDto;
 
 @Getter
 @AllArgsConstructor
 public class InstagramMediaResponseDto {
 
-    public final ArrayList<InstagramMediaDto> data;
-    public final Paging paging;
+    private final ArrayList<InstagramMediaDto> data;
+    private final Paging paging;
 
     @Getter
     public static class Cursors {
