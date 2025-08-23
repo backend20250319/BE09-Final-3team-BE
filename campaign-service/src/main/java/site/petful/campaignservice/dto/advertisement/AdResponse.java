@@ -27,7 +27,6 @@ public class AdResponse {
     private AdStatus adStatus;
     private String adUrl;
     private LocalDateTime createdAt;
-    private String reason;
     private AdvertiserResponse advertiser;
 
     private List<MissionResponse> mission;
@@ -49,7 +48,6 @@ public class AdResponse {
         res.setAdStatus(ad.getAdStatus());
         res.setAdUrl(ad.getAdUrl());
         res.setCreatedAt(ad.getCreatedAt());
-        res.setReason(ad.getReason());
 
         if (ad.getMission() != null) {
             res.mission = ad.getMission().stream()
