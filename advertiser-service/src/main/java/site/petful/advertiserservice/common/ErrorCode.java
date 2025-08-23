@@ -22,6 +22,7 @@ public enum ErrorCode {
     AD_INVALID_REQUEST("4002", "잘못된 요청입니다."),
     AD_INTERNAL_SERVER_ERROR("4003", "서버 내부 오류가 발생했습니다."),
     AD_NOT_MATCHED("4004", "해당 조건에 맞는 광고가 없습니다."),
+    APPLICANT_NOT_FOUND("4005", "해당 지원자는 존재하지 않습니다."),
 
 
     // 5000번대 : 관리자
