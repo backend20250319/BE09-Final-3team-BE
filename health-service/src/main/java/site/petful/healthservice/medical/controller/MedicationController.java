@@ -13,7 +13,11 @@ import site.petful.healthservice.common.response.ApiResponseGenerator;
 import site.petful.healthservice.common.response.ErrorCode;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.medical.service.MedicationService;
+import site.petful.healthservice.medical.service.MedicationScheduleService;
 import site.petful.healthservice.medical.dto.PrescriptionParsedDTO;
+import site.petful.healthservice.common.entity.Calendar;
+import java.time.LocalDate;
+import java.util.List;
 
  
 
@@ -23,6 +27,7 @@ import site.petful.healthservice.medical.dto.PrescriptionParsedDTO;
 public class MedicationController {
 
     private final MedicationService medicationService;
+    private final MedicationScheduleService medicationScheduleService;
 
     
     /**
@@ -37,6 +42,8 @@ public class MedicationController {
     public ResponseEntity<ApiResponse<PrescriptionParsedDTO>> extractText(@RequestParam("file") MultipartFile file) {
         try {
             PrescriptionParsedDTO result = medicationService.processPrescription(file);
+            // 일정 자동 등록: 임시로 userNo=1L, baseDate=오늘. FE에서 전달 받으면 교체
+            List<Calendar> saved = medicationScheduleService.registerMedicationSchedules(result, 1L, LocalDate.now());
             return ResponseEntity.ok(ApiResponseGenerator.success(result));
         } catch (BusinessException e) {
             return ResponseEntity.ok(ApiResponseGenerator.failGeneric(e.getErrorCode(), e.getMessage()));
