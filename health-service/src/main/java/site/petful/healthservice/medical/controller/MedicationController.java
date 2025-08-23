@@ -5,12 +5,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.response.ApiResponseGenerator;
 import site.petful.healthservice.common.response.ErrorCode;
@@ -54,7 +56,6 @@ public class MedicationController {
             @RequestParam(value = "to", required = false) String to,
             @RequestParam(value = "subType", required = false) String subType
     ) {
-        try {
             Long effectiveUserNo = (userNo != null) ? userNo : 1L;
             java.time.LocalDateTime start = (from == null || from.isBlank())
                     ? java.time.LocalDate.now().minusMonths(1).atStartOfDay()
@@ -92,24 +93,16 @@ public class MedicationController {
                     .toList();
 
             return ResponseEntity.ok(ApiResponseGenerator.success(result));
-        } catch (BusinessException e) {
-            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(e.getErrorCode(), e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.OPERATION_FAILED, "복용약 조회 실패"));
-        }
     }
 
     @PostMapping("/ocr")
     public ResponseEntity<ApiResponse<PrescriptionParsedDTO>> extractText(@RequestParam("file") MultipartFile file) {
         try {
             PrescriptionParsedDTO result = medicationService.processPrescription(file);
-            // 일정 자동 등록: 임시로 userNo=1L, baseDate=오늘. FE에서 전달 받으면 교체
             List<Calendar> saved = medicationScheduleService.registerMedicationSchedules(result, 1L, LocalDate.now());
             return ResponseEntity.ok(ApiResponseGenerator.success(result));
-        } catch (BusinessException e) {
-            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(e.getErrorCode(), e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.NETWORK_ERROR, "OCR 처리 실패"));
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.OCR_PROCESSING_FAILED, e);
         }
     }
 
@@ -121,7 +114,6 @@ public class MedicationController {
             @RequestHeader(value = "X-User-Id", required = false) Long userNo,
             @RequestBody MedicationRequestDTO request
     ) {
-        try {
             Long effectiveUserNo = (userNo != null) ? userNo : 1L;
 
             int days = (request.getDurationDays() == null || request.getDurationDays() <= 0) ? 1 : request.getDurationDays();
@@ -160,11 +152,6 @@ public class MedicationController {
 
             Long calNo = saved.isEmpty() ? null : saved.get(0).getCalNo();
             return ResponseEntity.ok(ApiResponseGenerator.success(calNo));
-        } catch (BusinessException e) {
-            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(e.getErrorCode(), e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.OPERATION_FAILED, "복용약 등록 실패"));
-        }
     }
 
     /**
@@ -176,17 +163,21 @@ public class MedicationController {
             @RequestParam("calNo") Long calNo,
             @RequestBody MedicationRequestDTO request
     ) {
-        try {
             Long effectiveUserNo = (userNo != null) ? userNo : 1L;
 
             // 조회 및 소유자 검증
             java.util.Optional<Calendar> opt = medicationScheduleService.getCalendarRepository().findById(calNo);
             if (opt.isEmpty()) {
-                return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.NOT_FOUND, "일정을 찾을 수 없습니다."));
+                throw new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다.");
             }
             Calendar entity = opt.get();
             if (!entity.getUserNo().equals(effectiveUserNo)) {
-                return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다."));
+                throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
+            }
+
+            // 삭제된 일정 수정 방지
+            if (Boolean.TRUE.equals(entity.getDeleted())) {
+                throw new BusinessException(ErrorCode.MEDICATION_VALIDATION_FAILED, "삭제된 일정입니다.");
             }
 
             // 부분 업데이트: 요청에 있는 값만 반영
@@ -232,11 +223,37 @@ public class MedicationController {
 
             medicationScheduleService.getCalendarRepository().save(entity);
             return ResponseEntity.ok(ApiResponseGenerator.success(entity.getCalNo()));
-        } catch (BusinessException e) {
-            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(e.getErrorCode(), e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseGenerator.failGeneric(ErrorCode.OPERATION_FAILED, "복용약 수정 실패"));
-        }
+    }
+
+    /**
+     * 복용약/영양제 일정 삭제
+     */
+    @DeleteMapping("/delete")
+    public ResponseEntity<ApiResponse<Long>> deleteMedication(
+            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @RequestParam("calNo") Long calNo
+    ) {
+            Long effectiveUserNo = (userNo != null) ? userNo : 1L;
+
+            java.util.Optional<Calendar> opt = medicationScheduleService.getCalendarRepository().findById(calNo);
+            if (opt.isEmpty()) {
+                throw new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다.");
+            }
+            Calendar entity = opt.get();
+            // deleted 값 null 방지
+            entity.ensureDeletedFlag();
+            if (!entity.getUserNo().equals(effectiveUserNo)) {
+                throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
+            }
+
+            // 이미 삭제된 경우 예외
+            if (Boolean.TRUE.equals(entity.getDeleted())) {
+                throw new BusinessException(ErrorCode.MEDICATION_VALIDATION_FAILED, "이미 삭제된 일정입니다.");
+            }
+
+            entity.softDelete();
+            medicationScheduleService.getCalendarRepository().save(entity);
+            return ResponseEntity.ok(ApiResponseGenerator.success(calNo));
     }
 
     
