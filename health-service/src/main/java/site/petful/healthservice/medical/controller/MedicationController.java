@@ -96,6 +96,37 @@ public class MedicationController {
             return ResponseEntity.ok(ApiResponseGenerator.success(result));
     }
 
+    /**
+     * 알림 on/off 전용 API 
+     */
+    @PatchMapping("/alarm")
+    public ResponseEntity<ApiResponse<Long>> toggleAlarm(
+            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @RequestParam("calNo") Long calNo,
+            @RequestParam("enabled") boolean enabled
+    ) {
+        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
+
+        var opt = medicationScheduleService.getCalendarRepository().findById(calNo);
+        if (opt.isEmpty()) throw new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다.");
+
+        Calendar entity = opt.get();
+        if (!entity.getUserNo().equals(effectiveUserNo)) throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
+        if (Boolean.TRUE.equals(entity.getDeleted())) throw new BusinessException(ErrorCode.MEDICATION_VALIDATION_FAILED, "삭제된 일정입니다.");
+
+        boolean isOn = entity.getReminderDaysBefore() != null && !entity.getReminderDaysBefore().isEmpty();
+        if (enabled) {
+            if (isOn) throw new BusinessException(ErrorCode.ALARM_ALREADY_ENABLED);
+            entity.updateReminders(java.util.List.of(0));
+        } else {
+            if (!isOn) throw new BusinessException(ErrorCode.ALARM_ALREADY_DISABLED);
+            entity.updateReminders(java.util.List.of());
+        }
+
+        medicationScheduleService.getCalendarRepository().save(entity);
+        return ResponseEntity.ok(ApiResponseGenerator.success(entity.getCalNo()));
+    }
+
     @PostMapping("/ocr")
     public ResponseEntity<ApiResponse<PrescriptionParsedDTO>> extractText(@RequestParam("file") MultipartFile file) {
         try {

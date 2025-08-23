@@ -13,22 +13,23 @@ import site.petful.healthservice.common.response.ErrorCode;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
+    public ResponseEntity<ApiResponse<?>> handleBusinessException(BusinessException e) {
         log.warn("Business exception occurred: {}", e.getMessage());
-        return ResponseEntity.ok(ApiResponseGenerator.fail(e.getErrorCode(), e.getMessage()));
+        // 메시지는 ErrorCode 기본 문구로 통일, 상세 사유는 data
+        return ResponseEntity.ok(ApiResponseGenerator.fail(e.getErrorCode()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException e) {
+    public ResponseEntity<ApiResponse<?>> handleValidationException(MethodArgumentNotValidException e) {
         String msg = e.getBindingResult().getAllErrors().stream()
                 .findFirst()
                 .map(err -> err.getDefaultMessage())
                 .orElse("요청 데이터가 올바르지 않습니다.");
-        return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.MEDICATION_VALIDATION_FAILED, msg));
+        return ResponseEntity.ok(ApiResponseGenerator.failWithData(ErrorCode.MEDICATION_VALIDATION_FAILED, msg));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception e) {
+    public ResponseEntity<ApiResponse<?>> handleGenericException(Exception e) {
         log.error("Unexpected exception occurred", e);
         return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.SYSTEM_ERROR));
     }

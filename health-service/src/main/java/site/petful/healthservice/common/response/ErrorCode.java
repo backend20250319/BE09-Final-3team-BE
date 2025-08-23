@@ -53,6 +53,8 @@ public enum ErrorCode {
     MEDICATION_DATA_CORRUPTED("7023", "약물 데이터가 손상되었습니다."),
     MEDICATION_SERVICE_UNAVAILABLE("7024", "약물 서비스를 사용할 수 없습니다."),
     MEDICATION_QUOTA_EXCEEDED("7025", "약물 처리 할당량을 초과했습니다."),
+    ALARM_ALREADY_ENABLED("7026", "알림이 이미 활성화되어 있습니다."),
+    ALARM_ALREADY_DISABLED("7027", "알림이 이미 비활성화되어 있습니다."),
 
     // 8000번대 : SNS 관리
 
