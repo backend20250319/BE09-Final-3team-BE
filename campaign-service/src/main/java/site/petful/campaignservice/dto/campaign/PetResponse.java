@@ -14,4 +14,6 @@ public class PetResponse {
     private Integer age;
     private Character gender;
     private Boolean isPetstar;
+    private Long userNo;
+
 }
