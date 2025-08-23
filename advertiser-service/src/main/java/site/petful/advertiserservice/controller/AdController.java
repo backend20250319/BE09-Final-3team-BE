@@ -127,6 +127,19 @@ public class AdController {
         }
     }
 
+    // 3-3. 광고(캠페인 수정) (applicants 1 증가) - 체험단
+    @PutMapping("/campaign/{adNo}")
+    public ResponseEntity<ApiResponse<?>> updateAdByCampaign(@PathVariable Long adNo){
+        try {
+            AdResponse response = adService.updateAdByCampaign(adNo);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
+
+
     // 4. 광고(캠페인) 삭제
     @DeleteMapping("/{adNo}")
     public ResponseEntity<ApiResponse<?>>  deleteAd(@PathVariable Long adNo) {
