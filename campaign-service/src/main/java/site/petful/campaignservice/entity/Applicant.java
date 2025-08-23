@@ -31,13 +31,12 @@ public class Applicant {
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ad_no")
+    @JoinColumn(name = "ad_no", nullable = false)
     private Advertisement advertisement;
 
     // @OneToOne(fetch = FetchType.LAZY)
     // @JoinColumn(name = "pet_no")
     // private Pet pet;
 
-    @Transient
-    private Pet pet;
+    private Long petNo;
 }
