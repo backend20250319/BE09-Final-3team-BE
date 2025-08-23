@@ -33,7 +33,7 @@ public class InstagramCommentService {
     public List<InstagramCommentDto> syncInstagramCommentByUserIdAndMediaId(Long userId,
         Long mediaId) {
 
-        String accessToken = instagramTokenService.getDecryptedAccessToken(userId);
+        String accessToken = instagramTokenService.getAccessTokenByUserId(userId);
 
         String fields = "id,username,like_count,text,timestamp,replies";
 
@@ -50,9 +50,6 @@ public class InstagramCommentService {
             after =
                 response.getPaging() != null ? response.getPaging().getCursors().getAfter() : null;
         } while (after != null);
-
-        // TODO [저장 처리] 댓글 저장 로직 추가
-        // 예시: instagramCommentRepository.saveAll(comments);
 
         InstagramMediaEntity media = instagramMediaRepository.findById(mediaId)
             .orElseThrow(() -> new IllegalArgumentException("조회된 게시글이 없습니다."));

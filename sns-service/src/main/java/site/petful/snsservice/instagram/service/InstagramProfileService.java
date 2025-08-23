@@ -25,9 +25,9 @@ public class InstagramProfileService {
         this.instagramApiClient = instagramApiClient;
     }
 
-    public List<InstagramProfileResponseDto> syncInstagramProfiles(Long userId) {
+    public List<InstagramProfileResponseDto> syncAllInstagramProfiles(Long userId) {
         // TODO [예외처리] null일때 오류 처리
-        String accessToken = instagramTokenService.getDecryptedAccessToken(userId);
+        String accessToken = instagramTokenService.getAccessTokenByUserId(userId);
         String jsonString = instagramApiClient.fetchInstagramAccounts(accessToken);
         List<String> instagramIds = JsonPath.read(jsonString,
             "$.data[*].instagram_business_account.id");
@@ -35,7 +35,7 @@ public class InstagramProfileService {
         List<InstagramProfileResponseDto> profiles = new ArrayList<>();
         for (String instagramId : instagramIds) {
             System.out.println(instagramId);
-            InstagramProfileResponseDto instagramProfileResponseDto = syncInstagramProfile(
+            InstagramProfileResponseDto instagramProfileResponseDto = syncSingleInstagramProfile(
                 Long.parseLong(instagramId), accessToken, userId);
 
             profiles.add(instagramProfileResponseDto);
@@ -44,7 +44,7 @@ public class InstagramProfileService {
         return profiles;
     }
 
-    public InstagramProfileResponseDto syncInstagramProfile(Long instagramId,
+    public InstagramProfileResponseDto syncSingleInstagramProfile(Long instagramId,
         String accessToken, Long userId) {
 
         // TODO [저장 처리] 저장을 위에서 한번에 할지 아니면 개별적으로 할지 고민
@@ -58,4 +58,6 @@ public class InstagramProfileService {
 
         return profile.toInstagramProfileDto();
     }
+
+
 }

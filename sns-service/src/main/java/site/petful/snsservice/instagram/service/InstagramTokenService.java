@@ -18,7 +18,7 @@ public class InstagramTokenService {
     public String saveToken(Long userId, InstagramTokenResponseDto instagramTokenResponseDto) {
         String encryptedToken = aesEncryptService.encrypt(instagramTokenResponseDto.access_token());
         // TODO: findByUserId로 기존 토큰이 있는지 확인
-        
+
         InstagramTokenEntity token = new InstagramTokenEntity(userId, encryptedToken,
             instagramTokenResponseDto.expires_in());
         token = instagramTokenRepository.save(token);
@@ -26,7 +26,7 @@ public class InstagramTokenService {
         return token.getToken();
     }
 
-    public String getDecryptedAccessToken(Long userId) {
+    public String getAccessTokenByUserId(Long userId) {
         // TODO [예외처리] Optional을 사용하여 null일 때 예외를 던지는 것이 안전합니다.
         InstagramTokenEntity token = instagramTokenRepository.findByUserId(userId)
             .orElseThrow(

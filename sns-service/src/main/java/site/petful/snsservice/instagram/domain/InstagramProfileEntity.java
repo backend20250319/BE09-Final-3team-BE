@@ -2,6 +2,8 @@ package site.petful.snsservice.instagram.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -15,6 +17,7 @@ import site.petful.snsservice.instagram.client.dto.InstagramProfileResponseDto;
 public class InstagramProfileEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
     private Long userNo;

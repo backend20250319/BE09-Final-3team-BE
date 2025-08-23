@@ -31,7 +31,7 @@ public class InstagramMediaService {
     }
 
     public List<InstagramMediaDto> syncInstagramMedia(Long userId, Long instagramId) {
-        String accessToken = instagramTokenService.getDecryptedAccessToken(userId);
+        String accessToken = instagramTokenService.getAccessTokenByUserId(userId);
         String fields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,is_comment_enabled,like_count,comments_count";
 
         List<InstagramMediaDto> allMediaDto = new ArrayList<>();

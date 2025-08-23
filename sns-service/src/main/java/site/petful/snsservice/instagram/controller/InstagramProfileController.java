@@ -24,6 +24,6 @@ public class InstagramProfileController {
     public ResponseEntity<ApiResponse<List<InstagramProfileResponseDto>>> syncProfiles(
         @RequestParam Long userId) {
         return ResponseEntity.ok(
-            ApiResponseGenerator.success(instagramProfileService.syncInstagramProfiles(userId)));
+            ApiResponseGenerator.success(instagramProfileService.syncAllInstagramProfiles(userId)));
     }
 }
