@@ -88,10 +88,8 @@ public class MedicationScheduleService {
                     .userNo(userNo)
                     .recurrenceType(freqInfo.recurrenceType)
                     .recurrenceInterval(freqInfo.interval)
-                    .recurrenceEndDate(endDateTime)
-                    // Keep frequency at calendar level for cross-domain consistency
+
                     .frequency(frequencyText)
-                    // Keep legacy medication fields for backward compatibility during migration
                     .medicationName(drugName)
                     .dosage(dosage)
                     .durationDays(durationDays)
@@ -101,9 +99,8 @@ public class MedicationScheduleService {
 
             Calendar saved = calendarRepository.save(entity);
 
-            // save detail
+            // 상세 정보 저장
             CalendarMedDetail detail = CalendarMedDetail.builder()
-                    .calNo(saved.getCalNo())
                     .calendar(saved)
                     .medicationName(drugName)
                     .dosage(dosage)
