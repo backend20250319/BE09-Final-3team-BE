@@ -23,6 +23,7 @@ import site.petful.healthservice.medical.service.MedicationScheduleService;
 import site.petful.healthservice.medical.repository.CalendarMedicationDetailRepository;
 import site.petful.healthservice.medical.dto.PrescriptionParsedDTO;
 import site.petful.healthservice.common.enums.CalendarSubType;
+import site.petful.healthservice.common.enums.MedicationFrequency;
 import site.petful.healthservice.common.entity.Calendar;
 import site.petful.healthservice.medical.dto.MedicationRequestDTO;
 import site.petful.healthservice.medical.dto.MedicationResponseDTO;
@@ -48,6 +49,20 @@ public class MedicationController {
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<String>> healthCheck() {
         return ResponseEntity.ok(ApiResponseGenerator.success("Health Service is running"));
+    }
+
+    /**
+     * 복용약/영양제 일정 조회 (기간/서브타입 필터)
+     */
+    @GetMapping("/meta")
+    public ResponseEntity<ApiResponse<java.util.Map<String, java.util.List<String>>>> medicationMeta() {
+        java.util.List<String> subTypes = java.util.List.of("PILL","SUPPLEMENT");
+        java.util.List<String> frequencies = java.util.Arrays.stream(MedicationFrequency.values())
+                .map(Enum::name).toList();
+        java.util.Map<String, java.util.List<String>> data = new java.util.HashMap<>();
+        data.put("subTypes", subTypes);
+        data.put("frequencies", frequencies);
+        return ResponseEntity.ok(ApiResponseGenerator.success(data));
     }
 
     /**
