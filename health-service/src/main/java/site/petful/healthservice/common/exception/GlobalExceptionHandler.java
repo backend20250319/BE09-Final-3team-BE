@@ -17,8 +17,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<?>> handleBusinessException(BusinessException e) {
         log.warn("Business exception occurred: {}", e.getMessage());
-        // 메시지는 ErrorCode 기본 문구로 통일, 상세 사유는 data
-        return ResponseEntity.ok(ApiResponseGenerator.fail(e.getErrorCode()));
+        // 커스텀 메시지를 그대로 전달
+        return ResponseEntity.ok(ApiResponseGenerator.fail(e.getErrorCode(), e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

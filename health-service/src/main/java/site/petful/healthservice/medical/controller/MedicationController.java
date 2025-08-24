@@ -27,6 +27,7 @@ import site.petful.healthservice.common.enums.MedicationFrequency;
 import site.petful.healthservice.common.entity.Calendar;
 import site.petful.healthservice.medical.dto.MedicationRequestDTO;
 import site.petful.healthservice.medical.dto.MedicationResponseDTO;
+import site.petful.healthservice.medical.dto.MedicationDetailDTO;
 import site.petful.healthservice.medical.dto.MedicationUpdateDiffDTO;
 import java.time.LocalDate;
 import java.util.List;
@@ -44,7 +45,7 @@ public class MedicationController {
 
     
     /**
-     * Health Service 상태를 확인합니다.
+     * Health Service 상태 확인인
      */
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<String>> healthCheck() {
@@ -92,7 +93,6 @@ public class MedicationController {
                 throw new BusinessException(ErrorCode.INVALID_DATE_RANGE, "from이 to보다 늦을 수 없습니다.");
             }
 
-            // 캘린더에서 사용자/기간으로 조회 후, MEDICATION만 필터
             java.util.List<Calendar> items = medicationScheduleService
                     .getCalendarRepository()
                     .findByUserNoAndDateRange(effectiveUserNo, start, end);
@@ -138,6 +138,46 @@ public class MedicationController {
                     .toList();
 
             return ResponseEntity.ok(ApiResponseGenerator.success(result));
+    }
+
+    @GetMapping("/{calNo}")
+    public ResponseEntity<ApiResponse<MedicationDetailDTO>> getMedicationDetail(
+            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @org.springframework.web.bind.annotation.PathVariable("calNo") Long calNo
+    ) {
+        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
+        java.util.Optional<Calendar> opt = medicationScheduleService.getCalendarRepository().findById(calNo);
+        if (opt.isEmpty()) throw new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다.");
+        Calendar c = opt.get();
+        if (!c.getUserNo().equals(effectiveUserNo)) throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
+        if (Boolean.TRUE.equals(c.getDeleted())) throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
+        if (c.getMainType() != site.petful.healthservice.common.enums.CalendarMainType.MEDICATION) {
+            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
+        }
+
+        var detailOpt = medicationDetailRepository.findById(calNo);
+        String medName = detailOpt.map(site.petful.healthservice.medical.entity.CalendarMedDetail::getMedicationName).orElse(null);
+        String dosage = detailOpt.map(site.petful.healthservice.medical.entity.CalendarMedDetail::getDosage).orElse(null);
+        Integer duration = detailOpt.map(site.petful.healthservice.medical.entity.CalendarMedDetail::getDurationDays).orElse(null);
+        String instructions = detailOpt.map(site.petful.healthservice.medical.entity.CalendarMedDetail::getInstructions).orElse(null);
+
+        MedicationDetailDTO dto = MedicationDetailDTO.builder()
+                .calNo(c.getCalNo())
+                .title(c.getTitle())
+                .mainType(c.getMainType().name())
+                .subType(c.getSubType().name())
+                .startDate(c.getStartDate())
+                .endDate(c.getEndDate())
+                .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
+                .frequency(c.getFrequency())
+                .alarmEnabled(c.getReminderDaysBefore() != null && !c.getReminderDaysBefore().isEmpty())
+                .reminderDaysBefore(c.getReminderDaysBefore())
+                .medicationName(medName)
+                .dosage(dosage)
+                .durationDays(duration)
+                .instructions(instructions)
+                .build();
+        return ResponseEntity.ok(ApiResponseGenerator.success(dto));
     }
 
     /**
