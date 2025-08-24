@@ -57,6 +57,7 @@ public enum ErrorCode {
     MEDICATION_QUOTA_EXCEEDED("7025", "약물 처리 할당량을 초과했습니다."),
     ALARM_ALREADY_ENABLED("7026", "알림이 이미 활성화되어 있습니다."),
     ALARM_ALREADY_DISABLED("7027", "알림이 이미 비활성화되어 있습니다."),
+    SCHEDULE_ALREADY_DELETED("7028", "삭제된 일정입니다."),
 
     // 8000번대 : SNS 관리
 

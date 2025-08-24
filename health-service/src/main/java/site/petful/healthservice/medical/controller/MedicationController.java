@@ -141,7 +141,7 @@ public class MedicationController {
 
         Calendar entity = opt.get();
         if (!entity.getUserNo().equals(effectiveUserNo)) throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
-        if (Boolean.TRUE.equals(entity.getDeleted())) throw new BusinessException(ErrorCode.MEDICATION_VALIDATION_FAILED, "삭제된 일정입니다.");
+        if (Boolean.TRUE.equals(entity.getDeleted())) throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
 
         boolean isOn = entity.getReminderDaysBefore() != null && !entity.getReminderDaysBefore().isEmpty();
         if (enabled) {
@@ -238,7 +238,7 @@ public class MedicationController {
 
             // 삭제된 일정 수정 방지
             if (Boolean.TRUE.equals(entity.getDeleted())) {
-                throw new BusinessException(ErrorCode.MEDICATION_VALIDATION_FAILED, "삭제된 일정입니다.");
+                throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
             }
 
             // 변경 전 스냅샷 수집 (detail 우선)
@@ -350,7 +350,7 @@ public class MedicationController {
 
             // 이미 삭제된 경우 예외
             if (Boolean.TRUE.equals(entity.getDeleted())) {
-                throw new BusinessException(ErrorCode.MEDICATION_VALIDATION_FAILED, "이미 삭제된 일정입니다.");
+                throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "이미 삭제된 일정입니다.");
             }
 
             entity.softDelete();
