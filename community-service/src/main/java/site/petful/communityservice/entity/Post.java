@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,6 +37,9 @@ public class Post {
     @Column(name="type" , nullable = false , length = 30)
     private PostType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name="status", nullable = true)
+    private Status status;
     public Post(Long userId, String title, String content, PostType type) {
         this.userId = userId;
         this.title = title;

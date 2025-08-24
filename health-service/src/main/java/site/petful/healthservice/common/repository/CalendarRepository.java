@@ -15,10 +15,11 @@ import java.util.List;
 public interface CalendarRepository extends JpaRepository<Calendar, Long> {
 
     // 사용자별 일정 조회
-    List<Calendar> findByUserNoOrderByStartDateAsc(Long userNo);
+    List<Calendar> findByUserNoAndDeletedFalseOrderByStartDateAsc(Long userNo);
 
     // 특정 기간 일정 조회
     @Query("SELECT c FROM Calendar c WHERE c.userNo = :userNo " +
+           "AND c.deleted = false " +
            "AND c.startDate >= :startDate AND c.startDate <= :endDate " +
            "ORDER BY c.startDate ASC")
     List<Calendar> findByUserNoAndDateRange(@Param("userNo") Long userNo,
@@ -26,13 +27,14 @@ public interface CalendarRepository extends JpaRepository<Calendar, Long> {
                                           @Param("endDate") LocalDateTime endDate);
 
     // 메인 타입별 조회
-    List<Calendar> findByUserNoAndMainTypeOrderByStartDateAsc(Long userNo, CalendarMainType mainType);
+    List<Calendar> findByUserNoAndMainTypeAndDeletedFalseOrderByStartDateAsc(Long userNo, CalendarMainType mainType);
 
     // 서브 타입별 조회
-    List<Calendar> findByUserNoAndSubTypeOrderByStartDateAsc(Long userNo, CalendarSubType subType);
+    List<Calendar> findByUserNoAndSubTypeAndDeletedFalseOrderByStartDateAsc(Long userNo, CalendarSubType subType);
 
     // 투약 일정만 조회 (알림용)
     @Query("SELECT c FROM Calendar c WHERE c.userNo = :userNo " +
+           "AND c.deleted = false " +
            "AND c.mainType = 'MEDICATION' " +
            "AND c.alarmTime BETWEEN :startTime AND :endTime " +
            "ORDER BY c.alarmTime ASC")
@@ -41,5 +43,5 @@ public interface CalendarRepository extends JpaRepository<Calendar, Long> {
                                               @Param("endTime") LocalDateTime endTime);
 
     // 특정 약물명으로 일정 조회
-    List<Calendar> findByUserNoAndMedicationNameContainingIgnoreCase(Long userNo, String medicationName);
+    List<Calendar> findByUserNoAndMedicationNameContainingIgnoreCaseAndDeletedFalse(Long userNo, String medicationName);
 }
