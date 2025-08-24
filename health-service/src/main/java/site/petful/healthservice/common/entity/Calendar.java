@@ -47,9 +47,6 @@ public class Calendar {
     @Builder.Default
     private Boolean allDay = false;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
     @Column(name = "alarm_time")
     private LocalDateTime alarmTime;
 
@@ -93,41 +90,22 @@ public class Calendar {
     @Builder.Default
     private List<Integer> reminderDaysBefore = new ArrayList<>(); // [1, 2, 7] = 1일전, 2일전, 7일전
 
-    // 투약 관련 추가 정보 (nullable, 투약 타입일 때만 사용)
-    @Column(name = "medication_name")
-    private String medicationName;
-
-    @Column(name = "dosage")
-    private String dosage;
-
     @Column(name = "frequency")
     private String frequency;
 
-    @Column(name = "duration_days")
-    private Integer durationDays;
-
-    @Column(name = "instructions", columnDefinition = "TEXT")
-    private String instructions;
-
 
     // 업데이트 메서드
-    public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate, 
-                             String description, LocalDateTime alarmTime) {
+    public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate,
+                             LocalDateTime alarmTime) {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.description = description;
         this.alarmTime = alarmTime;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateMedicationInfo(String medicationName, String dosage, String frequency,
-                                   Integer durationDays, String instructions) {
-        this.medicationName = medicationName;
-        this.dosage = dosage;
+    public void updateFrequency(String frequency) {
         this.frequency = frequency;
-        this.durationDays = durationDays;
-        this.instructions = instructions;
         this.updatedAt = LocalDateTime.now();
     }
 

@@ -104,7 +104,7 @@ public class MedicationController {
                                     .durationDays(detail.getDurationDays())
                                     .instructions(detail.getInstructions())
                                     .build()
-                    ).orElse(
+                    ).orElseGet(() ->
                             MedicationResponseDTO.builder()
                                     .calNo(c.getCalNo())
                                     .title(c.getTitle())
@@ -113,11 +113,11 @@ public class MedicationController {
                                     .alarmTime(c.getAlarmTime())
                                     .mainType(c.getMainType().name())
                                     .subType(c.getSubType().name())
-                                    .medicationName(c.getMedicationName())
-                                    .dosage(c.getDosage())
+                                    .medicationName(null)
+                                    .dosage(null)
                                     .frequency(c.getFrequency())
-                                    .durationDays(c.getDurationDays())
-                                    .instructions(c.getInstructions())
+                                    .durationDays(null)
+                                    .instructions(null)
                                     .build()
                     ))
                     .toList();
@@ -250,22 +250,22 @@ public class MedicationController {
                     .title(entity.getTitle())
                     .startDate(entity.getStartDate())
                     .endDate(entity.getEndDate())
-                    .medicationName(beforeDetail != null ? beforeDetail.getMedicationName() : entity.getMedicationName())
-                    .dosage(beforeDetail != null ? beforeDetail.getDosage() : entity.getDosage())
+                    .medicationName(beforeDetail != null ? beforeDetail.getMedicationName() : null)
+                    .dosage(beforeDetail != null ? beforeDetail.getDosage() : null)
                     .frequency(entity.getFrequency())
-                    .durationDays(beforeDetail != null ? beforeDetail.getDurationDays() : entity.getDurationDays())
-                    .instructions(beforeDetail != null ? beforeDetail.getInstructions() : entity.getInstructions())
+                    .durationDays(beforeDetail != null ? beforeDetail.getDurationDays() : null)
+                    .instructions(beforeDetail != null ? beforeDetail.getInstructions() : null)
                     .subType(entity.getSubType().name())
                     .reminderDaysBefore(beforeReminder)
                     .build();
             String title = request.getMedicationName() != null || request.getDosage() != null
-                    ? (request.getMedicationName() == null ? entity.getMedicationName() : request.getMedicationName()) +
-                      (request.getDosage() == null ? (entity.getDosage() == null ? "" : " " + entity.getDosage()) : " " + request.getDosage())
+                    ? (request.getMedicationName() == null ? entity.getTitle() : request.getMedicationName()) +
+                      (request.getDosage() == null ? "" : " " + request.getDosage())
                     : entity.getTitle();
 
             java.time.LocalDate base = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
-            Integer duration = request.getDurationDays() != null ? request.getDurationDays() : entity.getDurationDays();
-            String admin = request.getAdministration() != null ? request.getAdministration() : entity.getInstructions();
+            Integer duration = request.getDurationDays() != null ? request.getDurationDays() : null;
+            String admin = request.getAdministration() != null ? request.getAdministration() : null;
             String freq = request.getFrequency() != null ? request.getFrequency() : entity.getFrequency();
 
             // 빈도/시간 재계산
@@ -274,17 +274,11 @@ public class MedicationController {
             if (admin != null && admin.contains("식후")) slots = medicationScheduleService.addMinutesPublic(slots, 30);
 
             java.time.LocalDateTime startDt = java.time.LocalDateTime.of(base, slots.get(0));
-            java.time.LocalDate endDay = base.plusDays(Math.max(0, duration - 1));
+            java.time.LocalDate endDay = base.plusDays(Math.max(0, (duration == null ? 1 : duration) - 1));
             java.time.LocalDateTime endDt = java.time.LocalDateTime.of(endDay, slots.get(slots.size() - 1));
 
-            entity.updateSchedule(title, startDt, endDt, admin, startDt);
-            entity.updateMedicationInfo(
-                    request.getMedicationName() != null ? request.getMedicationName() : entity.getMedicationName(),
-                    request.getDosage() != null ? request.getDosage() : entity.getDosage(),
-                    freq,
-                    duration,
-                    admin
-            );
+            entity.updateSchedule(title, startDt, endDt, startDt);
+            entity.updateFrequency(freq);
             entity.updateRecurrence(freqInfo.getRecurrenceType(), freqInfo.getInterval(), endDt);
 
             // 서브타입 변경
@@ -316,11 +310,11 @@ public class MedicationController {
                     .title(entity.getTitle())
                     .startDate(entity.getStartDate())
                     .endDate(entity.getEndDate())
-                    .medicationName(afterDetail != null ? afterDetail.getMedicationName() : entity.getMedicationName())
-                    .dosage(afterDetail != null ? afterDetail.getDosage() : entity.getDosage())
+                    .medicationName(afterDetail != null ? afterDetail.getMedicationName() : null)
+                    .dosage(afterDetail != null ? afterDetail.getDosage() : null)
                     .frequency(entity.getFrequency())
-                    .durationDays(afterDetail != null ? afterDetail.getDurationDays() : entity.getDurationDays())
-                    .instructions(afterDetail != null ? afterDetail.getInstructions() : entity.getInstructions())
+                    .durationDays(afterDetail != null ? afterDetail.getDurationDays() : null)
+                    .instructions(afterDetail != null ? afterDetail.getInstructions() : null)
                     .subType(entity.getSubType().name())
                     .reminderDaysBefore(afterReminder)
                     .build();

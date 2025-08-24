@@ -83,7 +83,6 @@ public class MedicationScheduleService {
                     .mainType(CalendarMainType.MEDICATION)
                     .subType(subType != null ? subType : CalendarSubType.PILL)
                     .allDay(false)
-                    .description(administration)
                     .alarmTime(startDateTime)
                     .userNo(userNo)
                     .recurrenceType(freqInfo.recurrenceType)
@@ -91,10 +90,6 @@ public class MedicationScheduleService {
                     .recurrenceEndDate(endDateTime)
 
                     .frequency(frequencyText)
-                    .medicationName(drugName)
-                    .dosage(dosage)
-                    .durationDays(durationDays)
-                    .instructions(administration)
                     .build();
 
             Calendar saved = calendarRepository.save(entity);

@@ -42,7 +42,6 @@ public class CareScheduleService {
                 .mainType(CalendarMainType.CARE)
                 .subType(subType)
                 .allDay(false)
-                .description(null)
                 .alarmTime(startDt)
                 .userNo(userNo)
                 .recurrenceType(recurrenceType)
