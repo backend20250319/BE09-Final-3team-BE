@@ -10,6 +10,7 @@ import site.petful.healthservice.common.enums.RecurrenceType;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,6 +94,12 @@ public class Calendar {
     @Column(name = "frequency")
     private String frequency;
 
+    // 투약 시간들 (예: ["08:00", "20:00"])
+    @ElementCollection
+    @CollectionTable(name = "calendar_times", joinColumns = @JoinColumn(name = "cal_no"))
+    @Column(name = "time")
+    @Builder.Default
+    private List<LocalTime> times = new ArrayList<>();
 
     // 업데이트 메서드
     public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate,
@@ -118,7 +125,8 @@ public class Calendar {
     }
 
     public void updateReminders(List<Integer> reminderDaysBefore) {
-        this.reminderDaysBefore.clear();
+        // 새로운 ArrayList를 할당하여 불변 컬렉션 문제 해결
+        this.reminderDaysBefore = new ArrayList<>();
         if (reminderDaysBefore != null) {
             this.reminderDaysBefore.addAll(reminderDaysBefore);
         }
@@ -130,6 +138,14 @@ public class Calendar {
             this.subType = subType;
             this.updatedAt = LocalDateTime.now();
         }
+    }
+
+    public void updateTimes(List<LocalTime> times) {
+        this.times = new ArrayList<>();
+        if (times != null) {
+            this.times.addAll(times);
+        }
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void softDelete() {
