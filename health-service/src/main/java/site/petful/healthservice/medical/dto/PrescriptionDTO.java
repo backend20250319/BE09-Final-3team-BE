@@ -4,7 +4,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class PrescriptionParsedDTO {
+public class PrescriptionDTO {
     private List<MedicationInfo> medications;
     private String templateName;
     private String inferResult;
