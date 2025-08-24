@@ -19,7 +19,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +38,11 @@ public class CareScheduleService {
 
         LocalDate start = request.getStartDate();
         LocalDate end = request.getEndDate();
-        LocalDateTime startDt = LocalDateTime.of(start, request.getTime());
-        LocalDateTime endDt = LocalDateTime.of(end, request.getTime());
+        LocalTime time = (request.getTimes() != null && !request.getTimes().isEmpty()) 
+            ? request.getTimes().get(0) 
+            : LocalTime.of(9, 0);  // 기본값: 09:00
+        LocalDateTime startDt = LocalDateTime.of(start, time);
+        LocalDateTime endDt = LocalDateTime.of(end, time);
 
         Calendar entity = Calendar.builder()
                 .title(request.getTitle())
@@ -56,11 +58,18 @@ public class CareScheduleService {
                 .recurrenceEndDate(endDt)
                 // 공통 칼럼에 빈도 라벨 저장 (조회/통계 용도)
                 .frequency(cf != null ? cf.getLabel() : CareFrequency.DAILY.getLabel())
+                .times(List.of(time))  // times 필드에 저장
                 .build();
 
-        // 알림 설정
+        // 알림 설정 (기본값: ON, 시기는 필수이므로 기본값 설정)
         if (request.getAlarmEnabled() == null || request.getAlarmEnabled()) {
-            entity.updateReminders(List.of(request.getReminderDaysBefore() == null ? 0 : request.getReminderDaysBefore()));
+            // 사용자가 알림 시기를 지정한 경우
+            if (request.getReminderDaysBefore() != null) {
+                entity.updateReminders(List.of(request.getReminderDaysBefore()));
+            } else {
+                // 지정하지 않으면 기본값 (당일 알림)
+                entity.updateReminders(List.of(0));
+            }
         } else {
             entity.updateReminders(List.of());
         }
@@ -110,8 +119,9 @@ public class CareScheduleService {
                         .frequency(c.getFrequency())
                         .alarmEnabled(c.getReminderDaysBefore() != null && !c.getReminderDaysBefore().isEmpty())
                         .reminderDaysBefore((c.getReminderDaysBefore() == null || c.getReminderDaysBefore().isEmpty()) ? null : c.getReminderDaysBefore().get(0))
+                        .times(c.getTimes())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -138,7 +148,7 @@ public class CareScheduleService {
                 .subType(c.getSubType().name())
                 .startDate(c.getStartDate())
                 .endDate(c.getEndDate())
-                .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
+                .times(c.getTimes())
                 .frequency(c.getFrequency())
                 .alarmEnabled(c.getReminderDaysBefore() != null && !c.getReminderDaysBefore().isEmpty())
                 .reminderDaysBefore(c.getReminderDaysBefore())
@@ -178,17 +188,24 @@ public class CareScheduleService {
     private void updateCareScheduleFields(Calendar entity, CareUpdateRequestDTO request) {
         // 기본 정보 업데이트
         if (request.getTitle() != null) {
-            entity.setTitle(request.getTitle());
+            entity.updateSchedule(request.getTitle(), entity.getStartDate(), entity.getEndDate(), entity.getAlarmTime());
         }
         
         if (request.getSubType() != null) {
             entity.updateSubType(request.getSubType());
         }
 
+        // times 필드 업데이트
+        if (request.getTimes() != null && !request.getTimes().isEmpty()) {
+            entity.updateTimes(request.getTimes());
+        }
+
         // 날짜/시간 업데이트
         LocalDate base = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
         LocalDate endBase = request.getEndDate() != null ? request.getEndDate() : entity.getEndDate().toLocalDate();
-        LocalTime time = request.getTime() != null ? request.getTime() : entity.getStartDate().toLocalTime();
+        LocalTime time = (request.getTimes() != null && !request.getTimes().isEmpty()) 
+            ? request.getTimes().get(0) 
+            : entity.getStartDate().toLocalTime();
 
         LocalDateTime startDt = LocalDateTime.of(base, time);
         LocalDateTime endDt = LocalDateTime.of(endBase, time);

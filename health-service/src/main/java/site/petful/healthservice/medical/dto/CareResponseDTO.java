@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -21,6 +23,7 @@ public class CareResponseDTO {
     private String frequency; // 라벨 저장값
     private Boolean alarmEnabled;
     private Integer reminderDaysBefore; // 대표값(첫 번째)
+    private List<LocalTime> times; // 일정 시간들
 }
 
 

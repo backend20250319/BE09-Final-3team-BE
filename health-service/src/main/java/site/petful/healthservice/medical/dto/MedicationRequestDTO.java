@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -44,6 +45,7 @@ public class MedicationRequestDTO {
     @Max(value = 3, message = "알림 시기는 0~3 사이여야 합니다.")
     private Integer reminderDaysBefore;
 
-    // 일정 시간 (선택사항 - 없으면 기본 시간 사용)
-    private LocalTime time;
+    // 일정 시간들 (필수사항 - 하루 N회에 맞는 시간 개수)
+    @NotNull(message = "일정 시간들은 필수입니다.")
+    private List<LocalTime> times;
 }

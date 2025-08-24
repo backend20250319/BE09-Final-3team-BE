@@ -20,7 +20,7 @@ public class CareDetailDTO {
     private String subType;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private LocalTime time; // 일정 시간
+    private List<LocalTime> times; // 일정 시간들
     private String frequency; // 라벨
     private Boolean alarmEnabled;
     private List<Integer> reminderDaysBefore; // 전체

@@ -14,7 +14,7 @@ import site.petful.healthservice.medical.dto.MedicationDetailDTO;
 import site.petful.healthservice.medical.dto.MedicationUpdateRequestDTO;
 import site.petful.healthservice.medical.dto.MedicationUpdateDiffDTO;
 import site.petful.healthservice.medical.entity.CalendarMedDetail;
-import site.petful.healthservice.medical.repository.CalendarMedDetailRepository;
+import site.petful.healthservice.medical.repository.CalendarMedicationDetailRepository;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 
@@ -32,13 +32,18 @@ import java.util.stream.Collectors;
 public class MedicationScheduleService {
 
     private final CalendarRepository calendarRepository;
-    private final CalendarMedDetailRepository medicationDetailRepository;
+    private final CalendarMedicationDetailRepository medicationDetailRepository;
 
 
     /**
      * 복용약/영양제 일정 생성 (캘린더 기반)
      */
     public Long createMedication(Long userNo, MedicationRequestDTO request) {
+        // 직접 등록 시에는 시간들이 필수
+        if (request.getTimes() == null || request.getTimes().isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "일정 시간들은 필수입니다.");
+        }
+
         int days = (request.getDurationDays() == null || request.getDurationDays() <= 0) ? 1 : request.getDurationDays();
         String freq = (request.getFrequency() == null || request.getFrequency().isBlank())
                 ? (request.getAdministration() == null ? "하루 1회" : request.getAdministration())
@@ -51,7 +56,7 @@ public class MedicationScheduleService {
         info.setAdministration(request.getAdministration());
         info.setFrequency(freq);
         info.setPrescriptionDays(days + "일");
-        info.setTime(request.getTime());
+        info.setTimes(request.getTimes());  // 사용자가 입력한 시간들 직접 사용
         dto.setMedications(List.of(info));
 
         LocalDate base = (request.getStartDate() == null) ? LocalDate.now() : request.getStartDate();
@@ -62,11 +67,13 @@ public class MedicationScheduleService {
 
         List<Calendar> saved = registerMedicationSchedules(dto, userNo, base, subTypeEnum);
 
-        // 알림 시기 반영
-        if (request.getReminderDaysBefore() != null && !saved.isEmpty()) {
-            List<Integer> reminders = List.of(request.getReminderDaysBefore());
-            for (Calendar c : saved) {
-                c.updateReminders(reminders);
+        // 알림 시기 반영 (기본값: 당일 알림 활성화)
+        for (Calendar c : saved) {
+            if (request.getReminderDaysBefore() != null) {
+                c.updateReminders(List.of(request.getReminderDaysBefore()));
+            } else {
+                // 사용자가 알림 시기를 지정하지 않으면 기본값 (당일 알림)
+                c.updateReminders(List.of(0));
             }
         }
 
@@ -103,35 +110,34 @@ public class MedicationScheduleService {
             FrequencyInfo freqInfo = parseFrequency(frequencyText);
             int timesPerDay = freqInfo.timesPerDay > 0 ? freqInfo.timesPerDay : 1;
 
-            // 사용자 입력 시간이 있으면 해당 시간 기준, 없으면 기본 시간 사용
+            // 사용자 입력 시간이 있으면 해당 시간들 사용, 없으면 기본 시간 사용
             List<LocalTime> slots;
-            if (med.getTime() != null) {
-                slots = calculateSlotsFromUserTime(med.getTime(), timesPerDay);
+            if (med.getTimes() != null && !med.getTimes().isEmpty()) {
+                slots = med.getTimes();  // 사용자가 입력한 시간들 직접 사용
             } else {
                 slots = defaultSlots(timesPerDay);
-            }
-            if (isPostMeal(administration)) {
-                slots = addMinutes(slots, 30);
             }
 
             LocalDateTime startDateTime = LocalDateTime.of(startDay, slots.get(0));
             LocalDate endDay = startDay.plusDays(Math.max(0, durationDays - 1));
             LocalDateTime endDateTime = LocalDateTime.of(endDay, slots.get(slots.size() - 1));
 
-            Calendar entity = Calendar.builder()
-                    .title(buildTitle(drugName, dosage))
-                    .startDate(startDateTime)
-                    .endDate(endDateTime)
-                    .mainType(CalendarMainType.MEDICATION)
-                    .subType(subType != null ? subType : CalendarSubType.PILL)
-                    .allDay(false)
-                    .alarmTime(startDateTime)
-                    .userNo(userNo)
-                    .recurrenceType(freqInfo.recurrenceType)
-                    .recurrenceInterval(freqInfo.interval)
-                    .recurrenceEndDate(endDateTime)
-                    .frequency(frequencyText)
-                    .build();
+                    Calendar entity = Calendar.builder()
+                .title(buildTitle(drugName, dosage))
+                .startDate(startDateTime)
+                .endDate(endDateTime)
+                .mainType(CalendarMainType.MEDICATION)
+                .subType(subType != null ? subType : CalendarSubType.PILL)
+                .allDay(false)
+                .alarmTime(startDateTime)
+                .userNo(userNo)
+                .recurrenceType(freqInfo.recurrenceType)
+                .recurrenceInterval(freqInfo.interval)
+                .recurrenceEndDate(endDateTime)
+                .frequency(frequencyText)
+                .times(slots)
+                .reminderDaysBefore(new ArrayList<>(List.of(0)))  // 기본값: 당일 알림 활성화
+                .build();
 
             Calendar saved = calendarRepository.save(entity);
 
@@ -141,7 +147,7 @@ public class MedicationScheduleService {
                     .medicationName(drugName)
                     .dosage(dosage)
                     .durationDays(durationDays)
-                    .instructions(administration)
+                    .instructions(cleanInstructions(administration))
                     .ocrRawData(parsed.getOriginalText())
                     .build();
             medicationDetailRepository.save(detail);
@@ -185,7 +191,14 @@ public class MedicationScheduleService {
                     var detailOpt = medicationDetailRepository.findById(c.getCalNo());
                     String medName = detailOpt.map(CalendarMedDetail::getMedicationName).orElse(null);
                     String dosage = detailOpt.map(CalendarMedDetail::getDosage).orElse(null);
+                    Integer durationDays = detailOpt.map(CalendarMedDetail::getDurationDays).orElse(null);
+                    String instructions = detailOpt.map(CalendarMedDetail::getInstructions).orElse(null);
 
+                    var freqInfo = parseFrequency(c.getFrequency());
+                    List<LocalTime> slots = c.getTimes() != null && !c.getTimes().isEmpty() 
+                        ? c.getTimes() 
+                        : defaultSlots(freqInfo.getTimesPerDay());
+                    
                     return MedicationResponseDTO.builder()
                             .calNo(c.getCalNo())
                             .title(c.getTitle())
@@ -196,11 +209,13 @@ public class MedicationScheduleService {
                             .medicationName(medName)
                             .dosage(dosage)
                             .frequency(c.getFrequency())
-                            .alarmEnabled(c.getReminderDaysBefore() != null && !c.getReminderDaysBefore().isEmpty())
-                            .reminderDaysBefore((c.getReminderDaysBefore() == null || c.getReminderDaysBefore().isEmpty()) ? null : c.getReminderDaysBefore().get(0))
+                            .durationDays(durationDays)
+                            .instructions(instructions)
+                            .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
+                            .times(slots)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -226,15 +241,9 @@ public class MedicationScheduleService {
         Integer duration = detailOpt.map(CalendarMedDetail::getDurationDays).orElse(null);
         String instructions = detailOpt.map(CalendarMedDetail::getInstructions).orElse(null);
 
-        // 하루 N회 시간 슬롯 계산 (사용자 입력 시간 기준)
+        // 기본 시간 슬롯 사용 (상세 조회 시에는 기본 시간으로 표시)
         var freqInfo = parseFrequency(c.getFrequency());
-        List<LocalTime> slots = calculateSlotsFromUserTime(
-            c.getStartDate() != null ? c.getStartDate().toLocalTime() : null, 
-            freqInfo.getTimesPerDay()
-        );
-        if (instructions != null && instructions.contains("식후")) {
-            slots = addMinutes(slots, 30);
-        }
+        List<LocalTime> slots = defaultSlots(freqInfo.getTimesPerDay());
 
         return MedicationDetailDTO.builder()
                 .calNo(c.getCalNo())
@@ -254,8 +263,6 @@ public class MedicationScheduleService {
                 .instructions(instructions)
                 .build();
     }
-
-    // ==================== 투약 일정 수정 ====================
     
     /**
      * 투약 일정 수정 (부분 업데이트)
@@ -264,6 +271,10 @@ public class MedicationScheduleService {
         // 조회 및 소유자 검증
         Calendar entity = calendarRepository.findById(calNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다."));
+        
+        if (entity.getMainType() != CalendarMainType.MEDICATION) {
+            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
+        }
         
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -283,7 +294,6 @@ public class MedicationScheduleService {
         MedicationUpdateDiffDTO.Snapshot after = createSnapshot(entity);
         
         return MedicationUpdateDiffDTO.builder()
-                .calNo(calNo)
                 .before(before)
                 .after(after)
                 .build();
@@ -316,7 +326,7 @@ public class MedicationScheduleService {
             String medName = request.getMedicationName() != null ? request.getMedicationName() : 
                 (entity.getTitle() != null ? entity.getTitle().split(" ")[0] : "");
             String dosage = request.getDosage() != null ? request.getDosage() : "";
-            entity.setTitle(medName + " " + dosage);
+            entity.updateSchedule(medName + " " + dosage, entity.getStartDate(), entity.getEndDate(), entity.getAlarmTime());
         }
 
         // 기본값 설정
@@ -330,10 +340,11 @@ public class MedicationScheduleService {
 
         // 빈도/시간 재계산
         var freqInfo = parseFrequency(freq);
-        LocalTime baseTime = request.getTime() != null ? request.getTime() : entity.getStartDate().toLocalTime();
-        List<LocalTime> slots = calculateSlotsFromUserTime(baseTime, freqInfo.getTimesPerDay());
-        if (admin != null && admin.contains("식후")) {
-            slots = addMinutes(slots, 30);
+        List<LocalTime> slots;
+        if (request.getTimes() != null && !request.getTimes().isEmpty()) {
+            slots = request.getTimes();  // 사용자가 입력한 시간들 직접 사용
+        } else {
+            slots = defaultSlots(freqInfo.getTimesPerDay());  // 기본 시간 사용
         }
 
         LocalDateTime startDt = LocalDateTime.of(base, slots.get(0));
@@ -351,7 +362,7 @@ public class MedicationScheduleService {
 
         // 알림 변경
         if (request.getReminderDaysBefore() != null) {
-            entity.updateReminders(List.of(request.getReminderDaysBefore()));
+            entity.updateReminders(new ArrayList<>(List.of(request.getReminderDaysBefore())));
         }
 
         // 엔티티 저장
@@ -380,6 +391,10 @@ public class MedicationScheduleService {
         Calendar entity = calendarRepository.findById(calNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다."));
 
+        if (entity.getMainType() != CalendarMainType.MEDICATION) {
+            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
+        }
+
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
         }
@@ -390,10 +405,10 @@ public class MedicationScheduleService {
         boolean isOn = entity.getReminderDaysBefore() != null && !entity.getReminderDaysBefore().isEmpty();
         if (enabled) {
             if (isOn) throw new BusinessException(ErrorCode.ALARM_ALREADY_ENABLED);
-            entity.updateReminders(List.of(0));
+            entity.updateReminders(new ArrayList<>(List.of(0)));
         } else {
             if (!isOn) throw new BusinessException(ErrorCode.ALARM_ALREADY_DISABLED);
-            entity.updateReminders(List.of());
+            entity.updateReminders(new ArrayList<>(List.of()));
         }
 
         calendarRepository.save(entity);
@@ -406,6 +421,11 @@ public class MedicationScheduleService {
     public Long deleteMedication(Long calNo, Long userNo) {
         Calendar entity = calendarRepository.findById(calNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다."));
+
+
+        if (entity.getMainType() != CalendarMainType.MEDICATION) {
+            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
+        }
 
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -492,52 +512,41 @@ public class MedicationScheduleService {
         try { return Integer.parseInt(s); } catch (Exception e) { return def; }
     }
 
-    private boolean isPostMeal(String administration) {
-        if (administration == null) return false;
-        return administration.contains("식후");
-    }
+
 
     private List<LocalTime> defaultSlots(int times) {
         List<LocalTime> list = new ArrayList<>();
         switch (times) {
-            case 1 -> list.add(LocalTime.of(9, 0));
-            case 2 -> { list.add(LocalTime.of(9, 0)); list.add(LocalTime.of(21, 0)); }
-            case 3 -> { list.add(LocalTime.of(8, 0)); list.add(LocalTime.of(14, 0)); list.add(LocalTime.of(20, 0)); }
+            case 1 -> list.add(LocalTime.of(9, 0));  // 09:00
+            case 2 -> { 
+                list.add(LocalTime.of(8, 0));   // 아침 08:00
+                list.add(LocalTime.of(20, 0));  // 저녁 20:00
+            }
+            case 3 -> { 
+                list.add(LocalTime.of(8, 0));   // 아침 08:00
+                list.add(LocalTime.of(12, 0));  // 점심 12:00
+                list.add(LocalTime.of(20, 0));  // 저녁 20:00
+            }
             default -> list.add(LocalTime.of(9, 0));
         }
         return list;
     }
 
-    /**
-     * 사용자 입력 시간을 기준으로 하루 N회 슬롯을 계산합니다.
-     * 1회: 입력 시간 그대로, 2회: 12시간 간격, 3회: 8시간 간격
-     */
-    private List<LocalTime> calculateSlotsFromUserTime(LocalTime userTime, int times) {
-        List<LocalTime> list = new ArrayList<>();
-        if (userTime == null) {
-            return defaultSlots(times);
-        }
-        
-        switch (times) {
-            case 1 -> list.add(userTime);
-            case 2 -> { 
-                list.add(userTime);
-                list.add(userTime.plusHours(12));
-            }
-            case 3 -> { 
-                list.add(userTime);
-                list.add(userTime.plusHours(8));
-                list.add(userTime.plusHours(16));
-            }
-            default -> list.add(userTime);
-        }
-        return list;
-    }
 
-    private List<LocalTime> addMinutes(List<LocalTime> src, int minutes) {
-        List<LocalTime> out = new ArrayList<>(src.size());
-        for (LocalTime t : src) out.add(t.plusMinutes(minutes));
-        return out;
+
+    private String cleanInstructions(String administration) {
+        if (administration == null) return null;
+        
+        // "하루 N회" 패턴을 정확하게 제거
+        String cleaned = administration
+            .replaceAll("하루\\s*\\d+회", "")  // "하루 2회", "하루1회" 등 제거
+            .replaceAll("하루\\s*\\d+번", "")  // "하루 2번", "하루2번" 등 제거
+            .replaceAll("\\s*,\\s*", "")       // 쉼표와 공백 제거
+            .replaceAll("^\\s+|\\s+$", "")     // 앞뒤 공백 제거
+            .replaceAll("\\s+", " ");          // 연속된 공백을 하나로
+        
+        // 빈 문자열이면 null 반환
+        return cleaned.isEmpty() ? null : cleaned;
     }
 
     public static class FrequencyInfo {

@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,7 +25,7 @@ public class MedicationUpdateRequestDTO {
     private String frequency;
     private Integer durationDays;
     private LocalDate startDate;
-    private LocalTime time;
+    private List<LocalTime> times;
     private CalendarSubType subType;
     
     // 알림 설정 (선택적)

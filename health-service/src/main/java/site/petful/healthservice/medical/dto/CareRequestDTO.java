@@ -10,6 +10,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
+
 import site.petful.healthservice.common.enums.CalendarSubType;
 import site.petful.healthservice.common.enums.CareFrequency;
 
@@ -37,9 +39,9 @@ public class CareRequestDTO {
     @NotNull(message = "종료 날짜는 필수입니다.")
     private LocalDate endDate;
 
-    // 일정 시간 (하루 한 번 기준)
-    @NotNull(message = "일정 시간은 필수입니다.")
-    private LocalTime time;
+    // 일정 시간들 (하루 한 번 기준이지만 List로 통일)
+    @NotNull(message = "일정 시간들은 필수입니다.")
+    private List<LocalTime> times;
 
     // 알림 시기: 0=당일, 1/2/3일 전
     @NotNull(message = "알림 시기는 필수입니다.")
