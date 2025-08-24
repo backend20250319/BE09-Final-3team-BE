@@ -8,6 +8,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.response.ApiResponseGenerator;
 import site.petful.healthservice.common.response.ErrorCode;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -32,5 +34,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<?>> handleGenericException(Exception e) {
         log.error("Unexpected exception occurred", e);
         return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.SYSTEM_ERROR));
+    }
+
+    @ExceptionHandler(InvalidFormatException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidFormat(InvalidFormatException e) {
+        log.warn("Invalid format: {}", e.getOriginalMessage());
+        return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.INVALID_DATE_FORMAT));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<?>> handleNotReadable(HttpMessageNotReadableException e) {
+        Throwable root = e.getMostSpecificCause() != null ? e.getMostSpecificCause() : e.getCause();
+        if (root instanceof java.time.format.DateTimeParseException || root instanceof InvalidFormatException) {
+            log.warn("Date parse error: {}", root.getMessage());
+            return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.INVALID_DATE_FORMAT));
+        }
+        log.warn("Invalid request body: {}", e.getMessage());
+        return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST));
     }
 }

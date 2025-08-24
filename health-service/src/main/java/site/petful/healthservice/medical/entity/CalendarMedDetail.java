@@ -10,12 +10,14 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import site.petful.healthservice.common.entity.Calendar;
 
 @Entity
 @Table(name = "calendar_med_detail")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
