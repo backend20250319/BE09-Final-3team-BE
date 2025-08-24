@@ -15,6 +15,11 @@ public enum ErrorCode {
     NOT_FOUND("1003", "요청한 리소스를 찾을 수 없습니다."),
 
     // 3000번대 : 회원
+    EMAIL_ALREADY_EXISTS("3000", "이미 존재하는 이메일입니다."),
+    BUSINESS_NUMBER_ALREADY_EXISTS("3001", "이미 존재하는 사업자 등록번호입니다."),
+    INVALID_VERIFICATION_CODE("3002", "잘못된 인증번호입니다."),
+    VERIFICATION_CODE_EXPIRED("3003", "인증번호가 만료되었습니다."),
+    EMAIL_NOT_VERIFIED("3004", "이메일 인증이 필요합니다."),
 
     // 4000번대 : 광고주, 체험단
     ADVERTISER_NOT_FOUND("4000", "해당 광고주는 존재하지 않습니다."),

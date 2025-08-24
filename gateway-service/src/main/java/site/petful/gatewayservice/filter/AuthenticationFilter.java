@@ -25,6 +25,9 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     private static final List<String> DEFAULT_WHITELIST = List.of(
         "/api/v1/user-service/auth/**",
         "/api/v1/user-service/health",
+        "/api/v1/advertiser-service/advertiser/**",
+        "/api/v1/advertiser-service/health",
+        "/api/v1/advertiser-service/advertiser/email/**",
         "/actuator/**"
     );
 
