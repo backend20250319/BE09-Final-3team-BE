@@ -10,6 +10,7 @@ import site.petful.healthservice.common.enums.RecurrenceType;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,9 +47,6 @@ public class Calendar {
     @Column(name = "all_day", nullable = false)
     @Builder.Default
     private Boolean allDay = false;
-
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
 
     @Column(name = "alarm_time")
     private LocalDateTime alarmTime;
@@ -93,44 +91,28 @@ public class Calendar {
     @Builder.Default
     private List<Integer> reminderDaysBefore = new ArrayList<>(); // [1, 2, 7] = 1일전, 2일전, 7일전
 
-    // 투약 관련 추가 정보 (nullable, 투약 타입일 때만 사용)
-    @Column(name = "medication_name")
-    private String medicationName;
-
-    @Column(name = "dosage")
-    private String dosage;
-
     @Column(name = "frequency")
     private String frequency;
 
-    @Column(name = "duration_days")
-    private Integer durationDays;
-
-    @Column(name = "instructions", columnDefinition = "TEXT")
-    private String instructions;
-
-    // OCR 원본 데이터 (디버깅/검증용)
-    @Column(name = "ocr_raw_data", columnDefinition = "TEXT")
-    private String ocrRawData;
+    // 투약 시간들 (예: ["08:00", "20:00"])
+    @ElementCollection
+    @CollectionTable(name = "calendar_times", joinColumns = @JoinColumn(name = "cal_no"))
+    @Column(name = "time")
+    @Builder.Default
+    private List<LocalTime> times = new ArrayList<>();
 
     // 업데이트 메서드
-    public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate, 
-                             String description, LocalDateTime alarmTime) {
+    public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate,
+                             LocalDateTime alarmTime) {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.description = description;
         this.alarmTime = alarmTime;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateMedicationInfo(String medicationName, String dosage, String frequency,
-                                   Integer durationDays, String instructions) {
-        this.medicationName = medicationName;
-        this.dosage = dosage;
+    public void updateFrequency(String frequency) {
         this.frequency = frequency;
-        this.durationDays = durationDays;
-        this.instructions = instructions;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -143,7 +125,8 @@ public class Calendar {
     }
 
     public void updateReminders(List<Integer> reminderDaysBefore) {
-        this.reminderDaysBefore.clear();
+        // 새로운 ArrayList를 할당하여 불변 컬렉션 문제 해결
+        this.reminderDaysBefore = new ArrayList<>();
         if (reminderDaysBefore != null) {
             this.reminderDaysBefore.addAll(reminderDaysBefore);
         }
@@ -155,6 +138,14 @@ public class Calendar {
             this.subType = subType;
             this.updatedAt = LocalDateTime.now();
         }
+    }
+
+    public void updateTimes(List<LocalTime> times) {
+        this.times = new ArrayList<>();
+        if (times != null) {
+            this.times.addAll(times);
+        }
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void softDelete() {

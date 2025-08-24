@@ -42,6 +42,5 @@ public interface CalendarRepository extends JpaRepository<Calendar, Long> {
                                               @Param("startTime") LocalDateTime startTime,
                                               @Param("endTime") LocalDateTime endTime);
 
-    // 특정 약물명으로 일정 조회
-    List<Calendar> findByUserNoAndMedicationNameContainingIgnoreCaseAndDeletedFalse(Long userNo, String medicationName);
+    // 특정 약물명으로 일정 조회 - 캘린더에 약물명이 없어져서 비활성화 (상세 테이블에서 처리 권장)
 }
