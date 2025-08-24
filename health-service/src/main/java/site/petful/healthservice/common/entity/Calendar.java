@@ -109,9 +109,6 @@ public class Calendar {
     @Column(name = "instructions", columnDefinition = "TEXT")
     private String instructions;
 
-    // OCR 원본 데이터 (디버깅/검증용)
-    @Column(name = "ocr_raw_data", columnDefinition = "TEXT")
-    private String ocrRawData;
 
     // 업데이트 메서드
     public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate, 

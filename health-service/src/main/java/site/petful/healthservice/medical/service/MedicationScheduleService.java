@@ -88,13 +88,13 @@ public class MedicationScheduleService {
                     .userNo(userNo)
                     .recurrenceType(freqInfo.recurrenceType)
                     .recurrenceInterval(freqInfo.interval)
+                    .recurrenceEndDate(endDateTime)
 
                     .frequency(frequencyText)
                     .medicationName(drugName)
                     .dosage(dosage)
                     .durationDays(durationDays)
                     .instructions(administration)
-                    .ocrRawData(parsed.getOriginalText())
                     .build();
 
             Calendar saved = calendarRepository.save(entity);
