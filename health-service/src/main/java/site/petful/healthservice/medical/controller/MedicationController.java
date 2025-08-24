@@ -60,12 +60,21 @@ public class MedicationController {
             @RequestParam(value = "subType", required = false) String subType
     ) {
             Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-            java.time.LocalDateTime start = (from == null || from.isBlank())
-                    ? java.time.LocalDate.now().minusMonths(1).atStartOfDay()
-                    : java.time.LocalDate.parse(from).atStartOfDay();
-            java.time.LocalDateTime end = (to == null || to.isBlank())
-                    ? java.time.LocalDate.now().plusMonths(1).atTime(23,59,59)
-                    : java.time.LocalDate.parse(to).atTime(23,59,59);
+            java.time.LocalDateTime start;
+            java.time.LocalDateTime end;
+            try {
+                start = (from == null || from.isBlank())
+                        ? java.time.LocalDate.now().minusMonths(1).atStartOfDay()
+                        : java.time.LocalDate.parse(from).atStartOfDay();
+                end = (to == null || to.isBlank())
+                        ? java.time.LocalDate.now().plusMonths(1).atTime(23,59,59)
+                        : java.time.LocalDate.parse(to).atTime(23,59,59);
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new BusinessException(ErrorCode.INVALID_DATE_FORMAT, "유효하지 않은 날짜 형식입니다.");
+            }
+            if (start.isAfter(end)) {
+                throw new BusinessException(ErrorCode.INVALID_DATE_RANGE, "from이 to보다 늦을 수 없습니다.");
+            }
 
             // 캘린더에서 사용자/기간으로 조회 후, MEDICATION만 필터
             java.util.List<Calendar> items = medicationScheduleService
