@@ -16,16 +16,26 @@ import java.util.List;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
     private static final String HDR_USER_NO = "X-User-No";
     private static final String HDR_USER_TYPE = "X-User-Type";
+    
+    // 기본 화이트리스트 - 인증 없이 접근 가능한 경로들
+    private static final List<String> DEFAULT_WHITELIST = List.of(
+        "/api/v1/user-service/auth/**",
+        "/api/v1/user-service/health",
+        "/api/v1/advertiser-service/advertiser/**",
+        "/api/v1/advertiser-service/health",
+        "/api/v1/advertiser-service/advertiser/email/**",
+        "/actuator/**"
+    );
 
     private final JwtUtil jwtUtil;
 
-    public AuthenticationFilter() {
+    public AuthenticationFilter(JwtUtil jwtUtil) {
         super(Config.class);
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -80,15 +90,22 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     }
 
     private boolean isWhitelisted(List<String> whitelist, String path) {
+        // 기본 화이트리스트 확인
+        if (DEFAULT_WHITELIST.stream().anyMatch(pattern -> 
+            path.matches(pattern.replace("**", ".*")))) {
+            return true;
+        }
+        
+        // 설정된 화이트리스트 확인
         if (whitelist == null) return false;
         return whitelist.stream().anyMatch(pattern -> 
             path.matches(pattern.replace("**", ".*")));
     }
 
-    private org.springframework.web.server.ServerWebExchange unauthorized(org.springframework.web.server.ServerWebExchange exchange) {
+    private reactor.core.publisher.Mono<Void> unauthorized(org.springframework.web.server.ServerWebExchange exchange) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
-        return exchange;
+        return response.setComplete();
     }
 
     public static class Config {
