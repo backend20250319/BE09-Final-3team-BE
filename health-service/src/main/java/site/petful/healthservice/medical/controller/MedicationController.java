@@ -26,6 +26,7 @@ import site.petful.healthservice.common.enums.CalendarSubType;
 import site.petful.healthservice.common.entity.Calendar;
 import site.petful.healthservice.medical.dto.MedicationRequestDTO;
 import site.petful.healthservice.medical.dto.MedicationResponseDTO;
+import site.petful.healthservice.medical.dto.MedicationUpdateDiffDTO;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -218,7 +219,7 @@ public class MedicationController {
      * 복용약/영양제 일정 수정 (부분 업데이트 허용)
      */
     @PatchMapping("/update")
-    public ResponseEntity<ApiResponse<Long>> updateMedication(
+    public ResponseEntity<ApiResponse<MedicationUpdateDiffDTO>> updateMedication(
             @RequestHeader(value = "X-User-Id", required = false) Long userNo,
             @RequestParam("calNo") Long calNo,
             @RequestBody MedicationRequestDTO request
@@ -240,7 +241,23 @@ public class MedicationController {
                 throw new BusinessException(ErrorCode.MEDICATION_VALIDATION_FAILED, "삭제된 일정입니다.");
             }
 
-            // 부분 업데이트: 요청에 있는 값만 반영
+            // 변경 전 스냅샷 수집 (detail 우선)
+            java.util.Optional<site.petful.healthservice.medical.entity.CalendarMedDetail> optDetail = medicationDetailRepository.findById(calNo);
+            site.petful.healthservice.medical.entity.CalendarMedDetail beforeDetail = optDetail.orElse(null);
+            Integer beforeReminder = (entity.getReminderDaysBefore() == null || entity.getReminderDaysBefore().isEmpty())
+                    ? null : entity.getReminderDaysBefore().get(0);
+            MedicationUpdateDiffDTO.Snapshot before = MedicationUpdateDiffDTO.Snapshot.builder()
+                    .title(entity.getTitle())
+                    .startDate(entity.getStartDate())
+                    .endDate(entity.getEndDate())
+                    .medicationName(beforeDetail != null ? beforeDetail.getMedicationName() : entity.getMedicationName())
+                    .dosage(beforeDetail != null ? beforeDetail.getDosage() : entity.getDosage())
+                    .frequency(entity.getFrequency())
+                    .durationDays(beforeDetail != null ? beforeDetail.getDurationDays() : entity.getDurationDays())
+                    .instructions(beforeDetail != null ? beforeDetail.getInstructions() : entity.getInstructions())
+                    .subType(entity.getSubType().name())
+                    .reminderDaysBefore(beforeReminder)
+                    .build();
             String title = request.getMedicationName() != null || request.getDosage() != null
                     ? (request.getMedicationName() == null ? entity.getMedicationName() : request.getMedicationName()) +
                       (request.getDosage() == null ? (entity.getDosage() == null ? "" : " " + entity.getDosage()) : " " + request.getDosage())
@@ -282,7 +299,38 @@ public class MedicationController {
             }
 
             medicationScheduleService.getCalendarRepository().save(entity);
-            return ResponseEntity.ok(ApiResponseGenerator.success(entity.getCalNo()));
+
+            // detail 동기화(존재할 때만)
+            optDetail.ifPresent(d -> {
+                if (request.getMedicationName() != null) d.setMedicationName(request.getMedicationName());
+                if (request.getDosage() != null) d.setDosage(request.getDosage());
+                if (request.getDurationDays() != null) d.setDurationDays(request.getDurationDays());
+                if (request.getAdministration() != null) d.setInstructions(request.getAdministration());
+                medicationDetailRepository.save(d);
+            });
+
+            Integer afterReminder = (entity.getReminderDaysBefore() == null || entity.getReminderDaysBefore().isEmpty())
+                    ? null : entity.getReminderDaysBefore().get(0);
+            site.petful.healthservice.medical.entity.CalendarMedDetail afterDetail = medicationDetailRepository.findById(calNo).orElse(beforeDetail);
+            MedicationUpdateDiffDTO.Snapshot after = MedicationUpdateDiffDTO.Snapshot.builder()
+                    .title(entity.getTitle())
+                    .startDate(entity.getStartDate())
+                    .endDate(entity.getEndDate())
+                    .medicationName(afterDetail != null ? afterDetail.getMedicationName() : entity.getMedicationName())
+                    .dosage(afterDetail != null ? afterDetail.getDosage() : entity.getDosage())
+                    .frequency(entity.getFrequency())
+                    .durationDays(afterDetail != null ? afterDetail.getDurationDays() : entity.getDurationDays())
+                    .instructions(afterDetail != null ? afterDetail.getInstructions() : entity.getInstructions())
+                    .subType(entity.getSubType().name())
+                    .reminderDaysBefore(afterReminder)
+                    .build();
+
+            MedicationUpdateDiffDTO diff = MedicationUpdateDiffDTO.builder()
+                    .before(before)
+                    .after(after)
+                    .build();
+
+            return ResponseEntity.ok(ApiResponseGenerator.success(diff));
     }
 
     /**
