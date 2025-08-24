@@ -37,11 +37,11 @@ public class JwtUtil {
     private Claims parseClaims(String token) {
         try {
             SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtConfig.getSecret().trim()));
-            Jws<Claims> jws = Jwts.parserBuilder()
-                    .setSigningKey(key)
+            Jws<Claims> jws = Jwts.parser()
+                    .verifyWith(key)
                     .build()
-                    .parseClaimsJws(token);
-            return jws.getBody();
+                    .parseSignedClaims(token);
+            return jws.getPayload();
         } catch (Exception e) {
             log.error("Failed to parse token: {}", e.getMessage());
             throw e;
