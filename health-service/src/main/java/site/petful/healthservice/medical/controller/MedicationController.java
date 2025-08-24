@@ -20,6 +20,7 @@ import site.petful.healthservice.common.response.ErrorCode;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.medical.service.MedicationService;
 import site.petful.healthservice.medical.service.MedicationScheduleService;
+import site.petful.healthservice.medical.repository.CalendarMedicationDetailRepository;
 import site.petful.healthservice.medical.dto.PrescriptionParsedDTO;
 import site.petful.healthservice.common.enums.CalendarSubType;
 import site.petful.healthservice.common.entity.Calendar;
@@ -37,6 +38,7 @@ public class MedicationController {
 
     private final MedicationService medicationService;
     private final MedicationScheduleService medicationScheduleService;
+    private final CalendarMedicationDetailRepository medicationDetailRepository;
 
     
     /**
@@ -77,20 +79,37 @@ public class MedicationController {
             }
 
             java.util.List<MedicationResponseDTO> result = stream
-                    .map(c -> MedicationResponseDTO.builder()
-                            .calNo(c.getCalNo())
-                            .title(c.getTitle())
-                            .startDate(c.getStartDate())
-                            .endDate(c.getEndDate())
-                            .alarmTime(c.getAlarmTime())
-                            .mainType(c.getMainType().name())
-                            .subType(c.getSubType().name())
-                            .medicationName(c.getMedicationName())
-                            .dosage(c.getDosage())
-                            .frequency(c.getFrequency())
-                            .durationDays(c.getDurationDays())
-                            .instructions(c.getInstructions())
-                            .build())
+                    .map(c -> medicationDetailRepository.findById(c.getCalNo()).map(detail ->
+                            MedicationResponseDTO.builder()
+                                    .calNo(c.getCalNo())
+                                    .title(c.getTitle())
+                                    .startDate(c.getStartDate())
+                                    .endDate(c.getEndDate())
+                                    .alarmTime(c.getAlarmTime())
+                                    .mainType(c.getMainType().name())
+                                    .subType(c.getSubType().name())
+                                    .medicationName(detail.getMedicationName())
+                                    .dosage(detail.getDosage())
+                                    .frequency(c.getFrequency())
+                                    .durationDays(detail.getDurationDays())
+                                    .instructions(detail.getInstructions())
+                                    .build()
+                    ).orElse(
+                            MedicationResponseDTO.builder()
+                                    .calNo(c.getCalNo())
+                                    .title(c.getTitle())
+                                    .startDate(c.getStartDate())
+                                    .endDate(c.getEndDate())
+                                    .alarmTime(c.getAlarmTime())
+                                    .mainType(c.getMainType().name())
+                                    .subType(c.getSubType().name())
+                                    .medicationName(c.getMedicationName())
+                                    .dosage(c.getDosage())
+                                    .frequency(c.getFrequency())
+                                    .durationDays(c.getDurationDays())
+                                    .instructions(c.getInstructions())
+                                    .build()
+                    ))
                     .toList();
 
             return ResponseEntity.ok(ApiResponseGenerator.success(result));

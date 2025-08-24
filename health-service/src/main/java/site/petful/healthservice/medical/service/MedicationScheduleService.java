@@ -8,6 +8,8 @@ import site.petful.healthservice.common.enums.CalendarSubType;
 import site.petful.healthservice.common.enums.RecurrenceType;
 import site.petful.healthservice.common.repository.CalendarRepository;
 import site.petful.healthservice.medical.dto.PrescriptionParsedDTO;
+import site.petful.healthservice.medical.entity.CalendarMedDetail;
+import site.petful.healthservice.medical.repository.CalendarMedicationDetailRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,6 +24,7 @@ import java.util.regex.Pattern;
 public class MedicationScheduleService {
 
     private final CalendarRepository calendarRepository;
+    private final CalendarMedicationDetailRepository medicationDetailRepository;
 
     public CalendarRepository getCalendarRepository() { return calendarRepository; }
 
@@ -86,15 +89,31 @@ public class MedicationScheduleService {
                     .recurrenceType(freqInfo.recurrenceType)
                     .recurrenceInterval(freqInfo.interval)
                     .recurrenceEndDate(endDateTime)
+                    // Keep frequency at calendar level for cross-domain consistency
+                    .frequency(frequencyText)
+                    // Keep legacy medication fields for backward compatibility during migration
                     .medicationName(drugName)
                     .dosage(dosage)
-                    .frequency(frequencyText)
                     .durationDays(durationDays)
                     .instructions(administration)
                     .ocrRawData(parsed.getOriginalText())
                     .build();
 
-            created.add(calendarRepository.save(entity));
+            Calendar saved = calendarRepository.save(entity);
+
+            // save detail
+            CalendarMedDetail detail = CalendarMedDetail.builder()
+                    .calNo(saved.getCalNo())
+                    .calendar(saved)
+                    .medicationName(drugName)
+                    .dosage(dosage)
+                    .durationDays(durationDays)
+                    .instructions(administration)
+                    .ocrRawData(parsed.getOriginalText())
+                    .build();
+            medicationDetailRepository.save(detail);
+
+            created.add(saved);
         }
 
         return created;
