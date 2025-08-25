@@ -10,3 +10,4 @@ public class EmailVerificationResponse {
     private boolean success;
 }
 
+

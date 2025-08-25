@@ -147,3 +147,4 @@ public class EmailVerificationService {
                 ThreadLocalRandom.current().nextInt(100000, 1_000_000));
     }
 }
+
