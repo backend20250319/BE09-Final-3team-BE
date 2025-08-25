@@ -3,8 +3,6 @@ package site.petful.snsservice.instagram.auth.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -23,18 +21,17 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class InstagramTokenEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long userId;
-    @Column(name = "token", length = 512)
+    private Long userNo;
+    @Column(nullable = false, length = 512)
     private String token;
+    @Column(nullable = false)
     private LocalDateTime expireAt;
     @CreatedDate
     private LocalDateTime createdAt;
 
 
-    public InstagramTokenEntity(Long userId, String token, Long expiresIn) {
-        this.userId = userId;
+    public InstagramTokenEntity(Long userNo, String token, Long expiresIn) {
+        this.userNo = userNo;
         this.token = token;
         if (expiresIn == null) {
             expiresIn = 60 * 24 * 60 * 60L;
