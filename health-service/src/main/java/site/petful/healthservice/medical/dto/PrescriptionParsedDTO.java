@@ -17,5 +17,6 @@ public class PrescriptionParsedDTO {
         private String administration;  // 복용법/용법
         private String frequency;       // 횟수 (하루 3번, 1회 등)
         private String prescriptionDays; // 처방일수
+        private List<java.time.LocalTime> times; // 일정 시간들 (선택사항)
     }
 }

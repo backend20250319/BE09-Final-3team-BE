@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 import site.petful.communityservice.common.ApiResponse;
 import site.petful.communityservice.common.ApiResponseGenerator;
@@ -46,6 +48,7 @@ public class PostController {
             @RequestHeader(value = "X-User-Type",required = false) String userType,
             @RequestParam(defaultValue = "0")int page,
             @RequestParam(defaultValue = "20")int size,
+            @PageableDefault() Pageable pageable,
             @RequestParam(required = false)PostType type
             ){
            Page<PostItem> result = postService.getPosts(page,size,type);
@@ -79,6 +82,7 @@ public class PostController {
             @RequestHeader(value = "X-User-Type",required = false) String userType,
             @PathVariable Long postId
     ) throws AccessDeniedException {
-        return ApiResponseGenerator.success(postService.deletePost(userNo,postId));
+        postService.deletePost(userNo,postId);
+        return ApiResponseGenerator.success();
     }
 }

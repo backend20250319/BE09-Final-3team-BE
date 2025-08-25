@@ -31,12 +31,12 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(refreshSecret.getBytes());
     }
 
-    public String generateAccessToken(Long userNo, String userType) {
+    public String generateAccessToken(Long advertiserNo, String userType) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + (accessExpMin * 60 * 1000));
 
         return Jwts.builder()
-                .setSubject(String.valueOf(userNo))
+                .claim("advertiserNo", advertiserNo)
                 .claim("userType", userType)
                 .claim("tokenType", "ACCESS")
                 .setIssuedAt(now)
@@ -45,12 +45,12 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String generateRefreshToken(Long userNo, String userType) {
+    public String generateRefreshToken(Long advertiserNo, String userType) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + (refreshExpDays * 24 * 60 * 60 * 1000));
 
         return Jwts.builder()
-                .setSubject(String.valueOf(userNo))
+                .claim("advertiserNo", advertiserNo)
                 .claim("userType", userType)
                 .claim("tokenType", "REFRESH")
                 .setIssuedAt(now)
@@ -75,14 +75,14 @@ public class JwtTokenProvider {
                 .getBody();
     }
 
-    public Long getUserNoFromAccessToken(String token) {
+    public Long getAdvertiserNoFromAccessToken(String token) {
         Claims claims = getAccessTokenClaims(token);
-        return Long.parseLong(claims.getSubject());
+        return claims.get("advertiserNo", Long.class);
     }
 
-    public Long getUserNoFromRefreshToken(String token) {
+    public Long getAdvertiserNoFromRefreshToken(String token) {
         Claims claims = getRefreshTokenClaims(token);
-        return Long.parseLong(claims.getSubject());
+        return claims.get("advertiserNo", Long.class);
     }
 
     public String getUserTypeFromAccessToken(String token) {

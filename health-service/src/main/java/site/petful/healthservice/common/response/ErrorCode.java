@@ -13,6 +13,8 @@ public enum ErrorCode {
     UNAUTHORIZED("1001", "권한이 없습니다."),
     FORBIDDEN("1002", "접근이 금지되었습니다."),
     NOT_FOUND("1003", "요청한 리소스를 찾을 수 없습니다."),
+    INVALID_DATE_RANGE("1004", "잘못된 날짜 범위입니다."),
+    INVALID_DATE_FORMAT("1005", "잘못된 날짜 형식입니다."),
 
     //아래 는 3000~8000번대 까지는 비즈니스 로직 오류 코드 알아서 정의해서 사용 아래는 예시
     // 3000번대 : 회원
@@ -55,6 +57,8 @@ public enum ErrorCode {
     MEDICATION_QUOTA_EXCEEDED("7025", "약물 처리 할당량을 초과했습니다."),
     ALARM_ALREADY_ENABLED("7026", "알림이 이미 활성화되어 있습니다."),
     ALARM_ALREADY_DISABLED("7027", "알림이 이미 비활성화되어 있습니다."),
+    SCHEDULE_ALREADY_DELETED("7028", "삭제된 일정입니다."),
+    SCHEDULE_TYPE_MISMATCH("7029", "요청한 일정 타입이 엔드포인트와 일치하지 않습니다."),
 
     // 8000번대 : SNS 관리
 

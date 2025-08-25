@@ -53,16 +53,10 @@ public class SignupService {
 
         AdvertiserSignup savedAdvertiser = advertiserSignupRepository.save(advertiser);
 
-        // JWT 토큰 생성 (Access Token + Refresh Token)
-        String accessToken = jwtTokenProvider.generateAccessToken(savedAdvertiser.getAdvertiserNo(), "ADVERTISER");
-        String refreshToken = jwtTokenProvider.generateRefreshToken(savedAdvertiser.getAdvertiserNo(), "ADVERTISER");
-
         return SignupResponse.builder()
-                .userNo(savedAdvertiser.getAdvertiserNo())
+                .advertiserNo(savedAdvertiser.getAdvertiserNo())
                 .userType("ADVERTISER")
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .message("회원가입이 완료되었습니다.")
+                .message("회원가입이 완료되었습니다. 로그인 후 서비스를 이용해주세요.")
                 .build();
     }
 }
