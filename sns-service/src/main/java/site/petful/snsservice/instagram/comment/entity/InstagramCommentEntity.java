@@ -18,7 +18,7 @@ import site.petful.snsservice.instagram.media.entity.InstagramMediaEntity;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 
 @Entity
-@Table(name = "instagram_comments")
+@Table(name = "instagram_comment")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -47,7 +47,7 @@ public class InstagramCommentEntity {
     private InstagramMediaEntity instagramMedia;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instagram_media_id", nullable = false)
+    @JoinColumn(name = "instagram_profile_id", nullable = false)
     private InstagramProfileEntity instagramProfile;
 
     public InstagramCommentEntity(InstagramApiCommentDto dto, Sentiment sentiment,

@@ -171,8 +171,9 @@ public class InstagramCommentService {
         condition.setSentiment(sentiment);
         condition.setKeyword(keyword);
 
-//        Page<InstagramCommentEntity> entityPage = instagramCommentRepository.searchComments(mediaId,
-//            condition, pageable);
+        Page<InstagramCommentEntity> entityPage = instagramCommentRepository.searchComments(
+            instagramId,
+            condition, pageable);
 
         // Page<Entity>를 Page<Dto>로 변환
         return entityPage.map(InstagramCommentResponseDto::fromEntity);

@@ -35,7 +35,7 @@ public class InstagramCommentController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<InstagramCommentResponseDto>>> searchInstagramComments(
         @RequestParam(name = "instagram_id") Long instagramId,
-        @RequestParam(required = false) Boolean isDeleted,
+        @RequestParam(name = "is_deleted", required = false) Boolean isDeleted,
         @RequestParam(required = false) Sentiment sentiment,
         @RequestParam(required = false) String keyword,
         @PageableDefault(size = 20, sort = "timestamp", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -49,7 +49,8 @@ public class InstagramCommentController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<InstagramCommentResponseDto>>> getInstagramComments(
-        @RequestParam Long userNo, @RequestParam Long mediaId) {
+        @RequestParam(name = "user_no") Long userNo,
+        @RequestParam(name = "media_id") Long mediaId) {
 
         List<InstagramCommentResponseDto> comments = instagramCommentService.getComments(
             mediaId);
@@ -69,7 +70,8 @@ public class InstagramCommentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<List<InstagramCommentResponseDto>>> syncInstagramComments(
-        @RequestParam(name = "user_no") Long userNo, @RequestParam Long mediaId) {
+        @RequestParam(name = "user_no") Long userNo,
+        @RequestParam(name = "media_id") Long mediaId) {
 
         String accessToken = instagramTokenService.getAccessToken(userNo);
         List<InstagramCommentResponseDto> comments = instagramCommentService.syncInstagramCommentByMediaId(

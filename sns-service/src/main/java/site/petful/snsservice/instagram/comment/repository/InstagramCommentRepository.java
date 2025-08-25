@@ -6,7 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import site.petful.snsservice.instagram.comment.entity.InstagramCommentEntity;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 
-public interface InstagramCommentRepository extends JpaRepository<InstagramCommentEntity, Long> {
+public interface InstagramCommentRepository extends JpaRepository<InstagramCommentEntity, Long>,
+    InstagramCommentRepositoryCustom {
 
     List<InstagramCommentEntity> findAllByIdIn(Collection<Long> ids);
 
