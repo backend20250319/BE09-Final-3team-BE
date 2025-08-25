@@ -2,8 +2,7 @@ package site.petful.snsservice.instagram.media.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -24,19 +23,26 @@ import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 public class InstagramMediaEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(nullable = false)
     private String caption;
+    @Column(nullable = false)
     private String mediaType;
-    @Column(name = "profile_picture_url", length = 512)
+    @Column(name = "profile_picture_url", length = 512, nullable = false)
     private String mediaUrl;
+    @Column(nullable = false)
     private String permalink;
+    @Column(nullable = false)
     private OffsetDateTime timestamp;
+    @Column(nullable = false)
     private Boolean isCommentEnabled;
+    @Column(nullable = false)
     private Long likeCount;
+    @Column(nullable = false)
     private Long commentsCount;
-    @ManyToOne
-    @JoinColumn(name = "instagram_id")
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instagram_id", nullable = false)
     private InstagramProfileEntity instagramProfile;
 
 
@@ -58,5 +64,16 @@ public class InstagramMediaEntity {
     public InstagramMediaDto toDto() {
         return new InstagramMediaDto(id, caption, mediaType, mediaUrl, permalink, timestamp,
             isCommentEnabled, likeCount, commentsCount);
+    }
+
+    public void update(InstagramMediaDto dto) {
+        this.caption = dto.caption();
+        this.mediaType = dto.mediaType();
+        this.mediaUrl = dto.mediaUrl();
+        this.permalink = dto.permalink();
+        this.timestamp = dto.timestamp();
+        this.isCommentEnabled = dto.isCommentEnabled();
+        this.likeCount = dto.likeCount();
+        this.commentsCount = dto.commentsCount();
     }
 }

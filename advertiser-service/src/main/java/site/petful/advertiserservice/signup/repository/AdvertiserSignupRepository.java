@@ -9,7 +9,10 @@ public interface AdvertiserSignupRepository extends JpaRepository<AdvertiserSign
 
     Optional<AdvertiserSignup> findByAdvertiserNo(Long advertiserNo);
     
+    Optional<AdvertiserSignup> findByUserId(String userId);
+    
     boolean existsByUserId(String userId);
     
     boolean existsByAdvertiserNo(Long advertiserNo);
 }
+

@@ -27,7 +27,6 @@ public class EmailVerificationService {
     private final RedisTemplate<String, String> redisTemplate;
     private final AdvertiserSignupRepository advertiserSignupRepository;
 
-    // 환경 변수/설정 파일로 분리 권장
     @Value("${mail.from:no-reply@petful.app}")
     private String fromAddress;
 
@@ -147,3 +146,4 @@ public class EmailVerificationService {
                 ThreadLocalRandom.current().nextInt(100000, 1_000_000));
     }
 }
+
