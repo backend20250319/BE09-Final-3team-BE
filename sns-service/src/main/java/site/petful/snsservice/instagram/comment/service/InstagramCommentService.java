@@ -7,19 +7,24 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.snsservice.clova.service.ClovaApiService;
 import site.petful.snsservice.instagram.client.InstagramApiClient;
 import site.petful.snsservice.instagram.client.dto.InstagramApiCommentDto;
 import site.petful.snsservice.instagram.client.dto.InstagramApiCommentResponseDto;
+import site.petful.snsservice.instagram.comment.dto.CommentSearchCondition;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
+import site.petful.snsservice.instagram.comment.dto.InstagramCommentStatusResponseDto;
 import site.petful.snsservice.instagram.comment.entity.InstagramCommentEntity;
 import site.petful.snsservice.instagram.comment.entity.Sentiment;
 import site.petful.snsservice.instagram.comment.repository.InstagramCommentRepository;
 import site.petful.snsservice.instagram.media.entity.InstagramMediaEntity;
 import site.petful.snsservice.instagram.media.repository.InstagramMediaRepository;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
+import site.petful.snsservice.instagram.profile.repository.InstagramProfileRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -31,15 +36,14 @@ public class InstagramCommentService {
     private final InstagramMediaRepository instagramMediaRepository;
     private final ClovaApiService clovaApiService;
     private final InstagramBannedWordService instagramBannedWordService;
-
+    private final InstagramProfileRepository instagramProfileRepository;
 
     @Transactional
     public List<InstagramCommentResponseDto> syncInstagramCommentByMediaId(Long mediaId,
         String accessToken) {
-
+        // 1. 필요한 부모 엔티티 조회
         InstagramMediaEntity media = instagramMediaRepository.findById(mediaId)
             .orElseThrow(() -> new IllegalArgumentException("조회된 게시글이 없습니다."));
-        InstagramProfileEntity profile = media.getInstagramProfile();
 
         List<InstagramCommentEntity> finalSyncedEntities = new ArrayList<>();
         String after = null;
@@ -53,41 +57,10 @@ public class InstagramCommentService {
                 break;
             }
 
-            List<Long> commentIds = pagedCommentsDto.stream()
-                .map(InstagramApiCommentDto::id)
-                .toList();
-            Map<Long, InstagramCommentEntity> existingCommentsMap = instagramCommentRepository.findAllById(
-                    commentIds)
-                .stream()
-                .collect(Collectors.toMap(InstagramCommentEntity::getId, entity -> entity));
-
-            List<InstagramCommentEntity> entitiesToSave = new ArrayList<>();
-            for (InstagramApiCommentDto dto : pagedCommentsDto) {
-                InstagramCommentEntity existingComment = existingCommentsMap.get(dto.id());
-
-                if (existingComment != null) {
-                    existingComment.update(dto);
-                    entitiesToSave.add(existingComment);
-                } else {
-
-                    Sentiment sentiment = clovaApiService.analyzeSentiment(dto.text());
-                    Set<String> BannedWords = instagramBannedWordService.getBannedWords(profile);
-                    boolean isDeleted = false;
-
-                    if (profile.getAutoDelete() && (sentiment == Sentiment.NEGATIVE
-                        && BannedWords.contains(dto.text()))) {
-                        instagramApiClient.deleteComment(dto.id(), accessToken);
-                        isDeleted = true;
-                    }
-
-                    entitiesToSave.add(
-                        new InstagramCommentEntity(dto, sentiment,
-                            isDeleted, media,
-                            profile));
-                }
-            }
-
-            finalSyncedEntities.addAll(instagramCommentRepository.saveAll(entitiesToSave));
+            // 3. 한 페이지를 처리하는 로직을 별도 메서드로 위임
+            List<InstagramCommentEntity> savedEntitiesOnPage = processCommentsPage(
+                pagedCommentsDto, media, accessToken);
+            finalSyncedEntities.addAll(savedEntitiesOnPage);
 
             after =
                 response.getPaging() != null ? response.getPaging().getCursors().getAfter() : null;
@@ -119,5 +92,89 @@ public class InstagramCommentService {
         instagramCommentRepository.save(entity);
     }
 
+    public InstagramCommentStatusResponseDto getCommentStatus(Long instagramId) {
 
+        InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() -> new NoSuchElementException("존재하지 않는 Instagram ID 입니다."));
+
+        long totalComments = instagramCommentRepository.countByInstagramProfile(profile);
+        long deletedComments = instagramCommentRepository.countByInstagramProfileAndIsDeleted(
+            profile, true);
+        long bannedWords = instagramBannedWordService.getBannedWords(profile).size();
+
+        double deletionRate = totalComments == 0 ? 0.0
+            : (double) deletedComments / totalComments * 100;
+
+        return new InstagramCommentStatusResponseDto(totalComments, deletedComments,
+            deletionRate, (long) bannedWords);
+    }
+
+
+    private List<InstagramCommentEntity> processCommentsPage(List<InstagramApiCommentDto> dtos,
+        InstagramMediaEntity media, String accessToken) {
+
+        Map<Long, InstagramCommentEntity> existingCommentsMap = findExistingComments(dtos);
+
+        List<InstagramCommentEntity> entitiesToSave = new ArrayList<>();
+        for (InstagramApiCommentDto dto : dtos) {
+            InstagramCommentEntity existingComment = existingCommentsMap.get(dto.id());
+
+            if (existingComment != null) {
+                existingComment.update(dto);
+                entitiesToSave.add(existingComment);
+            } else {
+                // 4. 새로운 댓글 하나를 생성하고 정책을 적용하는 로직을 별도 메서드로 위임
+                InstagramCommentEntity newComment = createNewCommentWithPolicy(dto, media,
+                    accessToken);
+                entitiesToSave.add(newComment);
+            }
+        }
+        return instagramCommentRepository.saveAll(entitiesToSave);
+    }
+
+
+    private InstagramCommentEntity createNewCommentWithPolicy(InstagramApiCommentDto dto,
+        InstagramMediaEntity media, String accessToken) {
+
+        InstagramProfileEntity profile = media.getInstagramProfile();
+
+        Sentiment sentiment = clovaApiService.analyzeSentiment(dto.text());
+        Set<String> bannedWords = instagramBannedWordService.getBannedWords(profile);
+        boolean isDeleted = false;
+
+        boolean shouldDelete = profile.getAutoDelete()
+            && sentiment == Sentiment.NEGATIVE
+            && bannedWords.stream().anyMatch(dto.text()::contains);
+
+        if (shouldDelete) {
+            instagramApiClient.deleteComment(dto.id(), accessToken);
+            isDeleted = true;
+        }
+
+        return new InstagramCommentEntity(dto, sentiment, isDeleted, media, profile);
+    }
+
+    private Map<Long, InstagramCommentEntity> findExistingComments(
+        List<InstagramApiCommentDto> dtos) {
+        List<Long> commentIds = dtos.stream().map(InstagramApiCommentDto::id).toList();
+        return instagramCommentRepository.findAllByIdIn(commentIds).stream()
+            .collect(
+                Collectors.toMap(InstagramCommentEntity::getId, entity -> entity));
+    }
+
+
+    public Page<InstagramCommentResponseDto> searchComments(Long instagramId, Boolean isDeleted,
+        Sentiment sentiment, String keyword, Pageable pageable) {
+
+        CommentSearchCondition condition = new CommentSearchCondition();
+        condition.setIsDeleted(isDeleted);
+        condition.setSentiment(sentiment);
+        condition.setKeyword(keyword);
+
+//        Page<InstagramCommentEntity> entityPage = instagramCommentRepository.searchComments(mediaId,
+//            condition, pageable);
+
+        // Page<Entity>를 Page<Dto>로 변환
+        return entityPage.map(InstagramCommentResponseDto::fromEntity);
+    }
 }

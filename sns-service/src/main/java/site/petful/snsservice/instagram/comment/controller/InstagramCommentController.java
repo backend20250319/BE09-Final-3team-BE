@@ -2,6 +2,10 @@ package site.petful.snsservice.instagram.comment.controller;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +17,8 @@ import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
+import site.petful.snsservice.instagram.comment.dto.InstagramCommentStatusResponseDto;
+import site.petful.snsservice.instagram.comment.entity.Sentiment;
 import site.petful.snsservice.instagram.comment.service.InstagramBannedWordService;
 import site.petful.snsservice.instagram.comment.service.InstagramCommentService;
 
@@ -26,9 +32,21 @@ public class InstagramCommentController {
     private final InstagramBannedWordService instagramBannedWordService;
 
 
-    //TODO 게시물별 댓글 조회
-    // instagramId 별 모든 댓글 조회 paging이 들어가야함ㄴ
-    // 총 댓글수, 자동삭제, 삭제 비율, 금지어 개수 get
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<InstagramCommentResponseDto>>> searchInstagramComments(
+        @RequestParam(name = "instagram_id") Long instagramId,
+        @RequestParam(required = false) Boolean isDeleted,
+        @RequestParam(required = false) Sentiment sentiment,
+        @RequestParam(required = false) String keyword,
+        @PageableDefault(size = 20, sort = "timestamp", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        // 서비스 계층에 검색 조건과 페이징 정보를 전달
+        Page<InstagramCommentResponseDto> commentPage = instagramCommentService.searchComments(
+            instagramId, isDeleted, sentiment, keyword, pageable);
+
+        return ResponseEntity.ok(ApiResponseGenerator.success(commentPage));
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<InstagramCommentResponseDto>>> getInstagramComments(
         @RequestParam Long userNo, @RequestParam Long mediaId) {
@@ -58,6 +76,15 @@ public class InstagramCommentController {
 
             mediaId, accessToken);
         return ResponseEntity.ok(ApiResponseGenerator.success(comments));
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<InstagramCommentStatusResponseDto>> getStatus(
+        @RequestParam(name = "instagram_id") Long instagramId) {
+        InstagramCommentStatusResponseDto status = instagramCommentService.getCommentStatus(
+            instagramId);
+        return ResponseEntity.ok(ApiResponseGenerator.success(status));
+
     }
 
     @PostMapping("/banned-words")
