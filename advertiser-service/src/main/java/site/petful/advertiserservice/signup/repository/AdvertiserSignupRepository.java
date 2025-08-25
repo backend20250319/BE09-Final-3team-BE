@@ -15,3 +15,4 @@ public interface AdvertiserSignupRepository extends JpaRepository<AdvertiserSign
     
     boolean existsByAdvertiserNo(Long advertiserNo);
 }
+

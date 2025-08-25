@@ -13,3 +13,4 @@ public class EmailVerificationConfirmRequest {
     private String email;
     private String code;
 }
+

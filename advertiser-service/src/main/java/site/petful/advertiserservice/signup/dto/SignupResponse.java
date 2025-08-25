@@ -14,3 +14,4 @@ public class SignupResponse {
     private String userType;
     private String message;
 }
+

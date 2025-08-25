@@ -53,3 +53,4 @@ public class AdvertiserSignup {
     @Column(columnDefinition = "TEXT")
     private String reason;
 }
+
