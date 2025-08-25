@@ -14,6 +14,7 @@ import site.petful.gatewayservice.util.JwtUtil;
 
 @Slf4j
 @Component
+
 public class AuthenticationFilter extends
     AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
@@ -21,7 +22,7 @@ public class AuthenticationFilter extends
     @Override
     public String name() {
         return "Authentication";
-    }
+
 
     private static final String HDR_USER_NO = "X-User-No";
     private static final String HDR_USER_TYPE = "X-User-Type";

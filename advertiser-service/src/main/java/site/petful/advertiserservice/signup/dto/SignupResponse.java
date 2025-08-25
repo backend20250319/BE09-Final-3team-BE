@@ -10,9 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SignupResponse {
-    private Long userNo;
+    private Long advertiserNo;
     private String userType;
-    private String accessToken;
-    private String refreshToken;
     private String message;
 }

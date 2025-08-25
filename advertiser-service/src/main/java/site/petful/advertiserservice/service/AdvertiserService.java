@@ -7,19 +7,19 @@ import org.springframework.web.multipart.MultipartFile;
 import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserRequest;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserResponse;
-import site.petful.advertiserservice.entity.Advertiser;
-import site.petful.advertiserservice.repository.AdvertiserRepository;
+import site.petful.advertiserservice.signup.entity.AdvertiserSignup;
+import site.petful.advertiserservice.signup.repository.AdvertiserSignupRepository;
 
 @Service
 @RequiredArgsConstructor
 public class AdvertiserService {
 
-    private final AdvertiserRepository advertiserRepository;
+    private final AdvertiserSignupRepository advertiserSignupRepository;
 
     // 1. 광고주 프로필 정보 조회
     public AdvertiserResponse getAdvertiser(Long advertiserNo) {
 
-        Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
+        AdvertiserSignup advertiser = advertiserSignupRepository.findByAdvertiserNo(advertiserNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
 
         return AdvertiserResponse.from(advertiser);
@@ -29,16 +29,16 @@ public class AdvertiserService {
     @Transactional
     public AdvertiserResponse updateAdvertiser(Long advertiserNo, AdvertiserRequest updateRequest, MultipartFile imageFile) {
 
-        Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
+        AdvertiserSignup advertiser = advertiserSignupRepository.findByAdvertiserNo(advertiserNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
 
         if(updateRequest.getName() != null) advertiser.setName(updateRequest.getName());
         if(updateRequest.getPhone() != null) advertiser.setPhone(updateRequest.getPhone());
-        if(updateRequest.getWebsite() != null) advertiser.setWebsite(updateRequest.getWebsite());
-        if(updateRequest.getEmail() != null) advertiser.setEmail(updateRequest.getEmail());
+        // website는 AdvertiserSignup에 없으므로 제외
+        if(updateRequest.getEmail() != null) advertiser.setUserId(updateRequest.getEmail()); // email을 userId로 설정
         if(updateRequest.getDescription() != null) advertiser.setDescription(updateRequest.getDescription());
 
-        Advertiser saved = advertiserRepository.save(advertiser);
+        AdvertiserSignup saved = advertiserSignupRepository.save(advertiser);
 
         return AdvertiserResponse.from(saved);
     }
