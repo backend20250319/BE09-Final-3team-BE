@@ -32,3 +32,4 @@ public class ProfileUpdateRequest {
     private String instagramAccount;
 
 }
+

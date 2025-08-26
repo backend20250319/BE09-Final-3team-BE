@@ -61,3 +61,4 @@ public class UserProfile {
         updatedAt = LocalDateTime.now();
     }
 }
+

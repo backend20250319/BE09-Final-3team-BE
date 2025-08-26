@@ -31,3 +31,4 @@ public class ProfileResponse {
     // 타임스탬프
     private LocalDateTime profileUpdatedAt;
 }
+

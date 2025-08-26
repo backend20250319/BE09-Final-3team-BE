@@ -14,3 +14,4 @@ public class VerificationConfirmResponse {
     private String email;
     private boolean verified;
 }
+
