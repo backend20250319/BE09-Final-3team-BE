@@ -3,7 +3,6 @@ package site.petful.advertiserservice.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserRequest;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserResponse;
@@ -27,7 +26,7 @@ public class AdvertiserService {
 
     // 2. 광고주 프로필 정보 수정
     @Transactional
-    public AdvertiserResponse updateAdvertiser(Long advertiserNo, AdvertiserRequest updateRequest, MultipartFile imageFile) {
+    public AdvertiserResponse updateAdvertiser(Long advertiserNo, AdvertiserRequest updateRequest) {
 
         Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
