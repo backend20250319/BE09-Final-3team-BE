@@ -90,7 +90,6 @@ public class InstagramInsightsService {
 
         return new InstagramInsightEntity(
             id,
-            profile,
             shares,
             likes,
             comments,
@@ -128,8 +127,8 @@ public class InstagramInsightsService {
         LocalDate sixMonthsAgo = DateTimeUtils.getStartOfCurrentMonth().minusMonths(6)
             .toLocalDate();
 
-        List<InstagramInsightEntity> insights = instagramInsightRepository.findByInstagramProfileAndId_MonthGreaterThanEqual(
-            profile, sixMonthsAgo);
+        List<InstagramInsightEntity> insights = instagramInsightRepository.findById_InstagramIdAndId_MonthGreaterThanEqual(
+            profile.getId(), sixMonthsAgo);
 
         return insights.stream()
             .map(InstagramInsightResponseDto::fromEntity)
@@ -140,8 +139,8 @@ public class InstagramInsightsService {
         InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
             .orElseThrow(() -> new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
 
-        List<InstagramInsightEntity> insights = instagramInsightRepository.findByInstagramProfile(
-            profile);
+        List<InstagramInsightEntity> insights = instagramInsightRepository.findById_InstagramId(
+            profile.getId());
 
         if (insights.isEmpty()) {
             return new InstagramEngagementResponseDto(0.0, 0.0, 0.0);

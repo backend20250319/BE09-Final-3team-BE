@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.snsservice.instagram.comment.dto.BannedWordResponseDto;
 import site.petful.snsservice.instagram.comment.entity.InstagramBannedWordEntity;
+import site.petful.snsservice.instagram.comment.entity.InstagramBannedWordId;
 import site.petful.snsservice.instagram.comment.repository.InstagramBannedWordRepository;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 import site.petful.snsservice.instagram.profile.repository.InstagramProfileRepository;
@@ -27,22 +28,18 @@ public class InstagramBannedWordService {
             .orElseThrow(() -> new NoSuchElementException("존재하지 않는 인스타그램 프로필입니다."));
 
         InstagramBannedWordEntity entity = new InstagramBannedWordEntity(
-            null, profile, word);
+            profile.getId(), word);
         instagramBannedWordRepository.save(entity);
 
     }
 
     @Transactional
-    public void deleteBannedWord(Long id) {
-        if (!instagramBannedWordRepository.existsById(id)) {
-            throw new NoSuchElementException("존재하지 않는 금지어입니다.");
-        }
-
-        instagramBannedWordRepository.deleteById(id);
+    public void deleteBannedWord(Long instagramId, String word) {
+        instagramBannedWordRepository.deleteById(new InstagramBannedWordId(instagramId, word));
     }
 
     public Set<String> getBannedWords(InstagramProfileEntity profile) {
-        return instagramBannedWordRepository.findByInstagramProfile(profile).stream()
+        return instagramBannedWordRepository.findById_InstagramId(profile.getId()).stream()
             .map(InstagramBannedWordEntity::getWord)
             .collect(Collectors.toSet());
     }
@@ -56,7 +53,7 @@ public class InstagramBannedWordService {
             .getBannedWord(instagramId, Keyword);
 
         return bannedWords.stream()
-            .map(bw -> new BannedWordResponseDto(bw.getId(), bw.getWord()))
+            .map(bw -> new BannedWordResponseDto(bw.getInstagramId(), bw.getWord()))
             .collect(Collectors.toList());
     }
 

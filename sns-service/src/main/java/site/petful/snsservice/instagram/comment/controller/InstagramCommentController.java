@@ -91,9 +91,9 @@ public class InstagramCommentController {
 
     @DeleteMapping("/banned-words")
     public ResponseEntity<ApiResponse<Void>> deleteBannedWord(
-        @RequestParam(name = "id") Long id) {
+        @RequestParam(name = "instagram_id") Long id, @RequestParam String word) {
 
-        instagramBannedWordService.deleteBannedWord(id);
+        instagramBannedWordService.deleteBannedWord(id, word);
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
 
