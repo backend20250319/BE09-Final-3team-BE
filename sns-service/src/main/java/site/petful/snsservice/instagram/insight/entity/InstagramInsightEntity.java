@@ -15,8 +15,7 @@ import lombok.NoArgsConstructor;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 
 @Entity
-@Table(
-    name = "instagram_insight",
+@Table(name = "instagram_insight",
     uniqueConstraints = {
         @UniqueConstraint(columnNames = {"month", "instagram_id"})
     })
@@ -33,6 +32,8 @@ public class InstagramInsightEntity {
     @JoinColumn(name = "instagram_id", nullable = false)
     private InstagramProfileEntity instagramProfile;
     private LocalDate month;
+
+
     private Long shares;
     private Long likes;
     private Long comments;

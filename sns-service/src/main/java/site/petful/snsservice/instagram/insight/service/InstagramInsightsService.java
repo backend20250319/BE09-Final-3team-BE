@@ -123,14 +123,14 @@ public class InstagramInsightsService {
 
     }
 
-    public List<InstagramInsightResponseDto> getInsightGraphData(Long instagramId) {
+    public List<InstagramInsightResponseDto> getAnalysisData(Long instagramId) {
         InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
             .orElseThrow(() -> new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
 
-        LocalDate sixMonthsAgo = DateTimeUtils.getStartOfCurrentMonth().minusMonths(7)
+        LocalDate sixMonthsAgo = DateTimeUtils.getStartOfCurrentMonth().minusMonths(6)
             .toLocalDate();
 
-        List<InstagramInsightEntity> insights = instagramInsightRepository.findByInstagramProfileAndSinceAfter(
+        List<InstagramInsightEntity> insights = instagramInsightRepository.findByInstagramProfileAndMonthGreaterThanEqual(
             profile, sixMonthsAgo);
 
         return insights.stream()

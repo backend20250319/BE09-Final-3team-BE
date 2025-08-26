@@ -10,6 +10,7 @@ public interface InstagramInsightRepository extends JpaRepository<InstagramInsig
 
     List<InstagramInsightEntity> findByInstagramProfile(InstagramProfileEntity profile);
 
-    List<InstagramInsightEntity> findByInstagramProfileAndSinceAfter(InstagramProfileEntity profile,
-        LocalDate sixMonthsAgo);
+    List<InstagramInsightEntity> findByInstagramProfileAndMonthGreaterThanEqual(
+        InstagramProfileEntity profile,
+        LocalDate month);
 }

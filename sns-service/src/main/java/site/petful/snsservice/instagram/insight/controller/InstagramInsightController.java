@@ -34,9 +34,9 @@ public class InstagramInsightController {
     }
 
     @GetMapping("/analysis-data")
-    public ResponseEntity<ApiResponse<List<InstagramInsightResponseDto>>> getGraphData(
+    public ResponseEntity<ApiResponse<List<InstagramInsightResponseDto>>> getAnalysisData(
         @RequestParam("instagram_id") Long instagramId) {
-        List<InstagramInsightResponseDto> insightsDto = instagramInsightsService.getInsightGraphData(
+        List<InstagramInsightResponseDto> insightsDto = instagramInsightsService.getAnalysisData(
             instagramId);
 
         return ResponseEntity.ok(ApiResponseGenerator.success(insightsDto));

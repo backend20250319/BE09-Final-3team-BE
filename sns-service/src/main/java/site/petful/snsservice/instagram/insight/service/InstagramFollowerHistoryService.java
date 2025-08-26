@@ -30,8 +30,13 @@ public class InstagramFollowerHistoryService {
 
     public List<InstagramFollowerHistoryResponseDto> findAllByInstagramIdRecently6Month(
         Long instagramId) {
-        List<InstagramFollowerHistoryEntity> entities = instagramFollowerHistoryRepository.findById_InstagramIdAndId_MonthAfter(
-            instagramId, DateTimeUtils.getStartOfCurrentMonth().minusMonths(7).toLocalDate());
+
+        InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() ->
+                new IllegalArgumentException("해당 인스타그램 아이디가 없습니다. " + instagramId));
+        
+        List<InstagramFollowerHistoryEntity> entities = instagramFollowerHistoryRepository.findByInstagramProfileAndMonthGreaterThanEqual(
+            profile, DateTimeUtils.getStartOfCurrentMonth().minusMonths(6).toLocalDate());
 
         return entities.stream()
             .map(entity -> new InstagramFollowerHistoryResponseDto(
