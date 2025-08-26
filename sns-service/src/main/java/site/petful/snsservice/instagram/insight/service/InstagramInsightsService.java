@@ -11,6 +11,7 @@ import site.petful.snsservice.instagram.client.dto.InstagramApiInsightsResponseD
 import site.petful.snsservice.instagram.insight.dto.InstagramEngagementResponseDto;
 import site.petful.snsservice.instagram.insight.dto.InstagramInsightResponseDto;
 import site.petful.snsservice.instagram.insight.entity.InstagramInsightEntity;
+import site.petful.snsservice.instagram.insight.entity.InstagramMonthlyId;
 import site.petful.snsservice.instagram.insight.repository.InstagramInsightRepository;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 import site.petful.snsservice.instagram.profile.repository.InstagramProfileRepository;
@@ -31,13 +32,7 @@ public class InstagramInsightsService {
         syncInsights(instagramId, userId, 1);
     }
 
-
-    public void syncInsightRecentSixMonth(Long instagramId, Long userId) {
-        syncInsights(instagramId, userId, 6);
-    }
-
-
-    private void syncInsights(Long instagramId, Long userId, int monthsToSync) {
+    public void syncInsights(Long instagramId, Long userId, int monthsToSync) {
         String accessToken = instagramTokenService.getAccessToken(userId);
         InstagramProfileEntity profileEntity = instagramProfileRepository.findById(instagramId)
             .orElseThrow(() -> new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
@@ -90,9 +85,12 @@ public class InstagramInsightsService {
         views += extractValue(firstHalf, "views") + extractValue(secondHalf, "views");
         reach += extractValue(firstHalf, "reach") + extractValue(secondHalf, "reach");
 
+        InstagramMonthlyId id = new InstagramMonthlyId(profile.getId(),
+            DateTimeUtils.fromUnixTimeToLocalDateTime(since).toLocalDate());
+
         return new InstagramInsightEntity(
-            null, profile,
-            DateTimeUtils.fromUnixTimeToLocalDateTime(since).toLocalDate(),
+            id,
+            profile,
             shares,
             likes,
             comments,
@@ -130,7 +128,7 @@ public class InstagramInsightsService {
         LocalDate sixMonthsAgo = DateTimeUtils.getStartOfCurrentMonth().minusMonths(6)
             .toLocalDate();
 
-        List<InstagramInsightEntity> insights = instagramInsightRepository.findByInstagramProfileAndMonthGreaterThanEqual(
+        List<InstagramInsightEntity> insights = instagramInsightRepository.findByInstagramProfileAndId_MonthGreaterThanEqual(
             profile, sixMonthsAgo);
 
         return insights.stream()

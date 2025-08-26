@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.petful.snsservice.instagram.insight.dto.InstagramFollowerHistoryResponseDto;
 import site.petful.snsservice.instagram.insight.entity.InstagramFollowerHistoryEntity;
+import site.petful.snsservice.instagram.insight.entity.InstagramMonthlyId;
 import site.petful.snsservice.instagram.insight.repository.InstagramFollowerHistoryRepository;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 import site.petful.snsservice.instagram.profile.repository.InstagramProfileRepository;
@@ -19,11 +20,13 @@ public class InstagramFollowerHistoryService {
     private final InstagramProfileRepository instagramProfileRepository;
 
     public void saveFollowerHistory(Long instagramId, LocalDate date, long followerCount) {
+
         InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
             .orElseThrow(() -> new IllegalArgumentException("해당 인스타그램 아이디가 없습니다. " + instagramId));
 
-        InstagramFollowerHistoryEntity entity = new InstagramFollowerHistoryEntity(
-            null, profile, date, followerCount);
+        InstagramMonthlyId id = new InstagramMonthlyId(profile.getId(), date);
+        InstagramFollowerHistoryEntity entity = new InstagramFollowerHistoryEntity(id, profile,
+            followerCount);
 
         instagramFollowerHistoryRepository.save(entity);
     }
@@ -34,14 +37,14 @@ public class InstagramFollowerHistoryService {
         InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
             .orElseThrow(() ->
                 new IllegalArgumentException("해당 인스타그램 아이디가 없습니다. " + instagramId));
-        
-        List<InstagramFollowerHistoryEntity> entities = instagramFollowerHistoryRepository.findByInstagramProfileAndMonthGreaterThanEqual(
+
+        List<InstagramFollowerHistoryEntity> entities = instagramFollowerHistoryRepository.findByProfileAndId_MonthGreaterThanEqual(
             profile, DateTimeUtils.getStartOfCurrentMonth().minusMonths(6).toLocalDate());
 
         return entities.stream()
             .map(entity -> new InstagramFollowerHistoryResponseDto(
-                entity.getInstagramProfile().getId(),
-                entity.getMonth().toString(),
+                entity.getProfile().getId(),
+                entity.getId().getMonth().toString(),
                 entity.getTotalFollowers()
             ))
             .toList();

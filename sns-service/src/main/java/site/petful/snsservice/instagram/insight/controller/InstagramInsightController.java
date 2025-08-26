@@ -28,7 +28,7 @@ public class InstagramInsightController {
     public ResponseEntity<ApiResponse<Void>> syncInsights(
         @RequestParam("user_id") Long userId,
         @RequestParam("instagram_id") Long instagramId) {
-        instagramInsightsService.syncInsightRecentSixMonth(instagramId, userId);
+        instagramInsightsService.syncInsights(instagramId, userId, 6);
 
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }

@@ -24,14 +24,14 @@ public class InstagramCommentRepositoryImpl implements InstagramCommentRepositor
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<InstagramCommentEntity> searchComments(Long mediaId,
+    public Page<InstagramCommentEntity> searchComments(Long instagramId,
         CommentSearchCondition condition, Pageable pageable) {
 
         // 1. 데이터 조회 쿼리
         List<InstagramCommentEntity> content = queryFactory
             .selectFrom(instagramCommentEntity)
             .where(
-                instagramCommentEntity.instagramProfile.id.eq(mediaId),
+                instagramCommentEntity.instagramProfile.id.eq(instagramId),
                 isDeletedEq(condition.getIsDeleted()),
                 sentimentEq(condition.getSentiment()),
                 keywordContains(condition.getKeyword())
@@ -40,12 +40,12 @@ public class InstagramCommentRepositoryImpl implements InstagramCommentRepositor
             .limit(pageable.getPageSize())
             .orderBy(getOrderSpecifiers(pageable.getSort()))
             .fetch();
-        
+
         Long total = queryFactory
             .select(instagramCommentEntity.count())
             .from(instagramCommentEntity)
             .where(
-                instagramCommentEntity.instagramProfile.id.eq(mediaId),
+                instagramCommentEntity.instagramProfile.id.eq(instagramId),
                 isDeletedEq(condition.getIsDeleted()),
                 sentimentEq(condition.getSentiment()),
                 keywordContains(condition.getKeyword())
