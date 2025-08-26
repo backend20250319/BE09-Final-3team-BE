@@ -13,6 +13,8 @@ import site.petful.userservice.common.ApiResponse;
 import site.petful.userservice.common.ApiResponseGenerator;
 import site.petful.userservice.domain.User;
 import site.petful.userservice.dto.*;
+import site.petful.userservice.dto.ProfileResponse;
+import site.petful.userservice.dto.ProfileUpdateRequest;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
 import site.petful.userservice.common.ErrorCode;
@@ -114,6 +116,36 @@ public class UserController {
                 .build();
         
         return ResponseEntity.ok(ApiResponseGenerator.success(userInfo));
+    }
+    
+    /**
+     * 현재 로그인한 사용자의 프로필 정보 조회
+     * GET /auth/profile
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<ProfileResponse>> getProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        User user = userService.findByEmail(email);
+        ProfileResponse profile = userService.getProfile(user.getUserNo());
+        
+        return ResponseEntity.ok(ApiResponseGenerator.success(profile));
+    }
+    
+    /**
+     * 현재 로그인한 사용자의 프로필 정보 수정
+     * Patch /auth/profile
+     */
+    @PatchMapping("/profile")
+    public ResponseEntity<ApiResponse<ProfileResponse>> updateProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        User user = userService.findByEmail(email);
+        ProfileResponse updatedProfile = userService.updateProfile(user.getUserNo(), request);
+        
+        return ResponseEntity.ok(ApiResponseGenerator.success(updatedProfile));
     }
 
     /**
