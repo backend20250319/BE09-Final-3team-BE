@@ -7,7 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
+
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,7 +19,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Slf4j
@@ -43,12 +42,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token) && validateToken(token)) {
             log.debug("JWT Filter - Token is valid");
             Claims claims = extractClaims(token);
-            // User Service JWT 구조에 맞춰 userNo와 userType 추출
             Long userNo = claims.get("userNo", Long.class);
             String userType = claims.get("userType", String.class);
             log.debug("JWT Filter - Extracted userNo: {}, userType: {}", userNo, userType);
             
-            // JWT 토큰에서 추출한 userNo를 RequestAttribute에 설정
             request.setAttribute("X-User-No", userNo);
             
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -57,7 +54,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
             SecurityContextHolder.getContext().setAuthentication(authentication);
             
-            // 수정된 요청으로 계속 진행
             log.debug("JWT Filter - Setting X-User-No attribute: {}", userNo);
             filterChain.doFilter(request, response);
             return;
