@@ -16,6 +16,7 @@ import site.petful.snsservice.instagram.client.InstagramApiClient;
 import site.petful.snsservice.instagram.client.dto.InstagramApiCommentDto;
 import site.petful.snsservice.instagram.client.dto.InstagramApiCommentResponseDto;
 import site.petful.snsservice.instagram.comment.dto.CommentSearchCondition;
+import site.petful.snsservice.instagram.comment.dto.CommentSentimentRatioResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentStatusResponseDto;
 import site.petful.snsservice.instagram.comment.entity.InstagramCommentEntity;
@@ -57,7 +58,6 @@ public class InstagramCommentService {
                 break;
             }
 
-            // 3. 한 페이지를 처리하는 로직을 별도 메서드로 위임
             List<InstagramCommentEntity> savedEntitiesOnPage = processCommentsPage(
                 pagedCommentsDto, media, accessToken);
             finalSyncedEntities.addAll(savedEntitiesOnPage);
@@ -123,7 +123,6 @@ public class InstagramCommentService {
                 existingComment.update(dto);
                 entitiesToSave.add(existingComment);
             } else {
-                // 4. 새로운 댓글 하나를 생성하고 정책을 적용하는 로직을 별도 메서드로 위임
                 InstagramCommentEntity newComment = createNewCommentWithPolicy(dto, media,
                     accessToken);
                 entitiesToSave.add(newComment);
@@ -143,8 +142,8 @@ public class InstagramCommentService {
         boolean isDeleted = false;
 
         boolean shouldDelete = profile.getAutoDelete()
-            && sentiment == Sentiment.NEGATIVE
-            && bannedWords.stream().anyMatch(dto.text()::contains);
+            && (sentiment == Sentiment.NEGATIVE
+            || bannedWords.stream().anyMatch(dto.text()::contains));
 
         if (shouldDelete) {
             instagramApiClient.deleteComment(dto.id(), accessToken);
@@ -177,5 +176,36 @@ public class InstagramCommentService {
 
         // Page<Entity>를 Page<Dto>로 변환
         return entityPage.map(InstagramCommentResponseDto::fromEntity);
+    }
+
+    public CommentSentimentRatioResponseDto getSentimentRatio(Long instagramId) {
+
+        InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() -> new NoSuchElementException("존재하지 않는 Instagram ID 입니다."));
+
+        List<InstagramCommentEntity> comments = instagramCommentRepository.findInstagramCommentEntitiesByInstagramProfile(
+            profile);
+
+        long totalCount = comments.size();
+        if (totalCount == 0) {
+            return new CommentSentimentRatioResponseDto(0, 0, 0);
+        }
+
+        long positiveCount = 0;
+        long neutralCount = 0;
+        long negativeCount = 0;
+        for (InstagramCommentEntity comment : comments) {
+            switch (comment.getSentiment()) {
+                case POSITIVE -> positiveCount++;
+                case NEUTRAL -> neutralCount++;
+                case NEGATIVE -> negativeCount++;
+            }
+        }
+
+        double positiveRatio = (double) positiveCount / totalCount * 100;
+        double neutralRatio = (double) neutralCount / totalCount * 100;
+        double negativeRatio = (double) negativeCount / totalCount * 100;
+
+        return new CommentSentimentRatioResponseDto(positiveRatio, neutralRatio, negativeRatio);
     }
 }

@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum Sentiment {
-    POSITIVEO("긍정"),
+    POSITIVE("긍정"),
     NEGATIVE("부정"),
     NEUTRAL("중립");
 

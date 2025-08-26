@@ -12,4 +12,8 @@ public interface InstagramMediaRepository extends JpaRepository<InstagramMediaEn
     List<InstagramMediaEntity> findAllByInstagramProfile(InstagramProfileEntity profileEntity);
 
     List<InstagramMediaEntity> findAllByIdIn(List<Long> mediaIds);
+
+    List<InstagramMediaEntity> findTop5ByInstagramProfileOrderByLikeCountDesc(
+        InstagramProfileEntity profileEntity);
 }
+

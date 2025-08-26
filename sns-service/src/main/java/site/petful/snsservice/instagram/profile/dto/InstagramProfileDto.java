@@ -7,9 +7,10 @@ public record InstagramProfileDto(@NotNull Long id,
                                   @NotNull String username,
                                   @NotNull String name,
                                   @NotNull String profile_picture_url,
-                                  @NotNull Integer followers_count,
-                                  @NotNull Integer follows_count,
-                                  @NotNull Integer media_count) {
+                                  @NotNull Long followers_count,
+                                  @NotNull Long follows_count,
+                                  @NotNull Long media_count,
+                                  @NotNull Boolean auto_delete) {
 
     public static InstagramProfileDto fromEntity(InstagramProfileEntity entity) {
         return new InstagramProfileDto(
@@ -20,6 +21,7 @@ public record InstagramProfileDto(@NotNull Long id,
             entity.getFollowersCount(),
             entity.getFollowsCount(),
             entity.getMediaCount()
+            , entity.getAutoDelete()
         );
     }
 }
