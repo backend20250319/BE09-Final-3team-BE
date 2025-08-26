@@ -42,7 +42,7 @@ public enum CareFrequency {
 
     @JsonValue
     public String jsonValue() {
-        return name();
+        return label;  // name() 대신 label(한국어) 반환
     }
 }
 

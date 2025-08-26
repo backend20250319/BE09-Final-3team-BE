@@ -6,7 +6,7 @@ import lombok.Getter;
 
 
 @Getter
-public class InstagramInsightsResponseDto {
+public class InstagramApiInsightsResponseDto {
 
     @JsonProperty("data")
     private List<InsightData> data;

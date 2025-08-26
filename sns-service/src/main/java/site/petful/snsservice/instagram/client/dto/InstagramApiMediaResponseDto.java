@@ -7,7 +7,7 @@ import site.petful.snsservice.instagram.media.dto.InstagramMediaDto;
 
 @Getter
 @AllArgsConstructor
-public class InstagramMediaResponseDto {
+public class InstagramApiMediaResponseDto {
 
     private final ArrayList<InstagramMediaDto> data;
     private final Paging paging;

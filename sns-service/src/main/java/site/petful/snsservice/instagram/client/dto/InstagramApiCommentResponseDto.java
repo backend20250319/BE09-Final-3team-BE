@@ -6,8 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import site.petful.snsservice.instagram.client.dto.InstagramMediaResponseDto.Paging;
-import site.petful.snsservice.instagram.comment.dto.InstagramCommentDto;
+import site.petful.snsservice.instagram.client.dto.InstagramApiMediaResponseDto.Paging;
 
 /**
  * API의 최상위 응답 구조를 나타내는 DTO 클래스입니다.
@@ -16,10 +15,10 @@ import site.petful.snsservice.instagram.comment.dto.InstagramCommentDto;
 @Setter
 @NoArgsConstructor
 @ToString
-public class InstagramCommentResponseDto {
+public class InstagramApiCommentResponseDto {
 
     @JsonProperty("data")
-    private List<InstagramCommentDto> data;
+    private List<InstagramApiCommentDto> data;
 
     @JsonProperty("paging")
     private Paging paging;

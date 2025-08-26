@@ -13,3 +13,4 @@ public class EmailVerificationResponse {
     private String message;
     private boolean success;
 }
+

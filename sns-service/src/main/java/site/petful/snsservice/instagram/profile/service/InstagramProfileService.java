@@ -1,64 +1,79 @@
 package site.petful.snsservice.instagram.profile.service;
 
 import com.jayway.jsonpath.JsonPath;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
 import site.petful.snsservice.instagram.client.InstagramApiClient;
-import site.petful.snsservice.instagram.client.dto.InstagramProfileResponseDto;
+import site.petful.snsservice.instagram.profile.dto.InstagramProfileDto;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 import site.petful.snsservice.instagram.profile.repository.InstagramProfileRepository;
 
 @Service
+@RequiredArgsConstructor
 public class InstagramProfileService {
 
+    private final String fields = "username,name,profile_picture_url,biography,followers_count,follows_count,media_count,website";
     private final InstagramProfileRepository instagramProfileRepository;
-    private final InstagramTokenService instagramTokenService;
     private final InstagramApiClient instagramApiClient;
 
-    public InstagramProfileService(
-        InstagramProfileRepository instagramProfileRepository,
-        InstagramTokenService instagramTokenService,
-        InstagramApiClient instagramApiClient) {
-        this.instagramProfileRepository = instagramProfileRepository;
-        this.instagramTokenService = instagramTokenService;
-        this.instagramApiClient = instagramApiClient;
-    }
-
-    public List<InstagramProfileResponseDto> syncAllInstagramProfiles(Long userId) {
+    public List<InstagramProfileDto> syncAllInstagramProfiles(Long userNo,
+        String accessToken) {
         // TODO [예외처리] null일때 오류 처리
-        String accessToken = instagramTokenService.getAccessTokenByUserId(userId);
-        String jsonString = instagramApiClient.fetchInstagramAccounts(accessToken);
+        String jsonString = instagramApiClient.fetchAccounts(accessToken);
         List<String> instagramIds = JsonPath.read(jsonString,
             "$.data[*].instagram_business_account.id");
 
-        List<InstagramProfileResponseDto> profiles = new ArrayList<>();
+        List<InstagramProfileDto> profiles = new ArrayList<>();
         for (String instagramId : instagramIds) {
-            System.out.println(instagramId);
-            InstagramProfileResponseDto instagramProfileResponseDto = syncSingleInstagramProfile(
-                Long.parseLong(instagramId), accessToken, userId);
+            InstagramProfileDto instagramProfileDto = syncSingleInstagramProfile(
+                userNo,
+                Long.parseLong(instagramId), accessToken);
 
-            profiles.add(instagramProfileResponseDto);
+            profiles.add(instagramProfileDto);
         }
 
         return profiles;
     }
 
-    public InstagramProfileResponseDto syncSingleInstagramProfile(Long instagramId,
-        String accessToken, Long userId) {
+    public InstagramProfileDto syncSingleInstagramProfile(Long userId, Long instagramId,
+        String accessToken) {
 
-        // TODO [저장 처리] 저장을 위에서 한번에 할지 아니면 개별적으로 할지 고민
-        String fields = "username,name,profile_picture_url,biography,followers_count,follows_count,media_count,website";
-        InstagramProfileResponseDto response = instagramApiClient.fetchInstagramProfile(instagramId,
+        InstagramProfileDto response = instagramApiClient.fetchProfile(instagramId,
             accessToken, fields);
 
-        InstagramProfileEntity profile = new InstagramProfileEntity(response, userId);
+        InstagramProfileEntity profile = new InstagramProfileEntity(response, userId, false);
 
         profile = instagramProfileRepository.save(profile);
 
-        return profile.toInstagramProfileDto();
+        return InstagramProfileDto.fromEntity(profile);
     }
 
 
+    public List<InstagramProfileDto> getProfiles(Long userNo) {
+        List<InstagramProfileEntity> entities = instagramProfileRepository.findAllByUserNo(userNo);
+
+        return entities.stream().map(InstagramProfileDto::fromEntity).toList();
+    }
+
+    public InstagramProfileDto getProfile(Long instagramId) {
+        InstagramProfileEntity entity = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(
+                () -> new NotFoundException("해당 인스타그램의 id를 찾을 수 없습니다.")
+            );
+
+        return InstagramProfileDto.fromEntity(entity);
+    }
+
+    public void setAutoDelete(Long instagramId, Boolean isAutoDelete) {
+        InstagramProfileEntity entity = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(
+                () -> new NotFoundException("해당 인스타그램의 id를 찾을 수 없습니다.")
+            );
+
+        entity.setAutoDelete(isAutoDelete);
+        instagramProfileRepository.save(entity);
+    }
 }

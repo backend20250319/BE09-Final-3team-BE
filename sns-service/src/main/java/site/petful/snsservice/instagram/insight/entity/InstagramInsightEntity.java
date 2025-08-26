@@ -10,12 +10,12 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import site.petful.snsservice.instagram.client.dto.InstagramInsightsResponseDto;
-import site.petful.snsservice.instagram.client.dto.InstagramInsightsResponseDto.InsightData;
+import site.petful.snsservice.instagram.client.dto.InstagramApiInsightsResponseDto;
+import site.petful.snsservice.instagram.client.dto.InstagramApiInsightsResponseDto.InsightData;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 
 @Entity
-@Table(name = "instagram_insights")
+@Table(name = "instagram_insight")
 @Getter
 @NoArgsConstructor
 
@@ -37,7 +37,8 @@ public class InstagramInsightEntity {
     private LocalDateTime since;
     private LocalDateTime until;
 
-    public InstagramInsightEntity(InstagramInsightsResponseDto dto, InstagramProfileEntity profile,
+    public InstagramInsightEntity(InstagramApiInsightsResponseDto dto,
+        InstagramProfileEntity profile,
         LocalDateTime since, LocalDateTime until) {
         this.instagramProfile = profile;
         for (InsightData insightData : dto.getData()) {

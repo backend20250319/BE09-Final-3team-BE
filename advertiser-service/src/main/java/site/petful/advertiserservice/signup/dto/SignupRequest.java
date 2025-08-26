@@ -33,3 +33,4 @@ public class SignupRequest {
 
     private String docUrl; // 사업자등록 서류 URL
 }
+
