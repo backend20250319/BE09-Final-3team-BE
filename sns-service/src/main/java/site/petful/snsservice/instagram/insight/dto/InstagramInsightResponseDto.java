@@ -14,7 +14,7 @@ public record InstagramInsightResponseDto(
 
     public static InstagramInsightResponseDto fromEntity(InstagramInsightEntity entity) {
         return new InstagramInsightResponseDto(
-            entity.getMonth().toString(),
+            entity.getId().getMonth().toString(),
             entity.getShares(),
             entity.getLikes(),
             entity.getComments(),
