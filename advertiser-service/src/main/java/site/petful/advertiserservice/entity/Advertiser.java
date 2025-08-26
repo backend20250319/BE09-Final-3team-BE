@@ -1,30 +1,22 @@
 package site.petful.advertiserservice.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "advertiser")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@Entity
+@Table(name="advertiser")
+@Getter
+@Setter
 public class Advertiser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     private Long advertiserNo;
-
 
     @Column(name = "user_id", nullable = false, unique = true)
     private String userId; // 이메일
@@ -33,45 +25,28 @@ public class Advertiser {
     private String password;
 
     @Column(nullable = false)
-    private String password;
+    private String name;
 
     @Column(nullable = false)
-    private String companyName;
+    private String phone;
+
+    private String website;
 
     @Column(nullable = false)
-    private String businessNumber;
+    private String email;
 
-    @Column
-    private String phoneNumber;
-
-    @Column
-    private String address;
-
-    @Column
-    private String profileImage;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private AdvertiserStatus status = AdvertiserStatus.PENDING;
-
-    @Column
-    private String verificationCode;
-
-    @Column
-    private LocalDateTime verificationCodeExpiry;
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String description;
 
     @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    private Boolean isActive = false;
 
-    public enum AdvertiserStatus {
-        PENDING,    // 승인 대기
-        APPROVED,   // 승인됨
-        REJECTED,   // 거부됨
-        SUSPENDED   // 정지됨
-    }
+    @Column(nullable = false)
+    private Boolean isApproved = false;
+
+    private String reason;
 }
