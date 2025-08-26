@@ -16,9 +16,9 @@ import site.petful.userservice.admin.entity.ActorType;
 import site.petful.userservice.admin.entity.ReportLog;
 import site.petful.userservice.admin.entity.ReportStatus;
 import site.petful.userservice.admin.repository.ReportLogRepository;
-import site.petful.userservice.domain.Pet;
-import site.petful.userservice.domain.PetStarStatus;
-import site.petful.userservice.domain.User;
+import site.petful.userservice.entity.Pet;
+import site.petful.userservice.entity.PetStarStatus;
+import site.petful.userservice.entity.User;
 import site.petful.userservice.repository.PetRepository;
 import site.petful.userservice.repository.UserRepository;
 

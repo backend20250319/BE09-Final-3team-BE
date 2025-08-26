@@ -1,6 +1,5 @@
 package site.petful.userservice.controller;
 
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import site.petful.userservice.common.ApiResponse;
 import site.petful.userservice.common.ApiResponseGenerator;
-import site.petful.userservice.domain.User;
+import site.petful.userservice.entity.User;
 import site.petful.userservice.dto.*;
 import site.petful.userservice.dto.PasswordChangeRequest;
 import site.petful.userservice.dto.PasswordResetRequest;
@@ -22,7 +21,6 @@ import site.petful.userservice.dto.ProfileResponse;
 import site.petful.userservice.dto.ProfileUpdateRequest;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
-import site.petful.userservice.common.ErrorCode;
 import jakarta.validation.Valid;
 import java.time.Duration;
 
@@ -57,7 +55,7 @@ public class UserController {
         final String username = auth.getName(); // 보통 email
 
         // 유저 조회 후 Access/Refresh 발급
-        site.petful.userservice.domain.User user = userService.findByEmail(username);
+        site.petful.userservice.entity.User user = userService.findByEmail(username);
 
         log.debug("로그인 사용자 정보 email={}, name={}, nickname={}, userNo={}",
                 user.getEmail(), user.getName(), user.getNickname(), user.getUserNo());

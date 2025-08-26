@@ -4,8 +4,8 @@ import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import site.petful.userservice.domain.Role;
-import site.petful.userservice.domain.User;
+import site.petful.userservice.entity.Role;
+import site.petful.userservice.entity.User;
 import site.petful.userservice.security.JwtUtil;
 
 import static org.junit.jupiter.api.Assertions.*;

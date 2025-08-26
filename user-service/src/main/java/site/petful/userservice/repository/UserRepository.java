@@ -1,11 +1,9 @@
 package site.petful.userservice.repository;
 
-import org.apache.logging.log4j.simple.internal.SimpleProvider;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import site.petful.userservice.domain.User;
+import site.petful.userservice.entity.User;
 
-import java.util.List;
 import java.util.Optional;
 
 
