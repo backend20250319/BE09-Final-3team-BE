@@ -1,4 +1,4 @@
-package site.petful.userservice.domain;
+package site.petful.userservice.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -57,13 +57,6 @@ public class User implements UserDetails {
     
     @Column(name = "detail_address", length = 255)
     private String detailAddress;
-    
-    // 기존 필드들 (호환성을 위해 유지)
-    @Column(length = 255)
-    private String address;
-    
-    @Column(name = "detailed_address", length = 255)
-    private String detailedAddress;
     
     @Column(name = "birth_year")
     private Integer birthYear;
