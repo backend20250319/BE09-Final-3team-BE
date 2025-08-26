@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface AdvertiserRepository extends JpaRepository<Advertiser, Long> {
 
-    Optional<Advertiser> findByAdvertiserNo(Long advertiserNo);
+    Optional<Advertiser> findById(Long id);
 }
