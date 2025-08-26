@@ -13,6 +13,13 @@ import site.petful.userservice.common.ApiResponse;
 import site.petful.userservice.common.ApiResponseGenerator;
 import site.petful.userservice.domain.User;
 import site.petful.userservice.dto.*;
+import site.petful.userservice.dto.PasswordChangeRequest;
+import site.petful.userservice.dto.PasswordResetRequest;
+import site.petful.userservice.dto.PasswordResetResponse;
+import site.petful.userservice.dto.VerificationConfirmRequest;
+import site.petful.userservice.dto.VerificationConfirmResponse;
+import site.petful.userservice.dto.ProfileResponse;
+import site.petful.userservice.dto.ProfileUpdateRequest;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
 import site.petful.userservice.common.ErrorCode;
@@ -93,27 +100,65 @@ public class UserController {
 
         return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
     }
+
     /**
-     * 현재 로그인한 사용자 정보 조회
-     * GET /auth/me
+     * 현재 로그인한 사용자의 프로필 정보 조회
+     * GET /auth/profile
      */
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser() {
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<ProfileResponse>> getProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         
         User user = userService.findByEmail(email);
+        ProfileResponse profile = userService.getProfile(user.getUserNo());
         
-        UserInfoResponse userInfo = UserInfoResponse.builder()
-                .userNo(user.getUserNo())
-                .email(user.getEmail())
-                .name(user.getName())
-                .nickname(user.getNickname())
-                .phone(user.getPhone())
-                .role(user.getUserType().name())
-                .build();
+        return ResponseEntity.ok(ApiResponseGenerator.success(profile));
+    }
+    
+    /**
+     * 현재 로그인한 사용자의 프로필 정보 수정
+     * Patch /auth/profile
+     */
+    @PatchMapping("/profile")
+    public ResponseEntity<ApiResponse<ProfileResponse>> updateProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
         
-        return ResponseEntity.ok(ApiResponseGenerator.success(userInfo));
+        User user = userService.findByEmail(email);
+        ProfileResponse updatedProfile = userService.updateProfile(user.getUserNo(), request);
+        
+        return ResponseEntity.ok(ApiResponseGenerator.success(updatedProfile));
+    }
+    
+    /**
+     * 비밀번호 재설정 요청
+     * POST /auth/password/reset
+     */
+    @PostMapping("/password/reset")
+    public ResponseEntity<ApiResponse<PasswordResetResponse>> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        PasswordResetResponse response = userService.requestPasswordReset(request);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+    
+    /**
+     * 비밀번호 재설정 인증번호 확인
+     * POST /auth/password/verify
+     */
+    @PostMapping("/password/verify")
+    public ResponseEntity<ApiResponse<VerificationConfirmResponse>> verifyPasswordResetCode(@Valid @RequestBody VerificationConfirmRequest request) {
+        VerificationConfirmResponse response = userService.verifyPasswordResetCode(request);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+    
+    /**
+     * 비밀번호 변경
+     * POST /auth/password/change
+     */
+    @PostMapping("/password/change")
+    public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+        userService.changePassword(request);
+        return ResponseEntity.ok(ApiResponseGenerator.success("비밀번호가 성공적으로 변경되었습니다."));
     }
 
     /**
