@@ -8,6 +8,7 @@ import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertisement.*;
 import site.petful.advertiserservice.entity.advertisement.AdStatus;
+import site.petful.advertiserservice.security.SecurityUtil;
 import site.petful.advertiserservice.service.AdService;
 
 @RestController
@@ -15,17 +16,19 @@ import site.petful.advertiserservice.service.AdService;
 public class AdController {
 
     private final AdService adService;
+    private final SecurityUtil securityUtil;
 
-    public AdController(AdService adService) {
+    public AdController(AdService adService, SecurityUtil securityUtil) {
         this.adService = adService;
+        this.securityUtil = securityUtil;
     }
 
     // 1. 광고(캠페인) 생성
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createAd(
-            @RequestParam Long advertiserNo,
             @RequestBody AdRequest request) {
         try {
+            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
             AdResponse response = adService.createAd(advertiserNo, request);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (IllegalArgumentException e) {
@@ -52,7 +55,7 @@ public class AdController {
         }
     }
 
-    // 2-2. 광고(캠페인) 전체 조회
+    // 2-2. 광고(캠페인) 전체 조회 - 관리자
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getAllAds() {
         AdsResponse response = adService.getAllAds();
@@ -61,9 +64,9 @@ public class AdController {
 
     // 2-3. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
     @GetMapping("/advertiser")
-    public ResponseEntity<ApiResponse<?>> getAllAdsByAdvertiser(@RequestParam Long advertiserNo,
-                                                    @RequestParam(required = false) AdStatus adStatus) {
+    public ResponseEntity<ApiResponse<?>> getAllAdsByAdvertiser(@RequestParam(required = false) AdStatus adStatus) {
         try {
+            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
             AdsResponse response = adService.getAllAdsByAdvertiser(advertiserNo, adStatus);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
@@ -138,7 +141,6 @@ public class AdController {
                     .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
         }
     }
-
 
     // 4. 광고(캠페인) 삭제
     @DeleteMapping("/{adNo}")
