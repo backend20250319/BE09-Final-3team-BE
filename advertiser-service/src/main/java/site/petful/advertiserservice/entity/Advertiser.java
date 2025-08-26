@@ -15,7 +15,14 @@ import java.time.LocalDateTime;
 public class Advertiser {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long advertiserNo;
+
+    @Column(name = "user_id", nullable = false, unique = true)
+    private String userId; // 이메일
+
+    @Column(nullable = false)
+    private String password;
 
     @Column(nullable = false)
     private String name;
