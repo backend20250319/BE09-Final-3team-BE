@@ -25,7 +25,7 @@ public class InstagramFollowerHistoryService {
             .orElseThrow(() -> new IllegalArgumentException("해당 인스타그램 아이디가 없습니다. " + instagramId));
 
         InstagramMonthlyId id = new InstagramMonthlyId(profile.getId(), date);
-        InstagramFollowerHistoryEntity entity = new InstagramFollowerHistoryEntity(id, profile,
+        InstagramFollowerHistoryEntity entity = new InstagramFollowerHistoryEntity(id,
             followerCount);
 
         instagramFollowerHistoryRepository.save(entity);
@@ -38,12 +38,12 @@ public class InstagramFollowerHistoryService {
             .orElseThrow(() ->
                 new IllegalArgumentException("해당 인스타그램 아이디가 없습니다. " + instagramId));
 
-        List<InstagramFollowerHistoryEntity> entities = instagramFollowerHistoryRepository.findByProfileAndId_MonthGreaterThanEqual(
-            profile, DateTimeUtils.getStartOfCurrentMonth().minusMonths(6).toLocalDate());
+        List<InstagramFollowerHistoryEntity> entities = instagramFollowerHistoryRepository.findById_InstagramIdAndId_MonthGreaterThanEqual(
+            profile.getId(), DateTimeUtils.getStartOfCurrentMonth().minusMonths(6).toLocalDate());
 
         return entities.stream()
             .map(entity -> new InstagramFollowerHistoryResponseDto(
-                entity.getProfile().getId(),
+                entity.getId().getInstagramId(),
                 entity.getId().getMonth().toString(),
                 entity.getTotalFollowers()
             ))

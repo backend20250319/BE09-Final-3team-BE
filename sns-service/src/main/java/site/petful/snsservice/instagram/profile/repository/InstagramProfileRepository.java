@@ -9,4 +9,5 @@ import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 public interface InstagramProfileRepository extends JpaRepository<InstagramProfileEntity, Long> {
 
     List<InstagramProfileEntity> findAllByUserNo(Long userNo);
+
 }

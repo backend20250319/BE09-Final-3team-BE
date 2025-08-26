@@ -1,8 +1,10 @@
 package site.petful.snsservice.instagram.media.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -42,7 +44,7 @@ public class InstagramMediaEntity {
     private Long commentsCount;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "instagram_id", nullable = false)
+    @JoinColumn(name = "instagram_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private InstagramProfileEntity instagramProfile;
 
 

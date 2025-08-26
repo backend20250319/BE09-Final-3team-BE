@@ -31,7 +31,8 @@ public class InstagramMediaService {
     @Transactional
     public List<InstagramMediaDto> syncInstagramMedia(Long instagramId, String accessToken) {
 
-        InstagramProfileEntity instagramProfile = instagramProfileRepository.findById(instagramId)
+        InstagramProfileEntity instagramProfile = instagramProfileRepository.findById(
+                instagramId)
             .orElseThrow(() -> new IllegalArgumentException("조회된 인스타 그램 프로필이 없습니다."));
         List<InstagramMediaEntity> finalResultEntities = new ArrayList<>();
         String after = null;
