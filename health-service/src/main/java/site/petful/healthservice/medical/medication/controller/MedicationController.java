@@ -12,11 +12,12 @@ import site.petful.healthservice.medical.medication.service.MedicationScheduleSe
 import site.petful.healthservice.medical.medication.service.MedicationService;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.List;
 import java.time.LocalDate;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
-import site.petful.healthservice.common.entity.Calendar;
+import site.petful.healthservice.schedule.entity.Schedule;
 
 @RestController
 @RequestMapping("/medical")
@@ -130,7 +131,7 @@ public class MedicationController {
     public ResponseEntity<ApiResponse<PrescriptionParsedDTO>> extractText(@RequestParam("file") MultipartFile file) {
         try {
             PrescriptionParsedDTO result = medicationService.processPrescription(file);
-            List<Calendar> saved = medicationScheduleService.registerMedicationSchedules(result, 1L, LocalDate.now());
+            List<Schedule> saved = medicationScheduleService.registerMedicationSchedules(result, 1L, LocalDate.now());
             return ResponseEntity.ok(ApiResponseGenerator.success(result));
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.OCR_PROCESSING_FAILED, e);

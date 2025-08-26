@@ -3,19 +3,22 @@ package site.petful.healthservice.medical.medication.service;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import site.petful.healthservice.common.entity.Calendar;
-import site.petful.healthservice.common.enums.CalendarMainType;
-import site.petful.healthservice.common.enums.CalendarSubType;
-import site.petful.healthservice.common.enums.RecurrenceType;
-import site.petful.healthservice.common.repository.CalendarRepository;
+import site.petful.healthservice.medical.medication.entity.ScheduleMedDetail;
+import site.petful.healthservice.schedule.entity.Schedule;
+import site.petful.healthservice.schedule.enums.ScheduleMainType;
+import site.petful.healthservice.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.schedule.enums.RecurrenceType;
+import site.petful.healthservice.medical.medication.enums.MedicationFrequency;
 import site.petful.healthservice.medical.medication.dto.PrescriptionParsedDTO;
 import site.petful.healthservice.medical.medication.dto.MedicationRequestDTO;
 import site.petful.healthservice.medical.medication.dto.MedicationResponseDTO;
 import site.petful.healthservice.medical.medication.dto.MedicationDetailDTO;
 import site.petful.healthservice.medical.medication.dto.MedicationUpdateRequestDTO;
 import site.petful.healthservice.medical.medication.dto.MedicationUpdateDiffDTO;
-import site.petful.healthservice.medical.entity.CalendarMedDetail;
-import site.petful.healthservice.medical.repository.CalendarMedicationDetailRepository;
+import site.petful.healthservice.medical.medication.repository.ScheduleMedicationDetailRepository;
+import site.petful.healthservice.schedule.repository.ScheduleRepository;
+import site.petful.healthservice.schedule.service.AbstractScheduleService;
+import site.petful.healthservice.schedule.dto.ScheduleRequestDTO;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 
@@ -29,11 +32,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-public class MedicationScheduleService {
+public class MedicationScheduleService extends AbstractScheduleService {
 
-    private final CalendarRepository calendarRepository;
-    private final CalendarMedicationDetailRepository medicationDetailRepository;
+    private final ScheduleMedicationDetailRepository medicationDetailRepository;
+
+    public MedicationScheduleService(ScheduleRepository scheduleRepository, 
+                                   ScheduleMedicationDetailRepository medicationDetailRepository) {
+        super(scheduleRepository);
+        this.medicationDetailRepository = medicationDetailRepository;
+    }
 
 
     /**
@@ -43,14 +50,14 @@ public class MedicationScheduleService {
 
 
         int days = request.getDurationDays();
-        String freq = request.getFrequency();
+        MedicationFrequency freq = request.getMedicationFrequency();
 
         PrescriptionParsedDTO dto = new PrescriptionParsedDTO();
         PrescriptionParsedDTO.MedicationInfo info = new PrescriptionParsedDTO.MedicationInfo();
-        info.setDrugName(request.getMedicationName());
-        info.setDosage(request.getDosage());
-        info.setAdministration(request.getAdministration());
-        info.setFrequency(freq);
+        info.setDrugName(request.getName());
+        info.setDosage(request.getAmount());
+        info.setAdministration(request.getInstruction());
+        info.setFrequency(freq.getLabel());
         info.setPrescriptionDays(days + "일");
         info.setTimes(request.getTimes());
         dto.setMedications(List.of(info));
@@ -59,30 +66,35 @@ public class MedicationScheduleService {
 
         LocalDate base = request.getStartDate();
 
-        CalendarSubType subTypeEnum = request.getSubType().equalsIgnoreCase("SUPPLEMENT") 
-            ? CalendarSubType.SUPPLEMENT : CalendarSubType.PILL;
+        ScheduleSubType subTypeEnum = ScheduleSubType.PILL; // 기본값으로 PILL 사용
 
-        List<Calendar> saved = registerMedicationSchedules(dto, userNo, base, subTypeEnum);
+        List<Schedule> saved = registerMedicationSchedules(dto, userNo, base, subTypeEnum);
 
-        for (Calendar c : saved) {
-            c.updateReminders(List.of(request.getReminderDaysBefore()));
+        // reminderDaysBefore가 설정되어 있으면 해당 값으로, 없으면 기본값(0)으로 알림 설정
+        for (Schedule c : saved) {
+            if (request.getReminderDaysBefore() != null) {
+                c.updateReminders(request.getReminderDaysBefore());
+            } else {
+                // 기본값으로 당일 알림 활성화
+                c.updateReminders(0);
+            }
         }
 
-        return saved.isEmpty() ? null : saved.get(0).getCalNo();
+        return saved.isEmpty() ? null : saved.get(0).getScheduleNo();
     }
 
     /**
      * 파싱된 처방전 정보를 기반으로 투약 일정을 생성/저장합니다.
      */
-    public List<Calendar> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, LocalDate baseDate) {
-        return registerMedicationSchedules(parsed, userNo, baseDate, CalendarSubType.PILL);
+    public List<Schedule> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, LocalDate baseDate) {
+        return registerMedicationSchedules(parsed, userNo, baseDate, ScheduleSubType.PILL);
     }
 
     /**
      * 서브타입을 지정하여 일정을 생성/저장합니다.
      */
-    public List<Calendar> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, LocalDate baseDate, CalendarSubType subType) {
-        List<Calendar> created = new ArrayList<>();
+    public List<Schedule> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, LocalDate baseDate, ScheduleSubType subType) {
+        List<Schedule> created = new ArrayList<>();
         if (parsed == null || parsed.getMedications() == null || parsed.getMedications().isEmpty()) {
             return created;
         }
@@ -112,41 +124,72 @@ public class MedicationScheduleService {
             LocalDate endDay = startDay.plusDays(Math.max(0, durationDays - 1));
             LocalDateTime endDateTime = LocalDateTime.of(endDay, slots.get(slots.size() - 1));
 
-                    Calendar entity = Calendar.builder()
+                            // 기본값으로 DAILY 설정
+        RecurrenceType recurrenceType = RecurrenceType.DAILY;
+        int interval = 1;
+        
+        // 공통 DTO로 변환
+        ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
                 .title(buildTitle(drugName, dosage))
-                .startDate(startDateTime)
-                .endDate(endDateTime)
-                .mainType(CalendarMainType.MEDICATION)
-                .subType(subType != null ? subType : CalendarSubType.PILL)
-                .allDay(false)
-                .alarmTime(startDateTime)
-                .userNo(userNo)
-                .recurrenceType(freqInfo.recurrenceType)
-                .recurrenceInterval(freqInfo.interval)
-                .recurrenceEndDate(endDateTime)
-                .frequency(frequencyText)
+                .startDate(startDay)
+                .endDate(endDay)
+                .subType(subType != null ? subType : ScheduleSubType.PILL)
                 .times(slots)
-                .reminderDaysBefore(new ArrayList<>(List.of(0)))
+                .frequency(recurrenceType)
+                .recurrenceInterval(interval)
+                .recurrenceEndDate(endDay)
+                .reminderDaysBefore(0)  // 기본값: 당일 알림
+                .frequencyText(frequencyText)
                 .build();
 
-            Calendar saved = calendarRepository.save(entity);
+                    Schedule entity = createScheduleEntity(userNo, commonRequest, ScheduleMainType.MEDICATION);
+                    Long savedId = saveSchedule(entity);
+                    
+                    // 저장된 ID 확인
+                    if (savedId == null) {
+                        throw new RuntimeException("스케줄 저장 후 ID가 null입니다.");
+                    }
 
-            // 상세 정보 저장
-            CalendarMedDetail detail = CalendarMedDetail.builder()
-                    .calendar(saved)
-                    .medicationName(drugName)
-                    .dosage(dosage)
-                    .durationDays(durationDays)
-                    .instructions(cleanInstructions(administration))
-                    .ocrRawData(parsed.getOriginalText())
-                    .build();
-            medicationDetailRepository.save(detail);
+                    // 상세 정보 저장 - 더 안전한 방식으로 변경
+        try {
+            // Schedule 엔티티를 다시 조회하여 최신 상태 확인
+            Schedule savedSchedule = scheduleRepository.findById(savedId)
+                .orElseThrow(() -> new RuntimeException("저장된 스케줄을 찾을 수 없습니다: " + savedId));
+            
+            // 새로운 ScheduleMedDetail 엔티티 생성 (ID 없음)
+            ScheduleMedDetail detail = new ScheduleMedDetail();
+            detail.setScheduleNo(savedId);
+            detail.setMedicationName(drugName);
+            detail.setDosage(dosage);
+            detail.setDurationDays(durationDays);
+            detail.setInstructions(cleanInstructions(administration));
+            detail.setOcrRawData(parsed.getOriginalText());
+            
+            // saveAndFlush로 즉시 DB에 반영
+            ScheduleMedDetail savedDetail = medicationDetailRepository.saveAndFlush(detail);
+            if (savedDetail.getScheduleNo() == null) {
+                throw new RuntimeException("상세 정보 저장 후 schedule_no가 null입니다.");
+            }
+            
+            // 디버깅용 로그
+            System.out.println("=== ScheduleMedDetail 저장 성공 ===");
+            System.out.println("schedule_no: " + savedDetail.getScheduleNo());
+            System.out.println("medication_name: " + savedDetail.getMedicationName());
+            
+        } catch (Exception e) {
+            System.err.println("=== ScheduleMedDetail 저장 실패 ===");
+            System.err.println("에러: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("투약 상세 정보 저장 실패: " + e.getMessage(), e);
+        }
 
-            created.add(saved);
+            created.add(entity);
         }
 
         return created;
     }
+    
+
     
     /**
      * 투약 일정 목록 조회
@@ -168,29 +211,29 @@ public class MedicationScheduleService {
             throw new BusinessException(ErrorCode.INVALID_DATE_RANGE, "from이 to보다 늦을 수 없습니다.");
         }
 
-        List<Calendar> items = calendarRepository.findByUserNoAndDateRange(userNo, start, end);
+        List<Schedule> items = scheduleRepository.findByUserNoAndDateRange(userNo, start, end);
 
         var stream = items.stream()
-                .filter(c -> c.getMainType() == CalendarMainType.MEDICATION);
+                .filter(c -> c.getMainType() == ScheduleMainType.MEDICATION);
         if (subType != null && !subType.isBlank()) {
             stream = stream.filter(c -> c.getSubType().name().equalsIgnoreCase(subType));
         }
 
         return stream
                 .map(c -> {
-                    var detailOpt = medicationDetailRepository.findById(c.getCalNo());
-                    String medName = detailOpt.map(CalendarMedDetail::getMedicationName).orElse(null);
-                    String dosage = detailOpt.map(CalendarMedDetail::getDosage).orElse(null);
-                    Integer durationDays = detailOpt.map(CalendarMedDetail::getDurationDays).orElse(null);
-                    String instructions = detailOpt.map(CalendarMedDetail::getInstructions).orElse(null);
+                    var detailOpt = medicationDetailRepository.findById(c.getScheduleNo());
+                    String medName = detailOpt.map(ScheduleMedDetail::getMedicationName).orElse(null);
+                    String dosage = detailOpt.map(ScheduleMedDetail::getDosage).orElse(null);
+                    Integer durationDays = detailOpt.map(ScheduleMedDetail::getDurationDays).orElse(null);
+                    String instructions = detailOpt.map(ScheduleMedDetail::getInstructions).orElse(null);
 
                     var freqInfo = parseFrequency(c.getFrequency());
-                    List<LocalTime> slots = c.getTimes() != null && !c.getTimes().isEmpty() 
-                        ? c.getTimes() 
+                    List<LocalTime> slots = c.getTimesAsList() != null && !c.getTimesAsList().isEmpty() 
+                        ? c.getTimesAsList() 
                         : defaultSlots(freqInfo.getTimesPerDay());
                     
                     return MedicationResponseDTO.builder()
-                            .calNo(c.getCalNo())
+                            .scheduleNo(c.getScheduleNo())
                             .title(c.getTitle())
                             .startDate(c.getStartDate())
                             .endDate(c.getEndDate())
@@ -212,8 +255,7 @@ public class MedicationScheduleService {
      * 투약 일정 상세 조회
      */
     public MedicationDetailDTO getMedicationDetail(Long calNo, Long userNo) {
-        Calendar c = calendarRepository.findById(calNo)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다."));
+        Schedule c = findScheduleById(calNo);
 
         if (!c.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -221,22 +263,22 @@ public class MedicationScheduleService {
         if (Boolean.TRUE.equals(c.getDeleted())) {
             throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
         }
-        if (c.getMainType() != CalendarMainType.MEDICATION) {
+        if (c.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
         }
 
         var detailOpt = medicationDetailRepository.findById(calNo);
-        String medName = detailOpt.map(CalendarMedDetail::getMedicationName).orElse(null);
-        String dosage = detailOpt.map(CalendarMedDetail::getDosage).orElse(null);
-        Integer duration = detailOpt.map(CalendarMedDetail::getDurationDays).orElse(null);
-        String instructions = detailOpt.map(CalendarMedDetail::getInstructions).orElse(null);
+        String medName = detailOpt.map(ScheduleMedDetail::getMedicationName).orElse(null);
+        String dosage = detailOpt.map(ScheduleMedDetail::getDosage).orElse(null);
+        Integer duration = detailOpt.map(ScheduleMedDetail::getDurationDays).orElse(null);
+        String instructions = detailOpt.map(ScheduleMedDetail::getInstructions).orElse(null);
 
         // 기본 시간 슬롯 사용 (상세 조회 시에는 기본 시간으로 표시)
         var freqInfo = parseFrequency(c.getFrequency());
         List<LocalTime> slots = defaultSlots(freqInfo.getTimesPerDay());
 
         return MedicationDetailDTO.builder()
-                .calNo(c.getCalNo())
+                .scheduleNo(c.getScheduleNo())
                 .title(c.getTitle())
                 .mainType(c.getMainType().name())
                 .subType(c.getSubType().name())
@@ -245,8 +287,8 @@ public class MedicationScheduleService {
                 .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
                 .times(slots)
                 .frequency(c.getFrequency())
-                .alarmEnabled(c.getReminderDaysBefore() != null && !c.getReminderDaysBefore().isEmpty())
-                .reminderDaysBefore(c.getReminderDaysBefore())
+                        .alarmEnabled(c.getReminderDaysBefore() != null)
+        .reminderDaysBefore(c.getReminderDaysBefore())
                 .medicationName(medName)
                 .dosage(dosage)
                 .durationDays(duration)
@@ -259,10 +301,9 @@ public class MedicationScheduleService {
      */
     public MedicationUpdateDiffDTO updateMedication(Long calNo, MedicationUpdateRequestDTO request, Long userNo) {
         // 조회 및 소유자 검증
-        Calendar entity = calendarRepository.findById(calNo)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다."));
+        Schedule entity = findScheduleById(calNo);
         
-        if (entity.getMainType() != CalendarMainType.MEDICATION) {
+        if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
         }
         
@@ -289,12 +330,11 @@ public class MedicationScheduleService {
                 .build();
     }
 
-    private MedicationUpdateDiffDTO.Snapshot createSnapshot(Calendar entity) {
-        var detailOpt = medicationDetailRepository.findById(entity.getCalNo());
+    private MedicationUpdateDiffDTO.Snapshot createSnapshot(Schedule entity) {
+        var detailOpt = medicationDetailRepository.findById(entity.getScheduleNo());
         var detail = detailOpt.orElse(null);
         
-        Integer reminder = (entity.getReminderDaysBefore() == null || entity.getReminderDaysBefore().isEmpty())
-                ? null : entity.getReminderDaysBefore().get(0);
+        Integer reminder = entity.getReminderDaysBefore();
         
         return MedicationUpdateDiffDTO.Snapshot.builder()
                 .title(entity.getTitle())
@@ -310,7 +350,7 @@ public class MedicationScheduleService {
                 .build();
     }
 
-    private void updateMedicationSchedule(Calendar entity, MedicationUpdateRequestDTO request) {
+    private void updateMedicationSchedule(Schedule entity, MedicationUpdateRequestDTO request) {
         // 제목 업데이트
         if (request.getMedicationName() != null || request.getDosage() != null) {
             String medName = request.getMedicationName() != null ? request.getMedicationName() : 
@@ -325,7 +365,7 @@ public class MedicationScheduleService {
             (entity.getStartDate() != null && entity.getEndDate() != null ? 
                 (int) java.time.temporal.ChronoUnit.DAYS.between(entity.getStartDate().toLocalDate(), entity.getEndDate().toLocalDate()) + 1 : 1);
         String admin = request.getAdministration() != null ? request.getAdministration() : 
-            (medicationDetailRepository.findById(entity.getCalNo()).map(d -> d.getInstructions()).orElse(null));
+            (medicationDetailRepository.findById(entity.getScheduleNo()).map(d -> d.getInstructions()).orElse(null));
         String freq = request.getFrequency() != null ? request.getFrequency() : entity.getFrequency();
 
         // 빈도/시간 재계산
@@ -352,14 +392,14 @@ public class MedicationScheduleService {
 
         // 알림 변경
         if (request.getReminderDaysBefore() != null) {
-            entity.updateReminders(new ArrayList<>(List.of(request.getReminderDaysBefore())));
+            entity.updateReminders(request.getReminderDaysBefore());
         }
 
         // 엔티티 저장
-        calendarRepository.save(entity);
+        scheduleRepository.save(entity);
 
         // 상세 정보 업데이트
-        updateMedicationDetail(entity.getCalNo(), request);
+        updateMedicationDetail(entity.getScheduleNo(), request);
     }
 
     private void updateMedicationDetail(Long calNo, MedicationUpdateRequestDTO request) {
@@ -378,10 +418,9 @@ public class MedicationScheduleService {
      * 투약 일정 알림 on/off
      */
     public Long toggleAlarm(Long calNo, Long userNo, boolean enabled) {
-        Calendar entity = calendarRepository.findById(calNo)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다."));
+        Schedule entity = findScheduleById(calNo);
 
-        if (entity.getMainType() != CalendarMainType.MEDICATION) {
+        if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
         }
 
@@ -389,31 +428,19 @@ public class MedicationScheduleService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
         }
         if (Boolean.TRUE.equals(entity.getDeleted())) {
-            throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
+            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "삭제된 일정입니다.");
         }
 
-        boolean isOn = entity.getReminderDaysBefore() != null && !entity.getReminderDaysBefore().isEmpty();
-        if (enabled) {
-            if (isOn) throw new BusinessException(ErrorCode.ALARM_ALREADY_ENABLED);
-            entity.updateReminders(new ArrayList<>(List.of(0)));
-        } else {
-            if (!isOn) throw new BusinessException(ErrorCode.ALARM_ALREADY_DISABLED);
-            entity.updateReminders(new ArrayList<>(List.of()));
-        }
-
-        calendarRepository.save(entity);
-        return entity.getCalNo();
+        return super.toggleAlarm(calNo, enabled);
     }
     
     /**
      * 투약 일정 삭제 (soft delete)
      */
     public Long deleteMedication(Long calNo, Long userNo) {
-        Calendar entity = calendarRepository.findById(calNo)
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEDICATION_NOT_FOUND, "일정을 찾을 수 없습니다."));
+        Schedule entity = findScheduleById(calNo);
 
-
-        if (entity.getMainType() != CalendarMainType.MEDICATION) {
+        if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
         }
 
@@ -422,11 +449,10 @@ public class MedicationScheduleService {
         }
 
         if (Boolean.TRUE.equals(entity.getDeleted())) {
-            throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "이미 삭제된 일정입니다.");
+            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "이미 삭제된 일정입니다.");
         }
 
-        entity.softDelete();
-        calendarRepository.save(entity);
+        deleteSchedule(calNo);
         return calNo;
     }
     
@@ -434,8 +460,8 @@ public class MedicationScheduleService {
      * 투약 관련 메타 정보 조회 (드롭다운용)
      */
     public java.util.Map<String, java.util.List<String>> getMedicationMeta() {
-        java.util.List<String> subTypes = java.util.Arrays.stream(CalendarSubType.values())
-                .filter(CalendarSubType::isMedicationType)
+        java.util.List<String> subTypes = java.util.Arrays.stream(ScheduleSubType.values())
+                .filter(ScheduleSubType::isMedicationType)
                 .map(Enum::name)
                 .toList();
         
