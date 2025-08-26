@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
+import site.petful.snsservice.instagram.comment.dto.BannedWordResponseDto;
 import site.petful.snsservice.instagram.comment.dto.CommentSentimentRatioResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentStatusResponseDto;
@@ -78,12 +79,21 @@ public class InstagramCommentController {
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
 
+    @GetMapping("/banned-words")
+    public ResponseEntity<ApiResponse<List<BannedWordResponseDto>>> getBannedWords(
+        @RequestParam(name = "instagram_id") Long instagramId,
+        @RequestParam(required = false) String keyword) {
+
+        List<BannedWordResponseDto> bannedWords = instagramBannedWordService.getBannedWords(
+            instagramId, keyword);
+        return ResponseEntity.ok(ApiResponseGenerator.success(bannedWords));
+    }
+
     @DeleteMapping("/banned-words")
     public ResponseEntity<ApiResponse<Void>> deleteBannedWord(
-        @RequestParam(name = "instagram_id") Long instagramId,
-        @RequestParam(name = "word") String word) {
+        @RequestParam(name = "id") Long id) {
 
-        instagramBannedWordService.deleteBannedWord(instagramId, word);
+        instagramBannedWordService.deleteBannedWord(id);
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
 
@@ -115,6 +125,5 @@ public class InstagramCommentController {
             mediaId, accessToken);
         return ResponseEntity.ok(ApiResponseGenerator.success(comments));
     }
-
 
 }
