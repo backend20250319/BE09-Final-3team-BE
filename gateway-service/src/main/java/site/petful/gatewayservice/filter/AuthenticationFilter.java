@@ -16,7 +16,9 @@ import site.petful.gatewayservice.util.JwtUtil;
 @Component
 
 public class AuthenticationFilter extends
+
     AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
+
 
 
     @Override
@@ -29,6 +31,7 @@ public class AuthenticationFilter extends
 
     // 기본 화이트리스트 - 인증 없이 접근 가능한 경로들
     private static final List<String> DEFAULT_WHITELIST = List.of(
+
         "/api/v1/user-service/auth/**",
         "/api/v1/user-service/health",
         "/api/v1/advertiser-service/advertiser/**",
@@ -91,7 +94,9 @@ public class AuthenticationFilter extends
                 .build();
 
             log.debug("Authentication successful - userNo: {}, userType: {}, path: {}", userNo,
+
                 userType, path);
+
             return chain.filter(exchange.mutate().request(modifiedRequest).build());
         };
     }
@@ -99,7 +104,9 @@ public class AuthenticationFilter extends
     private boolean isWhitelisted(List<String> whitelist, String path) {
         // 기본 화이트리스트 확인
         if (DEFAULT_WHITELIST.stream().anyMatch(pattern ->
+
             path.matches(pattern.replace("**", ".*")))) {
+
             return true;
         }
 
