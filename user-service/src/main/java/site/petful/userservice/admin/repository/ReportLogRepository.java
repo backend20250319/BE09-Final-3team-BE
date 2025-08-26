@@ -16,7 +16,7 @@ public interface ReportLogRepository extends JpaRepository<ReportLog,Long>{
 
     Optional<ReportLog> findTopByReporterNoAndTargetNoAndReportStatusOrderByCreatedAtDesc(Long reporterNo, Long targetNo, ReportStatus reportStatus);
 
-    Page<ReportLog> findByStatus(ReportStatus reportStatus, Pageable pageable);
+    Page<ReportLog> findByReportStatus(ReportStatus reportStatus, Pageable pageable);
 
     Optional<ReportLog> findByReporterNoAndTargetNoAndReportStatus(Long reporterId, Long targetId, ReportStatus reportStatus);
 }

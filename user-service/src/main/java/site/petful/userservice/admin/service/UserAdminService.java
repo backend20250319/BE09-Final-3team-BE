@@ -38,7 +38,7 @@ public class UserAdminService {
 
 
     public Page<ReportResponse> getAllReportUsers(Pageable pageable) {
-        return reportLogRepository.findByStatus(ReportStatus.BEFORE, pageable)
+        return reportLogRepository.findByReportStatus(ReportStatus.BEFORE, pageable)
                 .map(ReportResponse::from);
     }
 
