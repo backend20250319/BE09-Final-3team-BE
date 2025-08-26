@@ -135,4 +135,8 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return isActive;
     }
+
+    public void suspend(){
+        isActive = false;
+    }
 }
