@@ -11,20 +11,20 @@ import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.insight.service.InstagramInsightsService;
 
 @Controller
-@RequestMapping("/instagram/insight")
+@RequestMapping("/instagram/insights")
 @RequiredArgsConstructor
 public class InstagramInsightController {
 
     private final InstagramInsightsService instagramInsightsService;
 
-    @PostMapping
+    @PostMapping("/sync")
     public ResponseEntity<ApiResponse<Void>> syncInstagramInsights(
-        @RequestParam("userId") Long userId,
-        @RequestParam("instagramId") Long instagramId) {
-        // Implementation for syncing Instagram insights
+        @RequestParam("user_id") Long userId,
+        @RequestParam("instagram_id") Long instagramId) {
         instagramInsightsService.syncInsightRecentSixMonth(instagramId, userId);
 
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
+
 
 }

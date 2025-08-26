@@ -8,6 +8,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.petful.snsservice.instagram.client.dto.InstagramApiInsightsResponseDto;
@@ -18,7 +19,7 @@ import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 @Table(name = "instagram_insight")
 @Getter
 @NoArgsConstructor
-
+@AllArgsConstructor
 public class InstagramInsightEntity {
 
     @Id
@@ -53,4 +54,5 @@ public class InstagramInsightEntity {
         this.since = since;
         this.until = until;
     }
+
 }
