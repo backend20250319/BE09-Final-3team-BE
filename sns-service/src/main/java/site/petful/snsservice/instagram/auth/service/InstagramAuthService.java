@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.snsservice.instagram.client.InstagramApiClient;
-import site.petful.snsservice.instagram.client.dto.InstagramTokenResponseDto;
+import site.petful.snsservice.instagram.client.dto.InstagramApiTokenResponseDto;
 
 @Service
 public class InstagramAuthService {
@@ -26,10 +26,11 @@ public class InstagramAuthService {
     }
 
     @Transactional
-    public String connect(String token) {
-        InstagramTokenResponseDto instagramTokenResponseDto = instagramApiClient.getLongLivedAccessToken(
-            clientId, clientSecret, token);
+    public String connect(Long userNo, String accessToken) {
+        InstagramApiTokenResponseDto instagramApiTokenResponseDto = instagramApiClient.getLongLivedAccessToken(
+            clientId, clientSecret, accessToken);
 
-        return instagramTokenService.saveToken(1L, instagramTokenResponseDto);
+        //TODO에 데이터 가져오는 거 어떻게 할지
+        return instagramTokenService.saveToken(userNo, instagramApiTokenResponseDto);
     }
 }

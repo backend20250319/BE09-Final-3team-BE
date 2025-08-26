@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import site.petful.snsservice.clova.service.ClovaApiService;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
+import site.petful.snsservice.instagram.comment.entity.Sentiment;
 
 @Controller
 @RequestMapping("/clova")
@@ -19,7 +20,7 @@ public class ClovaController {
     private final ClovaApiService clovaApiService;
 
     @PostMapping("/sentiment")
-    public ResponseEntity<ApiResponse<String>> analyzeSentiment(@RequestBody String text) {
+    public ResponseEntity<ApiResponse<Sentiment>> analyzeSentiment(@RequestBody String text) {
 
         return ResponseEntity.ok(
             ApiResponseGenerator.success(clovaApiService.analyzeSentiment(text)));

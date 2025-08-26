@@ -16,7 +16,9 @@ import site.petful.gatewayservice.util.JwtUtil;
 @Component
 
 public class AuthenticationFilter extends
-        AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
+
+    AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
+
 
 
     @Override
@@ -29,12 +31,13 @@ public class AuthenticationFilter extends
 
     // 기본 화이트리스트 - 인증 없이 접근 가능한 경로들
     private static final List<String> DEFAULT_WHITELIST = List.of(
-            "/api/v1/user-service/auth/**",
-            "/api/v1/user-service/health",
-            "/api/v1/advertiser-service/advertiser/**",
-            "/api/v1/advertiser-service/health",
-            "/api/v1/advertiser-service/advertiser/email/**",
-            "/actuator/**"
+
+        "/api/v1/user-service/auth/**",
+        "/api/v1/user-service/health",
+        "/api/v1/advertiser-service/advertiser/**",
+        "/api/v1/advertiser-service/health",
+        "/api/v1/advertiser-service/advertiser/email/**",
+        "/actuator/**"
     );
 
     private final JwtUtil jwtUtil;
@@ -86,12 +89,14 @@ public class AuthenticationFilter extends
 
             // 헤더에 추가
             ServerHttpRequest modifiedRequest = request.mutate()
-                    .header(HDR_USER_NO, userNo)
-                    .header(HDR_USER_TYPE, userType)
-                    .build();
+                .header(HDR_USER_NO, userNo)
+                .header(HDR_USER_TYPE, userType)
+                .build();
 
             log.debug("Authentication successful - userNo: {}, userType: {}, path: {}", userNo,
-                    userType, path);
+
+                userType, path);
+
             return chain.filter(exchange.mutate().request(modifiedRequest).build());
         };
     }
@@ -99,7 +104,9 @@ public class AuthenticationFilter extends
     private boolean isWhitelisted(List<String> whitelist, String path) {
         // 기본 화이트리스트 확인
         if (DEFAULT_WHITELIST.stream().anyMatch(pattern ->
-                path.matches(pattern.replace("**", ".*")))) {
+
+            path.matches(pattern.replace("**", ".*")))) {
+
             return true;
         }
 
@@ -108,11 +115,11 @@ public class AuthenticationFilter extends
             return false;
         }
         return whitelist.stream().anyMatch(pattern ->
-                path.matches(pattern.replace("**", ".*")));
+            path.matches(pattern.replace("**", ".*")));
     }
 
     private reactor.core.publisher.Mono<Void> unauthorized(
-            org.springframework.web.server.ServerWebExchange exchange) {
+        org.springframework.web.server.ServerWebExchange exchange) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
         return response.setComplete();

@@ -4,17 +4,19 @@ import lombok.Getter;
 
 @Getter
 public enum CalendarSubType {
-    // 투약관리 서브타입
-    PILL("복용약"),
-    SUPPLEMENT("영양제"),
-    VACCINATION("예방접종"),
-    CHECKUP("건강검진"),
-    
-    // 돌봄관리 서브타입
+    // 돌봄 서브타입 (CARE 메인타입)
     WALK("산책"),
     GROOMING("미용"),
     BIRTHDAY("생일"),
-    ETC("기타");
+    ETC("기타"),
+    
+    // 접종 서브타입 (VACCINATION 메인타입)
+    VACCINATION("예방접종"),
+    CHECKUP("건강검진"),
+    
+    // 투약 서브타입 (MEDICATION 메인타입)
+    PILL("복용약"),
+    SUPPLEMENT("영양제");
     
     private final String description;
     
@@ -22,11 +24,15 @@ public enum CalendarSubType {
         this.description = description;
     }
     
-    public boolean isMedicationType() {
-        return this == PILL || this == SUPPLEMENT || this == VACCINATION || this == CHECKUP;
-    }
-    
     public boolean isCareType() {
         return this == WALK || this == GROOMING || this == BIRTHDAY || this == ETC;
+    }
+    
+    public boolean isVaccinationType() {
+        return this == VACCINATION || this == CHECKUP;
+    }
+    
+    public boolean isMedicationType() {
+        return this == PILL || this == SUPPLEMENT;
     }
 }

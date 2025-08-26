@@ -2,14 +2,13 @@ package site.petful.snsservice.instagram.auth.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
+import site.petful.snsservice.instagram.auth.dto.InstagramConnectRequestDto;
 import site.petful.snsservice.instagram.auth.service.InstagramAuthService;
 
 @RestController
@@ -20,13 +19,17 @@ public class InstagramAuthController {
     private final InstagramAuthService instagramAuthService;
 
     @PostMapping("/connect")
-    public ResponseEntity<ApiResponse<String>> connectInstagram(@RequestParam String token) {
+    public ResponseEntity<ApiResponse<String>> connectInstagram(
+        @RequestBody InstagramConnectRequestDto dto) {
         // TODO [유저] 정보도 가져와야됌 쭉 들어가면서 수정 userNo로 저장
-        String encryptedToken = instagramAuthService.connect(token);
+        Long userNo = 1L;
+        String accessToken = dto.accessToken();
+
+        String encryptedToken = instagramAuthService.connect(userNo, accessToken);
         return ResponseEntity.ok(ApiResponseGenerator.success(encryptedToken));
     }
 
-    // TODO [추후에 시간 남으면]
+    /*// TODO [추후에 시간 남으면]
     @GetMapping("/webhook")
     public ResponseEntity<String> verifyWebhook(@RequestParam("hub.mode") String hubMode,
         @RequestParam("hub.verify_token") String hubVerifyToken,
@@ -45,5 +48,5 @@ public class InstagramAuthController {
         System.out.println(payload);
 
         return ResponseEntity.ok(null);
-    }
+    }*/
 }

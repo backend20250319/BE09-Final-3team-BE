@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
 import site.petful.snsservice.instagram.client.InstagramApiClient;
-import site.petful.snsservice.instagram.client.dto.InstagramInsightsResponseDto;
+import site.petful.snsservice.instagram.client.dto.InstagramApiInsightsResponseDto;
 import site.petful.snsservice.instagram.insight.entity.InstagramInsightEntity;
 import site.petful.snsservice.instagram.insight.repository.InstagramInsightRepository;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
@@ -36,7 +36,7 @@ public class InstagramInsightsService {
 
 
     private void syncInsights(Long instagramId, Long userId, int monthsToSync) {
-        String accessToken = instagramTokenService.getAccessTokenByUserId(userId);
+        String accessToken = instagramTokenService.getAccessToken(userId);
         InstagramProfileEntity profileEntity = instagramProfileRepository.findById(instagramId)
             .orElseThrow(() -> new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
 
@@ -78,7 +78,7 @@ public class InstagramInsightsService {
 
     private InstagramInsightEntity fetchInsightForPeriod(Long instagramId, String accessToken,
         InstagramProfileEntity profileEntity, long since, long until) {
-        InstagramInsightsResponseDto response = instagramApiClient.fetchInstagramInsights(
+        InstagramApiInsightsResponseDto response = instagramApiClient.fetchInsights(
             instagramId,
             accessToken,
             since,

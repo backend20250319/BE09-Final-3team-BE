@@ -24,6 +24,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PostService {
 
     private final PostRepository postRepository;
@@ -107,14 +108,13 @@ public class PostService {
     }
 
     @Transactional
-    public Void deletePost(Long userNo, Long postId) throws AccessDeniedException {
+    public void deletePost(Long userNo, Long postId) throws AccessDeniedException {
         Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("삭제할 게시물이 존재하지 않습니다.d"));
         if(!post.getUserId().equals(userNo)){
             throw new AccessDeniedException("게시물을 삭제할 권한이 없습니다.");
         }
         post.setStatus(Status.DELETED);
         postRepository.save(post);
-        return null;
     }
 
 }
