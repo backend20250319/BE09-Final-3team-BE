@@ -1,5 +1,7 @@
 package site.petful.advertiserservice.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import site.petful.advertiserservice.entity.Advertiser;
 
@@ -12,4 +14,6 @@ public interface AdvertiserRepository extends JpaRepository<Advertiser, Long> {
     boolean existsByUserId(String userId);
 
     Optional<Advertiser> findByUserId(String userId);
+
+    Page<Advertiser> findByIsApproved(boolean b, Pageable pageable);
 }
