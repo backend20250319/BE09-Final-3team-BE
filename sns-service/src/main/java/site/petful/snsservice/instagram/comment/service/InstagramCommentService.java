@@ -58,7 +58,6 @@ public class InstagramCommentService {
                 break;
             }
 
-            // 3. 한 페이지를 처리하는 로직을 별도 메서드로 위임
             List<InstagramCommentEntity> savedEntitiesOnPage = processCommentsPage(
                 pagedCommentsDto, media, accessToken);
             finalSyncedEntities.addAll(savedEntitiesOnPage);
@@ -143,8 +142,8 @@ public class InstagramCommentService {
         boolean isDeleted = false;
 
         boolean shouldDelete = profile.getAutoDelete()
-            && sentiment == Sentiment.NEGATIVE
-            && bannedWords.stream().anyMatch(dto.text()::contains);
+            && (sentiment == Sentiment.NEGATIVE
+            || bannedWords.stream().anyMatch(dto.text()::contains));
 
         if (shouldDelete) {
             instagramApiClient.deleteComment(dto.id(), accessToken);
@@ -192,17 +191,16 @@ public class InstagramCommentService {
             return new CommentSentimentRatioResponseDto(0, 0, 0);
         }
 
-        long positiveCount = comments.stream()
-            .filter(c -> Sentiment.POSITIVE == c.getSentiment())
-            .count();
-
-        long neutralCount = comments.stream()
-            .filter(c -> Sentiment.NEUTRAL == c.getSentiment())
-            .count();
-
-        long negativeCount = comments.stream()
-            .filter(c -> Sentiment.NEGATIVE == c.getSentiment())
-            .count();
+        long positiveCount = 0;
+        long neutralCount = 0;
+        long negativeCount = 0;
+        for (InstagramCommentEntity comment : comments) {
+            switch (comment.getSentiment()) {
+                case POSITIVE -> positiveCount++;
+                case NEUTRAL -> neutralCount++;
+                case NEGATIVE -> negativeCount++;
+            }
+        }
 
         double positiveRatio = (double) positiveCount / totalCount * 100;
         double neutralRatio = (double) neutralCount / totalCount * 100;

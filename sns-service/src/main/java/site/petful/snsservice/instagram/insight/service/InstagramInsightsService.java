@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
 import site.petful.snsservice.instagram.client.InstagramApiClient;
 import site.petful.snsservice.instagram.client.dto.InstagramApiInsightsResponseDto;
+import site.petful.snsservice.instagram.insight.dto.InstagramEngagementResponseDto;
+import site.petful.snsservice.instagram.insight.dto.InstagramInsightResponseDto;
 import site.petful.snsservice.instagram.insight.entity.InstagramInsightEntity;
 import site.petful.snsservice.instagram.insight.repository.InstagramInsightRepository;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
@@ -98,8 +100,8 @@ public class InstagramInsightsService {
             comments,
             views,
             reach,
-            DateTimeUtils.fromUnixTimeToLocalDateTime(since),
-            DateTimeUtils.fromUnixTimeToLocalDateTime(until)
+            DateTimeUtils.fromUnixTimeToLocalDateTime(since).toLocalDate(),
+            DateTimeUtils.fromUnixTimeToLocalDateTime(until).toLocalDate()
         );
     }
 
@@ -123,5 +125,49 @@ public class InstagramInsightsService {
             INSIGHT_METRICS
         );
 
+    }
+
+    public List<InstagramInsightResponseDto> getInsightGraphData(Long instagramId) {
+        InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() -> new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
+
+        LocalDate sixMonthsAgo = DateTimeUtils.getStartOfCurrentMonth().minusMonths(7)
+            .toLocalDate();
+
+        List<InstagramInsightEntity> insights = instagramInsightRepository.findByInstagramProfileAndSinceAfter(
+            profile, sixMonthsAgo);
+
+        return insights.stream()
+            .map(InstagramInsightResponseDto::fromEntity)
+            .toList();
+    }
+
+    public InstagramEngagementResponseDto getEngagementData(Long instagramId) {
+        InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() -> new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
+
+        List<InstagramInsightEntity> insights = instagramInsightRepository.findByInstagramProfile(
+            profile);
+
+        if (insights.isEmpty()) {
+            return new InstagramEngagementResponseDto(0.0, 0.0, 0.0);
+        }
+
+        long totalLikes = 0;
+        long totalComments = 0;
+        long totalShares = 0;
+
+        for (InstagramInsightEntity insight : insights) {
+            totalLikes += insight.getLikes();
+            totalComments += insight.getComments();
+            totalShares += insight.getShares();
+        }
+
+        double totalEngagements = totalLikes + totalComments + totalShares;
+        return new InstagramEngagementResponseDto(
+            totalLikes / totalEngagements * 100,
+            totalComments / totalEngagements * 100,
+            totalShares / totalEngagements * 100
+        );
     }
 }

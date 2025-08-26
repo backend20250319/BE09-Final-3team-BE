@@ -7,12 +7,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import site.petful.snsservice.instagram.client.dto.InstagramApiInsightsResponseDto;
-import site.petful.snsservice.instagram.client.dto.InstagramApiInsightsResponseDto.InsightData;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 
 @Entity
@@ -35,24 +33,11 @@ public class InstagramInsightEntity {
     private Long comments;
     private Long views;
     private Long reach;
-    private LocalDateTime since;
-    private LocalDateTime until;
+    private LocalDate since;
+    private LocalDate until;
 
-    public InstagramInsightEntity(InstagramApiInsightsResponseDto dto,
-        InstagramProfileEntity profile,
-        LocalDateTime since, LocalDateTime until) {
-        this.instagramProfile = profile;
-        for (InsightData insightData : dto.getData()) {
-            switch (insightData.getName()) {
-                case "shares" -> this.shares = insightData.getTotalValue().getValue();
-                case "likes" -> this.likes = insightData.getTotalValue().getValue();
-                case "comments" -> this.comments = insightData.getTotalValue().getValue();
-                case "views" -> this.views = insightData.getTotalValue().getValue();
-                case "reach" -> this.reach = insightData.getTotalValue().getValue();
-            }
-        }
-        this.since = since;
-        this.until = until;
+    public String getMonth() {
+        return since.toString().substring(0, 7);
     }
 
 }
