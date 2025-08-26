@@ -28,11 +28,11 @@ public class InstagramProfileEntity {
     @Column(name = "profile_picture_url", length = 512, nullable = false)
     private String profilePictureUrl;
     @Column(nullable = false)
-    private Integer followersCount;
+    private Long followersCount;
     @Column(nullable = false)
-    private Integer followsCount;
+    private Long followsCount;
     @Column(nullable = false)
-    private Integer mediaCount;
+    private Long mediaCount;
     @Column(nullable = false)
     private Boolean autoDelete;
 

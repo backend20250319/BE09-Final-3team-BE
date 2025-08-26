@@ -38,10 +38,9 @@ public class InstagramCommentRepositoryImpl implements InstagramCommentRepositor
             )
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
-            .orderBy(getOrderSpecifiers(pageable.getSort())) // Pageable의 Sort 정보를 기반으로 정렬 처리
+            .orderBy(getOrderSpecifiers(pageable.getSort()))
             .fetch();
-
-        // 2. 전체 카운트 조회 쿼리 (페이징을 위해 필요)
+        
         Long total = queryFactory
             .select(instagramCommentEntity.count())
             .from(instagramCommentEntity)

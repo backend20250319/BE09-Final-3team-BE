@@ -14,4 +14,7 @@ public interface InstagramCommentRepository extends JpaRepository<InstagramComme
     long countByInstagramProfile(InstagramProfileEntity profile);
 
     long countByInstagramProfileAndIsDeleted(InstagramProfileEntity profile, boolean b);
+
+    List<InstagramCommentEntity> findInstagramCommentEntitiesByInstagramProfile(
+        InstagramProfileEntity profile);
 }

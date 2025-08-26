@@ -15,7 +15,7 @@ public interface InstagramBannedWordRepository extends
 
 
     @Modifying
-    @Query("DELETE FROM InstagramBannedWordEntity b WHERE b.instagramProfile.id = :instagramId AND b.word = :word")
+    @Query("DELETE FROM InstagramBannedWordEntity b WHERE b.instagramProfile.id = :instagramId AND b.instagramBannedWordId.word = :word")
     int deleteByInstagramProfileIdAndWord(@Param("instagramId") Long instagramId,
         @Param("word") String word);
 
