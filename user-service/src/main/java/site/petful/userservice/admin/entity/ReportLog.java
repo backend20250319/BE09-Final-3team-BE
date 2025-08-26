@@ -21,11 +21,19 @@ public class ReportLog {
     @Column(name="reason", nullable=false)
     private String reason;
 
-    @Column(name="reporter_no", nullable = false)
-    private Long reporterNo;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="type",column = @Column(name="reporter_type", nullable=false,length = 20)),
+            @AttributeOverride(name="id", column = @Column (name="reporter_no",nullable=false))
+    })
+    private ActorRef reporter;
 
-    @Column(name="target_no", nullable = false)
-    private Long targetNo;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="type", column=@Column(name="target_type", nullable=false, length=20)),
+            @AttributeOverride(name="id",   column=@Column(name="target_no",   nullable=false))
+    })
+    private ActorRef target;
 
     @Column(name="post_no",nullable = true)
     private Long postNo;
