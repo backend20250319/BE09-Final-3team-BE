@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
+import site.petful.snsservice.instagram.insight.service.InstagramFollowerHistoryService;
 import site.petful.snsservice.instagram.profile.dto.InstagramProfileDto;
 import site.petful.snsservice.instagram.profile.service.InstagramProfileService;
+import site.petful.snsservice.util.DateTimeUtils;
 
 @RestController
 @RequestMapping("/instagram/profiles")
@@ -23,6 +25,7 @@ public class InstagramProfileController {
 
     private final InstagramProfileService instagramProfileService;
     private final InstagramTokenService instagramTokenService;
+    private final InstagramFollowerHistoryService instagramFollowerHistoryService;
 
     @GetMapping()
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> getProfiles(
@@ -49,9 +52,19 @@ public class InstagramProfileController {
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> syncProfiles(
         @RequestParam(name = "user_no") Long userNo) {
         String accessToken = instagramTokenService.getAccessToken(userNo);
+        List<InstagramProfileDto> profiles = instagramProfileService.syncAllInstagramProfiles(
+            userNo,
+            accessToken);
+
+        for (InstagramProfileDto profile : profiles) {
+            instagramFollowerHistoryService.saveFollowerHistory(profile.id(),
+                DateTimeUtils.getStartOfCurrentMonth().toLocalDate(), profile.followers_count());
+        }
+
         return ResponseEntity.ok(
             ApiResponseGenerator.success(
-                instagramProfileService.syncAllInstagramProfiles(userNo, accessToken)));
+                profiles
+            ));
     }
 
 

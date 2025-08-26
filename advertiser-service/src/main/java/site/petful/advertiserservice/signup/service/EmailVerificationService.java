@@ -7,9 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import site.petful.advertiserservice.signup.dto.EmailVerificationConfirmRequest;
-import site.petful.advertiserservice.signup.dto.EmailVerificationRequest;
-import site.petful.advertiserservice.signup.repository.AdvertiserSignupRepository;
+import site.petful.advertiserservice.repository.AdvertiserRepository;
 
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -25,7 +23,7 @@ public class EmailVerificationService {
 
     private final JavaMailSender mailSender;
     private final RedisTemplate<String, String> redisTemplate;
-    private final AdvertiserSignupRepository advertiserSignupRepository;
+    private final AdvertiserRepository advertiserRepository;
 
     @Value("${mail.from:no-reply@petful.app}")
     private String fromAddress;
@@ -47,7 +45,7 @@ public class EmailVerificationService {
         final String normalizedEmail = normalize(email);
 
         // 이메일 중복 체크
-        if (advertiserSignupRepository.existsByUserId(normalizedEmail)) {
+        if (advertiserRepository.existsByUserId(normalizedEmail)) {
             throw new IllegalStateException("이미 가입된 이메일입니다. 다른 이메일을 사용하거나 로그인해주세요.");
         }
 

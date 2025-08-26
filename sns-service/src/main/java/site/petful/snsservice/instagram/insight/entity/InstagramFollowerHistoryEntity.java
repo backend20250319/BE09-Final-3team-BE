@@ -1,5 +1,6 @@
 package site.petful.snsservice.instagram.insight.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -15,14 +16,15 @@ import lombok.NoArgsConstructor;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 
 @Entity
-@Table(name = "instagram_insight",
+@Table(name = "instagram_follower_history",
     uniqueConstraints = {
         @UniqueConstraint(columnNames = {"month", "instagram_id"})
     })
-@Getter
-@NoArgsConstructor
 @AllArgsConstructor
-public class InstagramInsightEntity {
+@NoArgsConstructor
+@Getter
+public class InstagramFollowerHistoryEntity {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,11 +35,7 @@ public class InstagramInsightEntity {
     private InstagramProfileEntity instagramProfile;
     private LocalDate month;
 
-
-    private Long shares;
-    private Long likes;
-    private Long comments;
-    private Long views;
-    private Long reach;
+    @Column(nullable = false)
+    private Long totalFollowers;
 
 }

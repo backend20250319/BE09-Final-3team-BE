@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
+import site.petful.snsservice.instagram.comment.dto.CommentSentimentRatioResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentStatusResponseDto;
 import site.petful.snsservice.instagram.comment.entity.Sentiment;
@@ -30,7 +31,6 @@ public class InstagramCommentController {
     private final InstagramTokenService instagramTokenService;
     private final InstagramCommentService instagramCommentService;
     private final InstagramBannedWordService instagramBannedWordService;
-
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<InstagramCommentResponseDto>>> searchInstagramComments(
@@ -68,26 +68,6 @@ public class InstagramCommentController {
 
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<List<InstagramCommentResponseDto>>> syncInstagramComments(
-        @RequestParam(name = "user_no") Long userNo,
-        @RequestParam(name = "media_id") Long mediaId) {
-
-        String accessToken = instagramTokenService.getAccessToken(userNo);
-        List<InstagramCommentResponseDto> comments = instagramCommentService.syncInstagramCommentByMediaId(
-
-            mediaId, accessToken);
-        return ResponseEntity.ok(ApiResponseGenerator.success(comments));
-    }
-
-    @GetMapping("/status")
-    public ResponseEntity<ApiResponse<InstagramCommentStatusResponseDto>> getStatus(
-        @RequestParam(name = "instagram_id") Long instagramId) {
-        InstagramCommentStatusResponseDto status = instagramCommentService.getCommentStatus(
-            instagramId);
-        return ResponseEntity.ok(ApiResponseGenerator.success(status));
-
-    }
 
     @PostMapping("/banned-words")
     public ResponseEntity<ApiResponse<Void>> addBannedWord(
@@ -106,4 +86,35 @@ public class InstagramCommentController {
         instagramBannedWordService.deleteBannedWord(instagramId, word);
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
+
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<InstagramCommentStatusResponseDto>> getStatus(
+        @RequestParam(name = "instagram_id") Long instagramId) {
+        InstagramCommentStatusResponseDto status = instagramCommentService.getCommentStatus(
+            instagramId);
+        return ResponseEntity.ok(ApiResponseGenerator.success(status));
+
+    }
+
+    @GetMapping("/sentiment-ratio")
+    public ResponseEntity<ApiResponse<CommentSentimentRatioResponseDto>> getSentimentRatio(
+        @RequestParam(name = "instagram_id") Long instagramId) {
+        CommentSentimentRatioResponseDto sentimentRatio = instagramCommentService.getSentimentRatio(
+            instagramId);
+        return ResponseEntity.ok(ApiResponseGenerator.success(sentimentRatio));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<List<InstagramCommentResponseDto>>> syncInstagramComments(
+        @RequestParam(name = "user_no") Long userNo,
+        @RequestParam(name = "media_id") Long mediaId) {
+
+        String accessToken = instagramTokenService.getAccessToken(userNo);
+        List<InstagramCommentResponseDto> comments = instagramCommentService.syncInstagramCommentByMediaId(
+
+            mediaId, accessToken);
+        return ResponseEntity.ok(ApiResponseGenerator.success(comments));
+    }
+
+
 }

@@ -7,5 +7,9 @@ import java.util.Optional;
 
 public interface AdvertiserRepository extends JpaRepository<Advertiser, Long> {
 
-    Optional<Advertiser> findById(Long id);
+    Optional<Advertiser> findByAdvertiserNo(Long advertiserNo);
+
+    boolean existsByUserId(String userId);
+
+    Optional<Advertiser> findByUserId(String userId);
 }
