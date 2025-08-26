@@ -16,6 +16,7 @@ import site.petful.snsservice.instagram.client.InstagramApiClient;
 import site.petful.snsservice.instagram.client.dto.InstagramApiCommentDto;
 import site.petful.snsservice.instagram.client.dto.InstagramApiCommentResponseDto;
 import site.petful.snsservice.instagram.comment.dto.CommentSearchCondition;
+import site.petful.snsservice.instagram.comment.dto.CommentSentimentRatioResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentStatusResponseDto;
 import site.petful.snsservice.instagram.comment.entity.InstagramCommentEntity;
@@ -123,7 +124,6 @@ public class InstagramCommentService {
                 existingComment.update(dto);
                 entitiesToSave.add(existingComment);
             } else {
-                // 4. 새로운 댓글 하나를 생성하고 정책을 적용하는 로직을 별도 메서드로 위임
                 InstagramCommentEntity newComment = createNewCommentWithPolicy(dto, media,
                     accessToken);
                 entitiesToSave.add(newComment);
@@ -177,5 +177,37 @@ public class InstagramCommentService {
 
         // Page<Entity>를 Page<Dto>로 변환
         return entityPage.map(InstagramCommentResponseDto::fromEntity);
+    }
+
+    public CommentSentimentRatioResponseDto getSentimentRatio(Long instagramId) {
+
+        InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() -> new NoSuchElementException("존재하지 않는 Instagram ID 입니다."));
+
+        List<InstagramCommentEntity> comments = instagramCommentRepository.findInstagramCommentEntitiesByInstagramProfile(
+            profile);
+
+        long totalCount = comments.size();
+        if (totalCount == 0) {
+            return new CommentSentimentRatioResponseDto(0, 0, 0);
+        }
+
+        long positiveCount = comments.stream()
+            .filter(c -> Sentiment.POSITIVE == c.getSentiment())
+            .count();
+
+        long neutralCount = comments.stream()
+            .filter(c -> Sentiment.NEUTRAL == c.getSentiment())
+            .count();
+
+        long negativeCount = comments.stream()
+            .filter(c -> Sentiment.NEGATIVE == c.getSentiment())
+            .count();
+
+        double positiveRatio = (double) positiveCount / totalCount * 100;
+        double neutralRatio = (double) neutralCount / totalCount * 100;
+        double negativeRatio = (double) negativeCount / totalCount * 100;
+
+        return new CommentSentimentRatioResponseDto(positiveRatio, neutralRatio, negativeRatio);
     }
 }
