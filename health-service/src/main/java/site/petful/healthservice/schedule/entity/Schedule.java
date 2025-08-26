@@ -1,31 +1,32 @@
-package site.petful.healthservice.common.entity;
+package site.petful.healthservice.schedule.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import site.petful.healthservice.common.enums.CalendarMainType;
-import site.petful.healthservice.common.enums.CalendarSubType;
-import site.petful.healthservice.common.enums.RecurrenceType;
+import site.petful.healthservice.schedule.enums.ScheduleMainType;
+import site.petful.healthservice.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.schedule.enums.RecurrenceType;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "calendar")
+@Table(name = "schedule")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Calendar {
+public class Schedule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cal_no")
-    private Long calNo;
+    @Column(name = "schedule_no")
+    private Long scheduleNo;
 
     @Column(name = "title", nullable = false, length = 255)
     private String title;
@@ -38,11 +39,11 @@ public class Calendar {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "main_type", nullable = false)
-    private CalendarMainType mainType;
+    private ScheduleMainType mainType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "sub_type", nullable = false)
-    private CalendarSubType subType;
+    private ScheduleSubType subType;
 
     @Column(name = "all_day", nullable = false)
     @Builder.Default
@@ -84,22 +85,16 @@ public class Calendar {
     @Column(name = "recurrence_end_date")
     private LocalDateTime recurrenceEndDate; // 반복 종료일
 
-    // 알림 설정 (n일 전 알림)
-    @ElementCollection
-    @CollectionTable(name = "calendar_reminders", joinColumns = @JoinColumn(name = "cal_no"))
+    // 알림 설정 (n일 전 알림) - 단일 값으로 변경
     @Column(name = "reminder_days_before")
-    @Builder.Default
-    private List<Integer> reminderDaysBefore = new ArrayList<>(); // [1, 2, 7] = 1일전, 2일전, 7일전
+    private Integer reminderDaysBefore; // 1 = 1일전, 2 = 2일전, 7 = 7일전
 
     @Column(name = "frequency")
     private String frequency;
 
-    // 투약 시간들 (예: ["08:00", "20:00"])
-    @ElementCollection
-    @CollectionTable(name = "calendar_times", joinColumns = @JoinColumn(name = "cal_no"))
-    @Column(name = "time")
-    @Builder.Default
-    private List<LocalTime> times = new ArrayList<>();
+    // 스케줄 시간 (예: "08:00,20:00") 
+    @Column(name = "times", columnDefinition = "TEXT")
+    private String times;
 
     // 업데이트 메서드
     public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate,
@@ -124,16 +119,12 @@ public class Calendar {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateReminders(List<Integer> reminderDaysBefore) {
-        // 새로운 ArrayList를 할당하여 불변 컬렉션 문제 해결
-        this.reminderDaysBefore = new ArrayList<>();
-        if (reminderDaysBefore != null) {
-            this.reminderDaysBefore.addAll(reminderDaysBefore);
-        }
+    public void updateReminders(Integer reminderDaysBefore) {
+        this.reminderDaysBefore = reminderDaysBefore;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateSubType(CalendarSubType subType) {
+    public void updateSubType(ScheduleSubType subType) {
         if (subType != null) {
             this.subType = subType;
             this.updatedAt = LocalDateTime.now();
@@ -141,9 +132,12 @@ public class Calendar {
     }
 
     public void updateTimes(List<LocalTime> times) {
-        this.times = new ArrayList<>();
-        if (times != null) {
-            this.times.addAll(times);
+        if (times != null && !times.isEmpty()) {
+            this.times = times.stream()
+                .map(LocalTime::toString)
+                .collect(Collectors.joining(","));
+        } else {
+            this.times = null;
         }
         this.updatedAt = LocalDateTime.now();
     }
@@ -159,5 +153,17 @@ public class Calendar {
             this.deleted = false;
             this.updatedAt = LocalDateTime.now();
         }
+    }
+    
+    // times 문자열을 List<LocalTime>으로 변환
+    public List<LocalTime> getTimesAsList() {
+        if (this.times == null || this.times.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return List.of(this.times.split(","))
+            .stream()
+            .map(String::trim)
+            .map(LocalTime::parse)
+            .collect(Collectors.toList());
     }
 }

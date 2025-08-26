@@ -1,36 +1,28 @@
-package site.petful.healthservice.medical.entity;
+package site.petful.healthservice.medical.medication.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
-import site.petful.healthservice.common.entity.Calendar;
 
 @Entity
-@Table(name = "calendar_med_detail")
+@Table(name = "schedule_med_detail")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CalendarMedDetail {
+public class ScheduleMedDetail {
 
     @Id
-    @Column(name = "cal_no")
-    private Long calNo;
+    @Column(name = "schedule_no")
+    private Long scheduleNo;
 
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "cal_no")
-    private Calendar calendar;
 
     @Column(name = "medication_name")
     private String medicationName;

@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CareDetailDTO {
-    private Long calNo;
+    private Long scheduleNo;
     private String title;
     private String mainType;
     private String subType;
@@ -23,7 +23,7 @@ public class CareDetailDTO {
     private List<LocalTime> times; // 일정 시간들
     private String frequency; // 라벨
     private Boolean alarmEnabled;
-    private List<Integer> reminderDaysBefore; // 전체
+    private Integer reminderDaysBefore; // 단일 값
 }
 
 

@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class MedicationDetailDTO {
-    private Long calNo;
+    private Long scheduleNo;
     private String title;           // 약명 + 용량 표기
     private String mainType;        // MEDICATION
     private String subType;         // PILL|SUPPLEMENT
@@ -24,7 +24,7 @@ public class MedicationDetailDTO {
     private List<LocalTime> times;  // 하루 N회일 때 전개 시간 목록
     private String frequency;       // 라벨 저장값
     private Boolean alarmEnabled;
-    private List<Integer> reminderDaysBefore;
+    private Integer reminderDaysBefore;
 
     // 상세(Detail)
     private String medicationName;

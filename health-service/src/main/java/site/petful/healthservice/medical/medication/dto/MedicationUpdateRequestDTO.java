@@ -3,7 +3,7 @@ package site.petful.healthservice.medical.medication.dto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import site.petful.healthservice.common.enums.CalendarSubType;
+import site.petful.healthservice.schedule.enums.ScheduleSubType;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -26,7 +26,7 @@ public class MedicationUpdateRequestDTO {
     private Integer durationDays;
     private LocalDate startDate;
     private List<LocalTime> times;
-    private CalendarSubType subType;
+    private ScheduleSubType subType;
     
     // 알림 설정 (선택적)
     @Min(value = 0, message = "알림 시기는 0~3 사이여야 합니다.")

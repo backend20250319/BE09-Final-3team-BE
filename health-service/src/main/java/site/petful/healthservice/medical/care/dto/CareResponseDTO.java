@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CareResponseDTO {
-    private Long calNo;
+    private Long scheduleNo;
     private String title;
     private LocalDateTime startDate;
     private LocalDateTime endDate;

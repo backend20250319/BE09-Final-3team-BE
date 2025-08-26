@@ -1,11 +1,15 @@
-package site.petful.healthservice.common.enums;
+package site.petful.healthservice.medical.care.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
+import site.petful.healthservice.schedule.enums.RecurrenceType;
 
 @Getter
-public enum VaccinationFrequency {
+public enum CareFrequency {
+    DAILY("매일", RecurrenceType.DAILY, 1),
+    WEEKLY("매주", RecurrenceType.WEEKLY, 1),
+    MONTHLY("매월", RecurrenceType.MONTHLY, 1),
     YEARLY_ONCE("연 1회", RecurrenceType.YEARLY, 1),
     HALF_YEARLY_ONCE("반년 1회", RecurrenceType.CUSTOM, 6),
     MONTHLY_ONCE("월 1회", RecurrenceType.MONTHLY, 1),
@@ -15,28 +19,32 @@ public enum VaccinationFrequency {
     private final RecurrenceType recurrenceType;
     private final int interval;
 
-    VaccinationFrequency(String label, RecurrenceType recurrenceType, int interval) {
+    CareFrequency(String label, RecurrenceType recurrenceType, int interval) {
         this.label = label;
         this.recurrenceType = recurrenceType;
         this.interval = interval;
     }
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    public static VaccinationFrequency from(String value) {
+    public static CareFrequency from(String value) {
         if (value == null) return null;
         String v = value.trim();
-        for (VaccinationFrequency f : values()) {
-            if (f.label.equals(v)) return f;
+        // match by label (한글)
+        for (CareFrequency cf : values()) {
+            if (cf.label.equals(v)) return cf;
         }
+        // match by enum name, case-insensitive
         String upper = v.toUpperCase();
-        for (VaccinationFrequency f : values()) {
-            if (f.name().equals(upper)) return f;
+        for (CareFrequency cf : values()) {
+            if (cf.name().equals(upper)) return cf;
         }
         return null;
     }
 
     @JsonValue
-    public String jsonValue() { return name(); }
+    public String jsonValue() {
+        return label;  // name() 대신 label(한국어) 반환
+    }
 }
 
 
