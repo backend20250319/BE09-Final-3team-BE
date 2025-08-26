@@ -49,4 +49,8 @@ public class Advertiser {
     private Boolean isApproved = false;
 
     private String reason;
+
+    public void suspend() {
+        this.isActive = false;
+    }
 }
