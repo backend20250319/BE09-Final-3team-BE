@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,7 +15,11 @@ import lombok.NoArgsConstructor;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 
 @Entity
-@Table(name = "instagram_insight")
+@Table(
+    name = "instagram_insight",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"month", "instagram_id"})
+    })
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,17 +32,11 @@ public class InstagramInsightEntity {
     @ManyToOne
     @JoinColumn(name = "instagram_id", nullable = false)
     private InstagramProfileEntity instagramProfile;
-
+    private LocalDate month;
     private Long shares;
     private Long likes;
     private Long comments;
     private Long views;
     private Long reach;
-    private LocalDate since;
-    private LocalDate until;
-
-    public String getMonth() {
-        return since.toString().substring(0, 7);
-    }
 
 }

@@ -6,8 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.petful.snsservice.instagram.insight.dto.InstagramFollowerHistoryResponseDto;
 import site.petful.snsservice.instagram.insight.entity.InstagramFollowerHistoryEntity;
-import site.petful.snsservice.instagram.insight.entity.InstagramFollowerHistoryId;
 import site.petful.snsservice.instagram.insight.repository.InstagramFollowerHistoryRepository;
+import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
+import site.petful.snsservice.instagram.profile.repository.InstagramProfileRepository;
 import site.petful.snsservice.util.DateTimeUtils;
 
 @Service
@@ -15,13 +16,14 @@ import site.petful.snsservice.util.DateTimeUtils;
 public class InstagramFollowerHistoryService {
 
     private final InstagramFollowerHistoryRepository instagramFollowerHistoryRepository;
+    private final InstagramProfileRepository instagramProfileRepository;
 
     public void saveFollowerHistory(Long instagramId, LocalDate date, long followerCount) {
-        InstagramFollowerHistoryId id = new InstagramFollowerHistoryId(instagramId,
-            date);
+        InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() -> new IllegalArgumentException("해당 인스타그램 아이디가 없습니다. " + instagramId));
 
-        InstagramFollowerHistoryEntity entity = new InstagramFollowerHistoryEntity(id,
-            followerCount);
+        InstagramFollowerHistoryEntity entity = new InstagramFollowerHistoryEntity(
+            null, profile, date, followerCount);
 
         instagramFollowerHistoryRepository.save(entity);
     }
@@ -33,8 +35,8 @@ public class InstagramFollowerHistoryService {
 
         return entities.stream()
             .map(entity -> new InstagramFollowerHistoryResponseDto(
-                entity.getId().getInstagramId(),
-                entity.getId().getMonth().toString(),
+                entity.getInstagramProfile().getId(),
+                entity.getMonth().toString(),
                 entity.getTotalFollowers()
             ))
             .toList();

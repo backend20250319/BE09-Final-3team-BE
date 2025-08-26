@@ -5,11 +5,11 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import site.petful.snsservice.instagram.insight.entity.InstagramFollowerHistoryEntity;
-import site.petful.snsservice.instagram.insight.entity.InstagramFollowerHistoryId;
+import site.petful.snsservice.instagram.insight.entity.InstagramMonthlyId;
 
 @Repository
 public interface InstagramFollowerHistoryRepository extends
-    JpaRepository<InstagramFollowerHistoryEntity, InstagramFollowerHistoryId> {
+    JpaRepository<InstagramFollowerHistoryEntity, InstagramMonthlyId> {
 
     List<InstagramFollowerHistoryEntity> findById_InstagramId(Long instagramId);
 

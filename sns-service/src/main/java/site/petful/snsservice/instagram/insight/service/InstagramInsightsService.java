@@ -72,13 +72,11 @@ public class InstagramInsightsService {
         InstagramApiInsightsResponseDto secondHalf = fetchInsightForPeriod(instagramId, accessToken,
             secondHalfSince, secondHalfUntil);
 
-        // 👉 두 엔티티를 하나로 합치기
-        return mergeInsights(firstHalf, secondHalf, profileEntity, firstHalfSince, secondHalfUntil);
+        return mergeInsights(firstHalf, secondHalf, profileEntity, firstHalfSince);
     }
 
     private InstagramInsightEntity mergeInsights(InstagramApiInsightsResponseDto firstHalf,
-        InstagramApiInsightsResponseDto secondHalf, InstagramProfileEntity profile, long since,
-        long until) {
+        InstagramApiInsightsResponseDto secondHalf, InstagramProfileEntity profile, long since) {
 
         long shares = 0L;
         long likes = 0L;
@@ -93,15 +91,13 @@ public class InstagramInsightsService {
         reach += extractValue(firstHalf, "reach") + extractValue(secondHalf, "reach");
 
         return new InstagramInsightEntity(
-            null,
-            profile,
+            null, profile,
+            DateTimeUtils.fromUnixTimeToLocalDateTime(since).toLocalDate(),
             shares,
             likes,
             comments,
             views,
-            reach,
-            DateTimeUtils.fromUnixTimeToLocalDateTime(since).toLocalDate(),
-            DateTimeUtils.fromUnixTimeToLocalDateTime(until).toLocalDate()
+            reach
         );
     }
 
