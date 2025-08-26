@@ -18,6 +18,7 @@ public enum ErrorCode {
     USER_NOT_FOUND("3000", "사용자를 찾을 수 없습니다."),
     DUPLICATE_EMAIL("3001", "이미 존재하는 이메일입니다."),
     INVALID_PASSWORD("3002", "비밀번호가 올바르지 않습니다."),
+    INVALID_CREDENTIALS("3015", "이메일 또는 비밀번호가 올바르지 않습니다."),
     EMAIL_VERIFICATION_REQUIRED("3003", "이메일 인증이 필요합니다."),
     EMAIL_VERIFICATION_FAILED("3004", "이메일 인증에 실패했습니다."),
     INVALID_TOKEN("3005", "유효하지 않은 토큰입니다."),
@@ -30,6 +31,8 @@ public enum ErrorCode {
     LOGIN_FAILED("3012", "로그인에 실패했습니다."),
     PASSWORD_MISMATCH("3013", "비밀번호가 일치하지 않습니다."),
     EMAIL_SEND_FAILED("3014", "이메일 발송에 실패했습니다."),
+    INVALID_VERIFICATION_CODE("3016", "유효하지 않은 인증 코드입니다."),
+    VERIFICATION_CODE_EXPIRED("3017", "인증 코드가 만료되었습니다."),
 
     // 4000번대 : 체험단
 

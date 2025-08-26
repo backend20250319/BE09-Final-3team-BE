@@ -158,6 +158,22 @@ public class EmailServiceImpl implements EmailService {
         return false;
     }
 
+    @Override
+    public void sendEmail(String to, String subject, String content) {
+        try {
+            MimeMessage mime = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mime, false, StandardCharsets.UTF_8.name());
+            helper.setFrom(fromAddress);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, false); // HTML이 아닌 일반 텍스트로 발송
+            mailSender.send(mime);
+            log.info("이메일 발송 완료: {}", to);
+        } catch (MailException | jakarta.mail.MessagingException e) {
+            log.error("메일 전송 실패: {}", e.getMessage());
+            throw new IllegalStateException("메일 전송에 실패했습니다.");
+        }
+    }
 
     private String normalize(String email) {
         return email == null ? null : email.trim().toLowerCase();

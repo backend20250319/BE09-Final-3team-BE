@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
+import site.petful.snsservice.instagram.media.dto.InstagramAnalysisMediasResponseDto;
 import site.petful.snsservice.instagram.media.dto.InstagramMediaDto;
 import site.petful.snsservice.instagram.media.service.InstagramMediaService;
 
@@ -50,5 +51,24 @@ public class InstagramMediaController {
         InstagramMediaDto mediaDto = instagramMediaService.getMedia(mediaId);
 
         return ResponseEntity.ok(ApiResponseGenerator.success(mediaDto));
+    }
+
+    @GetMapping("/top-media")
+    public ResponseEntity<ApiResponse<List<InstagramMediaDto>>> getTopMedias(
+        @NotNull @RequestParam(name = "instagram_id") Long instagramId) {
+
+        List<InstagramMediaDto> topMedias = instagramMediaService.getTopMedias(instagramId);
+
+        return ResponseEntity.ok(ApiResponseGenerator.success(topMedias));
+    }
+
+    @GetMapping("/analysis")
+    public ResponseEntity<ApiResponse<InstagramAnalysisMediasResponseDto>> analyzeMedias(
+        @NotNull @RequestParam(name = "instagram_id") Long instagramId) {
+
+        InstagramAnalysisMediasResponseDto analyzedMedias = instagramMediaService.analyzeMedias(
+            instagramId);
+
+        return ResponseEntity.ok(ApiResponseGenerator.success(analyzedMedias));
     }
 }

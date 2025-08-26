@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
+import site.petful.snsservice.instagram.comment.dto.BannedWordResponseDto;
+import site.petful.snsservice.instagram.comment.dto.CommentSentimentRatioResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentStatusResponseDto;
 import site.petful.snsservice.instagram.comment.entity.Sentiment;
@@ -30,7 +32,6 @@ public class InstagramCommentController {
     private final InstagramTokenService instagramTokenService;
     private final InstagramCommentService instagramCommentService;
     private final InstagramBannedWordService instagramBannedWordService;
-
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<InstagramCommentResponseDto>>> searchInstagramComments(
@@ -68,6 +69,51 @@ public class InstagramCommentController {
 
     }
 
+
+    @PostMapping("/banned-words")
+    public ResponseEntity<ApiResponse<Void>> addBannedWord(
+        @RequestParam(name = "instagram_id") Long instagramId,
+        @RequestParam(name = "word") String word) {
+
+        instagramBannedWordService.addBannedWord(instagramId, word);
+        return ResponseEntity.ok(ApiResponseGenerator.success(null));
+    }
+
+    @GetMapping("/banned-words")
+    public ResponseEntity<ApiResponse<List<BannedWordResponseDto>>> getBannedWords(
+        @RequestParam(name = "instagram_id") Long instagramId,
+        @RequestParam(required = false) String keyword) {
+
+        List<BannedWordResponseDto> bannedWords = instagramBannedWordService.getBannedWords(
+            instagramId, keyword);
+        return ResponseEntity.ok(ApiResponseGenerator.success(bannedWords));
+    }
+
+    @DeleteMapping("/banned-words")
+    public ResponseEntity<ApiResponse<Void>> deleteBannedWord(
+        @RequestParam(name = "id") Long id) {
+
+        instagramBannedWordService.deleteBannedWord(id);
+        return ResponseEntity.ok(ApiResponseGenerator.success(null));
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<InstagramCommentStatusResponseDto>> getStatus(
+        @RequestParam(name = "instagram_id") Long instagramId) {
+        InstagramCommentStatusResponseDto status = instagramCommentService.getCommentStatus(
+            instagramId);
+        return ResponseEntity.ok(ApiResponseGenerator.success(status));
+
+    }
+
+    @GetMapping("/sentiment-ratio")
+    public ResponseEntity<ApiResponse<CommentSentimentRatioResponseDto>> getSentimentRatio(
+        @RequestParam(name = "instagram_id") Long instagramId) {
+        CommentSentimentRatioResponseDto sentimentRatio = instagramCommentService.getSentimentRatio(
+            instagramId);
+        return ResponseEntity.ok(ApiResponseGenerator.success(sentimentRatio));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<List<InstagramCommentResponseDto>>> syncInstagramComments(
         @RequestParam(name = "user_no") Long userNo,
@@ -80,30 +126,4 @@ public class InstagramCommentController {
         return ResponseEntity.ok(ApiResponseGenerator.success(comments));
     }
 
-    @GetMapping("/status")
-    public ResponseEntity<ApiResponse<InstagramCommentStatusResponseDto>> getStatus(
-        @RequestParam(name = "instagram_id") Long instagramId) {
-        InstagramCommentStatusResponseDto status = instagramCommentService.getCommentStatus(
-            instagramId);
-        return ResponseEntity.ok(ApiResponseGenerator.success(status));
-
-    }
-
-    @PostMapping("/banned-words")
-    public ResponseEntity<ApiResponse<Void>> addBannedWord(
-        @RequestParam(name = "instagram_id") Long instagramId,
-        @RequestParam(name = "word") String word) {
-
-        instagramBannedWordService.addBannedWord(instagramId, word);
-        return ResponseEntity.ok(ApiResponseGenerator.success(null));
-    }
-
-    @DeleteMapping("/banned-words")
-    public ResponseEntity<ApiResponse<Void>> deleteBannedWord(
-        @RequestParam(name = "instagram_id") Long instagramId,
-        @RequestParam(name = "word") String word) {
-
-        instagramBannedWordService.deleteBannedWord(instagramId, word);
-        return ResponseEntity.ok(ApiResponseGenerator.success(null));
-    }
 }
