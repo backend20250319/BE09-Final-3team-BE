@@ -2,7 +2,7 @@ package org.example.petservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.petservice.client.UserClient;
+
 import org.example.petservice.dto.PetRequest;
 import org.example.petservice.dto.PetResponse;
 import org.example.petservice.dto.PetStarResponse;
@@ -16,8 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -27,7 +25,6 @@ import java.util.stream.Collectors;
 public class PetService {
 
     private final PetRepository petRepository;
-    private final UserClient userClient;
 
     // 반려동물 등록
     @Transactional
