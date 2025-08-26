@@ -25,12 +25,14 @@ public class ClovaApiService {
                 1. 답변은 반드시 '긍정', '부정', '중립' 중 하나여야 합니다.
                 2. '혼합' 또는 다른 단어를 절대 사용하지 마세요.
                 3. 어떠한 설명도 추가하지 말고, 오직 하나의 단어만 출력하세요.
+                4. 아무 뜻이 없으면 중립으로 출력
             
                 # 예시
                 - 문장: "기분 진짜 좋다" -> 긍정
                 - 문장: "아오 진짜 짜증나게 하네" -> 부정
                 - 문장: "이걸로 보내드릴게요" -> 중립
-            
+                - 문장: "asdfsafads" -> 중립
+                - 문장: "ㄹㅁㅎㅇㄴㅎ" -> 중립
                 # 지시
                 다음 문장의 감정을 위 규칙에 따라 분석하세요.
             """;
@@ -50,7 +52,7 @@ public class ClovaApiService {
         // 실제 응답 구조에 따라 반환 로직은 달라질 수 있습니다.
         String content = response.getResult().getMessage().getContent().trim();
         if (content.equals("긍정")) {
-            return Sentiment.POSITIVEO;
+            return Sentiment.POSITIVE;
         } else if (content.equals("중립")) {
             return Sentiment.NEGATIVE;
         }

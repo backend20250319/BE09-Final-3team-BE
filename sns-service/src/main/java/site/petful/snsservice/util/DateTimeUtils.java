@@ -10,6 +10,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public final class DateTimeUtils {
 
+    public static LocalDateTime getStartOfCurrentMonth() {
+        return LocalDate.now().withDayOfMonth(1).atStartOfDay();
+    }
+
+    public static LocalDateTime getEndOfCurrentMonth() {
+        return YearMonth.now().atEndOfMonth().atTime(23, 59, 59);
+    }
+
     public static long getStartOfCurrentMonthAsUnixTime() {
         LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         return toUnixTimestamp(startOfMonth);
