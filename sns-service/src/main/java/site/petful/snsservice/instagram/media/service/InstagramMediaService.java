@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.snsservice.instagram.client.InstagramApiClient;
 import site.petful.snsservice.instagram.client.dto.InstagramApiMediaResponseDto;
+import site.petful.snsservice.instagram.media.dto.InstagramAnalysisMediasResponseDto;
 import site.petful.snsservice.instagram.media.dto.InstagramMediaDto;
 import site.petful.snsservice.instagram.media.entity.InstagramMediaEntity;
 import site.petful.snsservice.instagram.media.repository.InstagramMediaRepository;
@@ -21,7 +22,7 @@ import site.petful.snsservice.instagram.profile.repository.InstagramProfileRepos
 @RequiredArgsConstructor
 public class InstagramMediaService {
 
-    private static final String fields = "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,username";
+    private static final String fields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,is_comment_enabled,like_count,comments_count";
 
     private final InstagramApiClient instagramApiClient;
     private final InstagramMediaRepository instagramMediaRepository;
@@ -30,7 +31,8 @@ public class InstagramMediaService {
     @Transactional
     public List<InstagramMediaDto> syncInstagramMedia(Long instagramId, String accessToken) {
 
-        InstagramProfileEntity instagramProfile = instagramProfileRepository.findById(instagramId)
+        InstagramProfileEntity instagramProfile = instagramProfileRepository.findById(
+                instagramId)
             .orElseThrow(() -> new IllegalArgumentException("조회된 인스타 그램 프로필이 없습니다."));
         List<InstagramMediaEntity> finalResultEntities = new ArrayList<>();
         String after = null;
@@ -89,5 +91,49 @@ public class InstagramMediaService {
             .orElseThrow(() ->
                 new NotFoundException("해당 미디어 ID를 찾을 수 없습니다."));
         return mediaEntity.toDto();
+    }
+
+    public List<InstagramMediaDto> getTopMedias(@NotNull Long instagramId) {
+
+        InstagramProfileEntity profileEntity = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() ->
+                new NotFoundException("해당 인스타그램 ID를 찾을 수 없습니다."));
+
+        List<InstagramMediaEntity> topMediaEntities = instagramMediaRepository
+            .findTop5ByInstagramProfileOrderByLikeCountDesc(profileEntity);
+
+        return topMediaEntities.stream().map(InstagramMediaEntity::toDto).toList();
+    }
+
+    public InstagramAnalysisMediasResponseDto analyzeMedias(@NotNull Long instagramId) {
+
+        InstagramProfileEntity profileEntity = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() ->
+                new NotFoundException("해당 인스타그램 ID를 찾을 수 없습니다."));
+
+        List<InstagramMediaEntity> mediaEntities = instagramMediaRepository.findAllByInstagramProfile(
+            profileEntity);
+
+        if (mediaEntities.isEmpty()) {
+            return new InstagramAnalysisMediasResponseDto(0.0, 0.0, 0L, 0L);
+        }
+
+        double averageLikes = 0.0;
+        double averageComments = 0.0;
+        long topLikeCount = 0L;
+        long topCommentCount = 0L;
+
+        for (InstagramMediaEntity mediaEntity : mediaEntities) {
+            averageLikes += mediaEntity.getLikeCount();
+            averageComments += mediaEntity.getCommentsCount();
+            topLikeCount = Math.max(topLikeCount, mediaEntity.getLikeCount());
+            topCommentCount = Math.max(topCommentCount, mediaEntity.getCommentsCount());
+        }
+
+        long totalMediaCount = mediaEntities.size();
+        return new InstagramAnalysisMediasResponseDto(
+            averageLikes / totalMediaCount, averageComments / totalMediaCount, topLikeCount,
+            topCommentCount
+        );
     }
 }

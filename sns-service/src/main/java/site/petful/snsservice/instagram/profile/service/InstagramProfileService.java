@@ -53,7 +53,8 @@ public class InstagramProfileService {
 
 
     public List<InstagramProfileDto> getProfiles(Long userNo) {
-        List<InstagramProfileEntity> entities = instagramProfileRepository.findAllByUserNo(userNo);
+        List<InstagramProfileEntity> entities = instagramProfileRepository.findAllByUserNo(
+            userNo);
 
         return entities.stream().map(InstagramProfileDto::fromEntity).toList();
     }
