@@ -2,9 +2,6 @@ package site.petful.userservice.admin.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import site.petful.userservice.domain.Pet;
-import site.petful.userservice.domain.User;
-import site.petful.userservice.repository.UserRepository;
 
 
 @Getter

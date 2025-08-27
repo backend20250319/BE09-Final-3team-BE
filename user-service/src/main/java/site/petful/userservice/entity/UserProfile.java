@@ -1,4 +1,4 @@
-package site.petful.userservice.domain;
+package site.petful.userservice.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

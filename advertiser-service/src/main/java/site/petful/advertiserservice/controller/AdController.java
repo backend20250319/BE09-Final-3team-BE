@@ -55,14 +55,7 @@ public class AdController {
         }
     }
 
-    // 2-2. 광고(캠페인) 전체 조회 - 관리자
-    @GetMapping
-    public ResponseEntity<ApiResponse<?>> getAllAds() {
-        AdsResponse response = adService.getAllAds();
-        return ResponseEntity.ok(ApiResponseGenerator.success(response));
-    }
-
-    // 2-3. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
+    // 2-2. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
     @GetMapping("/advertiser")
     public ResponseEntity<ApiResponse<?>> getAllAdsByAdvertiser(@RequestParam(required = false) AdStatus adStatus) {
         try {
@@ -83,7 +76,7 @@ public class AdController {
         }
     }
 
-    // 2-4. adStatus별 광고(캠페인) 전체 조회
+    // 2-3. adStatus별 광고(캠페인) 전체 조회
     @GetMapping("/adStatus")
     public ResponseEntity<ApiResponse<?>> getAllAdsByAdStatus(@RequestParam AdStatus adStatus) {
         try {
@@ -95,13 +88,6 @@ public class AdController {
         }
     }
 
-    // 2-5. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회 - 체험단
-    @GetMapping("/adStatus/grouped")
-    public ResponseEntity<ApiResponse<?>> getAllAdsByAdStatusGrouped() {
-        AdsGroupedResponse response = adService.getAllAdsByAdStatusGrouped();
-        return ResponseEntity.ok(ApiResponseGenerator.success(response));
-    }
-
     // 3-1. 광고(캠페인) 수정 - 광고주
     @PutMapping("/advertiser/{adNo}")
     public ResponseEntity<ApiResponse<?>> updateAdByAdvertiser(
@@ -109,32 +95,6 @@ public class AdController {
             @RequestBody AdRequest request) {
         try {
             AdResponse response = adService.updateAdByAdvertiser(adNo, request);
-            return ResponseEntity.ok(ApiResponseGenerator.success(response));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
-        }
-    }
-
-    // 3-2. 광고(캠페인) 수정 (AdStatus: APPROVED/REJECTED, (선택:반려 사유 추가)) - 관리자
-    @PutMapping("/admin/{adNo}")
-    public ResponseEntity<ApiResponse<?>> updateAdByAdmin(
-            @PathVariable Long adNo,
-            @RequestBody AdRequestByAdmin request){
-        try {
-            AdResponse response = adService.updateAdByAdmin(adNo, request);
-            return ResponseEntity.ok(ApiResponseGenerator.success(response));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
-        }
-    }
-
-    // 3-3. 광고(캠페인) 수정 (applicants 1 증가) - 체험단
-    @PutMapping("/campaign/{adNo}")
-    public ResponseEntity<ApiResponse<?>> updateAdByCampaign(@PathVariable Long adNo){
-        try {
-            AdResponse response = adService.updateAdByCampaign(adNo);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

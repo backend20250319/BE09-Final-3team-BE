@@ -1,6 +1,6 @@
 package site.petful.userservice.service;
 
-import site.petful.userservice.domain.User;
+import site.petful.userservice.entity.User;
 import site.petful.userservice.dto.PasswordChangeRequest;
 import site.petful.userservice.dto.PasswordResetRequest;
 import site.petful.userservice.dto.PasswordResetResponse;

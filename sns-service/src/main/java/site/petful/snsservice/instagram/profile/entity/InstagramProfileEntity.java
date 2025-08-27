@@ -17,23 +17,15 @@ import site.petful.snsservice.instagram.profile.dto.InstagramProfileDto;
 public class InstagramProfileEntity {
 
     @Id
-    @Column(nullable = false)
     private Long id;
-    @Column(nullable = false)
     private Long userNo;
-    @Column(nullable = false)
     private String username;
-    @Column(nullable = false)
     private String name;
-    @Column(name = "profile_picture_url", length = 512, nullable = false)
+    @Column(name = "profile_picture_url", length = 512)
     private String profilePictureUrl;
-    @Column(nullable = false)
     private Long followersCount;
-    @Column(nullable = false)
     private Long followsCount;
-    @Column(nullable = false)
     private Long mediaCount;
-    @Column(nullable = false)
     private Boolean autoDelete;
 
     public InstagramProfileEntity(InstagramProfileDto response, Long user_no, Boolean autoDelete) {

@@ -19,7 +19,7 @@ public class InstagramBannedWordRepositoryImpl implements InstagramBannedWordRep
         return queryFactory
             .selectFrom(instagramBannedWordEntity)
             .where(
-                instagramBannedWordEntity.instagramProfile.id.eq(instagramId),
+                instagramBannedWordEntity.id.instagramId.eq(instagramId),
                 keywordContains(keyword)
             )
             .fetch();
@@ -27,6 +27,6 @@ public class InstagramBannedWordRepositoryImpl implements InstagramBannedWordRep
 
     private BooleanExpression keywordContains(String keyword) {
         return keyword != null && !keyword.isBlank()
-            ? instagramBannedWordEntity.word.containsIgnoreCase(keyword) : null;
+            ? instagramBannedWordEntity.id.word.containsIgnoreCase(keyword) : null;
     }
 }

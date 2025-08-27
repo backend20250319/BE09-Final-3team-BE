@@ -32,10 +32,9 @@ public class Advertiser {
 
     private String website;
 
-    @Column(nullable = false)
     private String email;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @CreatedDate
@@ -49,4 +48,8 @@ public class Advertiser {
     private Boolean isApproved = false;
 
     private String reason;
+
+    public void suspend() {
+        this.isActive = false;
+    }
 }

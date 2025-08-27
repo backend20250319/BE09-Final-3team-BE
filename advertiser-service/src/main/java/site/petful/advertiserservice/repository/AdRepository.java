@@ -1,5 +1,7 @@
 package site.petful.advertiserservice.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,7 +22,9 @@ public interface AdRepository extends JpaRepository<Advertisement, Long> {
 
     List<Advertisement> findByAdStatus(AdStatus adStatus);
 
+    Page<Advertisement> findByAdStatus(AdStatus adStatus, Pageable pageable);
+
     @Modifying
-    @Query("UPDATE Advertisement a SET a.applicants = a.applicants + 1 WHERE a.adNo = :adNo")
-    int incrementApplicants(@Param("adNo") Long adNo);
+    @Query("UPDATE Advertisement a SET a.applicants = a.applicants + :incrementBy WHERE a.adNo = :adNo")
+    int incrementApplicants(@Param("adNo") Long adNo, @Param("incrementBy") int incrementBy);
 }
