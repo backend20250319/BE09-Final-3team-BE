@@ -32,10 +32,9 @@ public class Advertiser {
 
     private String website;
 
-    @Column(nullable = false)
     private String email;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @CreatedDate
