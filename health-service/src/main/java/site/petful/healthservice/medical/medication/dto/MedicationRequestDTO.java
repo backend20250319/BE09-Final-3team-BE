@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import site.petful.healthservice.medical.medication.enums.MedicationFrequency;
-import site.petful.healthservice.medical.medication.schedule.dto.ScheduleRequestDTO;
+import site.petful.healthservice.medical.schedule.dto.ScheduleRequestDTO;
 
 @Getter
 @Setter

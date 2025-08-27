@@ -16,7 +16,7 @@ import java.util.List;
 import java.time.LocalDate;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
-import site.petful.healthservice.medical.medication.schedule.entity.Schedule;
+import site.petful.healthservice.medical.schedule.entity.Schedule;
 
 @RestController
 @RequestMapping("/medical")

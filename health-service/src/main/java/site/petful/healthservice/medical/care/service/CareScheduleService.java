@@ -2,18 +2,18 @@ package site.petful.healthservice.medical.care.service;
 
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
-import site.petful.healthservice.medical.medication.schedule.entity.Schedule;
-import site.petful.healthservice.medical.medication.schedule.enums.ScheduleMainType;
-import site.petful.healthservice.medical.medication.schedule.enums.ScheduleSubType;
-import site.petful.healthservice.medical.medication.schedule.enums.RecurrenceType;
+import site.petful.healthservice.medical.schedule.entity.Schedule;
+import site.petful.healthservice.medical.schedule.enums.ScheduleMainType;
+import site.petful.healthservice.medical.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.medical.schedule.enums.RecurrenceType;
 import site.petful.healthservice.medical.care.enums.CareFrequency;
 import site.petful.healthservice.medical.care.dto.CareRequestDTO;
 import site.petful.healthservice.medical.care.dto.CareResponseDTO;
 import site.petful.healthservice.medical.care.dto.CareDetailDTO;
 import site.petful.healthservice.medical.care.dto.CareUpdateRequestDTO;
-import site.petful.healthservice.medical.medication.schedule.repository.ScheduleRepository;
-import site.petful.healthservice.medical.medication.schedule.service.AbstractScheduleService;
-import site.petful.healthservice.medical.medication.schedule.dto.ScheduleRequestDTO;
+import site.petful.healthservice.medical.schedule.repository.ScheduleRepository;
+import site.petful.healthservice.medical.schedule.service.AbstractScheduleService;
+import site.petful.healthservice.medical.schedule.dto.ScheduleRequestDTO;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 
