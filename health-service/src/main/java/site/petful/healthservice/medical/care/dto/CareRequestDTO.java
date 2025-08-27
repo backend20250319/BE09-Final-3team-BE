@@ -6,7 +6,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import site.petful.healthservice.medical.care.enums.CareFrequency;
-import site.petful.healthservice.medical.medication.schedule.dto.ScheduleRequestDTO;
+import site.petful.healthservice.medical.schedule.dto.ScheduleRequestDTO;
 
 @Getter
 @Setter

@@ -1,12 +1,12 @@
-package site.petful.healthservice.medical.medication.schedule.service;
+package site.petful.healthservice.medical.schedule.service;
 
-import site.petful.healthservice.medical.medication.schedule.entity.Schedule;
-import site.petful.healthservice.medical.medication.schedule.enums.ScheduleMainType;
-import site.petful.healthservice.medical.medication.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.medical.schedule.entity.Schedule;
+import site.petful.healthservice.medical.schedule.enums.ScheduleMainType;
+import site.petful.healthservice.medical.schedule.enums.ScheduleSubType;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
-import site.petful.healthservice.medical.medication.schedule.repository.ScheduleRepository;
-import site.petful.healthservice.medical.medication.schedule.dto.ScheduleRequestDTO;
+import site.petful.healthservice.medical.schedule.repository.ScheduleRepository;
+import site.petful.healthservice.medical.schedule.dto.ScheduleRequestDTO;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

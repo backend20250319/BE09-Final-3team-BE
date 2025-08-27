@@ -1,4 +1,4 @@
-package site.petful.healthservice.medical.medication.schedule.enums;
+package site.petful.healthservice.medical.schedule.enums;
 
 /**
  * 스케줄 서브타입 열거형
