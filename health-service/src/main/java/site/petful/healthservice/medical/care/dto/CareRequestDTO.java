@@ -4,13 +4,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import lombok.Builder;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import site.petful.healthservice.medical.care.enums.CareFrequency;
-import site.petful.healthservice.schedule.dto.ScheduleRequestDTO;
+import site.petful.healthservice.medical.medication.schedule.dto.ScheduleRequestDTO;
 
 @Getter
 @Setter

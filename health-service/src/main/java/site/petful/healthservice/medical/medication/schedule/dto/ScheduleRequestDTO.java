@@ -1,12 +1,11 @@
-package site.petful.healthservice.schedule.dto;
+package site.petful.healthservice.medical.medication.schedule.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import site.petful.healthservice.schedule.enums.ScheduleSubType;
-import site.petful.healthservice.schedule.enums.RecurrenceType;
+import site.petful.healthservice.medical.medication.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.medical.medication.schedule.enums.RecurrenceType;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

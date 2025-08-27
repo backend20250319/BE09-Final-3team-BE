@@ -1,4 +1,4 @@
-package site.petful.healthservice.medical.dto;
+package site.petful.healthservice.medical.medication.ocr;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

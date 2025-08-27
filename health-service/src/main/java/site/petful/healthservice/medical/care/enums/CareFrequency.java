@@ -3,7 +3,7 @@ package site.petful.healthservice.medical.care.enums;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
-import site.petful.healthservice.schedule.enums.RecurrenceType;
+import site.petful.healthservice.medical.medication.schedule.enums.RecurrenceType;
 
 @Getter
 public enum CareFrequency {

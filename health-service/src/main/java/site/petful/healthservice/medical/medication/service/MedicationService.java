@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 import site.petful.healthservice.medical.medication.dto.PrescriptionParsedDTO;
-import site.petful.healthservice.medical.ocr.ClovaOcrClient;
+import site.petful.healthservice.medical.medication.ocr.ClovaOcrClient;
 
 import java.io.File;
 import java.io.IOException;

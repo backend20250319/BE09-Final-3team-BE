@@ -1,4 +1,4 @@
-package site.petful.healthservice.common.enums;
+package site.petful.healthservice.medical.medication.schedule.enums;
 
 import lombok.Getter;
 
