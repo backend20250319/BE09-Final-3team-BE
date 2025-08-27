@@ -1,4 +1,4 @@
-package site.petful.userservice.domain;
+package org.example.petservice.entity;
 
 public enum PetStarStatus {
     NONE,

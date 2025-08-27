@@ -5,9 +5,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.userservice.common.ErrorCode;
-import site.petful.userservice.domain.Role;
-import site.petful.userservice.domain.User;
-import site.petful.userservice.domain.UserProfile;
+import site.petful.userservice.entity.Role;
+import site.petful.userservice.entity.User;
+import site.petful.userservice.entity.UserProfile;
 import site.petful.userservice.dto.PasswordChangeRequest;
 import site.petful.userservice.dto.PasswordResetRequest;
 import site.petful.userservice.dto.PasswordResetResponse;
@@ -65,9 +65,6 @@ public class UserServiceImpl implements UserService {
                 .description(request.getDescription())
                 .roadAddress(request.getRoadAddress())
                 .detailAddress(request.getDetailAddress())
-                // 기존 필드들 (호환성을 위해 유지)
-                .address(request.getAddress())
-                .detailedAddress(request.getDetailedAddress())
                 .birthYear(request.getBirthYear())
                 .birthMonth(request.getBirthMonth())
                 .birthDay(request.getBirthDay())
@@ -124,8 +121,11 @@ public class UserServiceImpl implements UserService {
                 .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
                 .selfIntroduction(profile != null ? profile.getSelfIntroduction() : null)
                 .birthDate(birthDate)
-                .roadAddress(profile != null ? profile.getRoadAddress() : null)
-                .detailAddress(profile != null ? profile.getDetailAddress() : null)
+                // 프로필에 주소가 있으면 프로필 주소, 없으면 회원가입 시 입력한 기본 주소 사용
+                .roadAddress(profile != null && profile.getRoadAddress() != null ? 
+                           profile.getRoadAddress() : user.getRoadAddress())
+                .detailAddress(profile != null && profile.getDetailAddress() != null ? 
+                             profile.getDetailAddress() : user.getDetailAddress())
                 .instagramAccount(profile != null ? profile.getInstagramAccount() : null)
                 .build();
     }

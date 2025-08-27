@@ -2,7 +2,7 @@ package site.petful.userservice.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import site.petful.userservice.domain.UserProfile;
+import site.petful.userservice.entity.UserProfile;
 
 import java.util.Optional;
 

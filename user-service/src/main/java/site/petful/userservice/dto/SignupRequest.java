@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import site.petful.userservice.domain.Role;
+import site.petful.userservice.entity.Role;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -48,13 +48,6 @@ public class SignupRequest {
     
     @Size(max = 255, message = "상세 주소는 255자를 초과할 수 없습니다.")
     private String detailAddress;
-    
-    // 기존 필드들 (호환성을 위해 유지)
-    @Size(max = 255, message = "주소는 255자를 초과할 수 없습니다.")
-    private String address;
-    
-    @Size(max = 255, message = "상세 주소는 255자를 초과할 수 없습니다.")
-    private String detailedAddress;
     
     private Integer birthYear;
     private Integer birthMonth;
