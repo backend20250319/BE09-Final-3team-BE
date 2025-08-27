@@ -1,4 +1,4 @@
-package org.example.petservice.common;
+package site.petful.petservice.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

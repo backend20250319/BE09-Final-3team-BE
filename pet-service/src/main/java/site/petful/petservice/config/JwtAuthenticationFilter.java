@@ -1,4 +1,4 @@
-package org.example.petservice.config;
+package site.petful.petservice.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

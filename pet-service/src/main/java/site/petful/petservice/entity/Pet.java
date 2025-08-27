@@ -1,4 +1,4 @@
-package org.example.petservice.entity;
+package site.petful.petservice.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

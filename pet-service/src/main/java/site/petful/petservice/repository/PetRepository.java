@@ -1,7 +1,7 @@
-package org.example.petservice.repository;
+package site.petful.petservice.repository;
 
-import org.example.petservice.entity.Pet;
-import org.example.petservice.entity.PetStarStatus;
+import site.petful.petservice.entity.Pet;
+import site.petful.petservice.entity.PetStarStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

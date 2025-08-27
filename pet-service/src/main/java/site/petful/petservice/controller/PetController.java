@@ -1,16 +1,16 @@
-package org.example.petservice.controller;
+package site.petful.petservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.petservice.dto.PetRequest;
-import org.example.petservice.dto.PetResponse;
-import org.example.petservice.dto.PetStarResponse;
-import org.example.petservice.service.PetService;
+import site.petful.petservice.dto.PetRequest;
+import site.petful.petservice.dto.PetResponse;
+import site.petful.petservice.dto.PetStarResponse;
+import site.petful.petservice.service.PetService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.example.petservice.common.ApiResponse;
+import site.petful.petservice.common.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

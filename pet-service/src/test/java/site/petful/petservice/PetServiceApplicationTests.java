@@ -1,4 +1,4 @@
-package org.example.petservice;
+package site.petful.petservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

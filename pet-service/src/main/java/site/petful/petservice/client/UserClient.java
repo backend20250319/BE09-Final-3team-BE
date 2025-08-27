@@ -1,4 +1,4 @@
-package org.example.petservice.client;
+package site.petful.petservice.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,4 +1,4 @@
-package org.example.petservice.dto;
+package site.petful.petservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

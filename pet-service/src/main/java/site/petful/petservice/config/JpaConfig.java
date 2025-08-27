@@ -1,4 +1,4 @@
-package org.example.petservice.config;
+package site.petful.petservice.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;

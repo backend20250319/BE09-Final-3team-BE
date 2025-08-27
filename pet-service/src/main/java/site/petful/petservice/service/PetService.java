@@ -1,14 +1,14 @@
-package org.example.petservice.service;
+package site.petful.petservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.example.petservice.dto.PetRequest;
-import org.example.petservice.dto.PetResponse;
-import org.example.petservice.dto.PetStarResponse;
-import org.example.petservice.entity.Pet;
-import org.example.petservice.entity.PetStarStatus;
-import org.example.petservice.repository.PetRepository;
+import site.petful.petservice.dto.PetRequest;
+import site.petful.petservice.dto.PetResponse;
+import site.petful.petservice.dto.PetStarResponse;
+import site.petful.petservice.entity.Pet;
+import site.petful.petservice.entity.PetStarStatus;
+import site.petful.petservice.repository.PetRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

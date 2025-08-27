@@ -1,10 +1,10 @@
-package org.example.petservice.dto;
+package site.petful.petservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.petservice.entity.PetStarStatus;
+import site.petful.petservice.entity.PetStarStatus;
 
 import java.time.LocalDateTime;
 
