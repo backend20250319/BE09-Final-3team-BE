@@ -1,56 +1,65 @@
 package site.petful.healthservice.schedule.enums;
 
-import lombok.Getter;
-
-@Getter
+/**
+ * 스케줄 서브타입 열거형
+ * 각 서브타입은 특정 카테고리의 일정을 나타냄
+ */
 public enum ScheduleSubType {
-    // 돌봄 서브타입 (CARE 메인타입)
+    // 돌봄 관련 서브타입
     WALK("산책"),
-    GROOMING("미용"),
+    GROOMING("그루밍"),
     BIRTHDAY("생일"),
     ETC("기타"),
     
-    // 접종 서브타입 (VACCINATION 메인타입)
-    VACCINATION("예방접종"),
-    CHECKUP("건강검진"),
+    // 접종 관련 서브타입
+    VACCINE("접종"),
+    BOOSTER("부스터"),
     
-    // 투약 서브타입 (MEDICATION 메인타입)
-    PILL("복용약"),
-    SUPPLEMENT("영양제"),
+    // 투약 관련 서브타입
+    PILL("약"),
+    INJECTION("주사"),
+    DROPS("점안/점이"),
     
-    // 운동 서브타입 (EXERCISE 메인타입)
-    RUNNING("달리기"),
-    SWIMMING("수영"),
-    PLAY("놀이"),
-    
-    // 훈련 서브타입 (TRAINING 메인타입)
-    BASIC_TRAINING("기본훈련"),
-    ADVANCED_TRAINING("고급훈련"),
-    AGILITY("애질리티");
-    
-    private final String description;
-    
-    ScheduleSubType(String description) {
-        this.description = description;
+    // 건강 관련 서브타입
+    CHECKUP("검진"),
+    TREATMENT("치료"),
+    SURGERY("수술");
+
+    private final String label;
+
+    ScheduleSubType(String label) {
+        this.label = label;
     }
-    
+
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * 접종 관련 서브타입인지 확인
+     */
+    public boolean isVaccinationType() {
+        return this == VACCINE || this == BOOSTER;
+    }
+
+    /**
+     * 투약 관련 서브타입인지 확인
+     */
+    public boolean isMedicationType() {
+        return this == PILL || this == INJECTION || this == DROPS;
+    }
+
+    /**
+     * 돌봄 관련 서브타입인지 확인
+     */
     public boolean isCareType() {
         return this == WALK || this == GROOMING || this == BIRTHDAY || this == ETC;
     }
-    
-    public boolean isVaccinationType() {
-        return this == VACCINATION || this == CHECKUP;
-    }
-    
-    public boolean isMedicationType() {
-        return this == PILL || this == SUPPLEMENT;
-    }
-    
-    public boolean isExerciseType() {
-        return this == RUNNING || this == SWIMMING || this == PLAY;
-    }
-    
-    public boolean isTrainingType() {
-        return this == BASIC_TRAINING || this == ADVANCED_TRAINING || this == AGILITY;
+
+    /**
+     * 건강 관련 서브타입인지 확인
+     */
+    public boolean isHealthType() {
+        return this == CHECKUP || this == TREATMENT || this == SURGERY;
     }
 }
