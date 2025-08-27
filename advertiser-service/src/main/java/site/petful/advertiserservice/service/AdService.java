@@ -44,15 +44,7 @@ public class AdService {
         return AdResponse.from(ad);
     }
 
-    // 2-2. 광고(캠페인) 전체 조회
-    @Transactional(readOnly = true)
-    public AdsResponse getAllAds() {
-
-        List<Advertisement> ads = adRepository.findAll();
-        return AdsResponse.from(ads);
-    }
-
-    // 2-3. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
+    // 2-2. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
     @Transactional(readOnly = true)
     public AdsResponse getAllAdsByAdvertiser(Long advertiserNo, AdStatus adStatus) {
         Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
@@ -72,7 +64,7 @@ public class AdService {
         return AdsResponse.from(ads);
     }
 
-    // 2-4. adStatus별 광고(캠페인) 전체 조회
+    // 2-3. adStatus별 광고(캠페인) 전체 조회
     @Transactional(readOnly = true)
     public AdsResponse getAllAdsByAdStatus(AdStatus adStatus) {
 
@@ -85,7 +77,7 @@ public class AdService {
         return AdsResponse.from(ads);
     }
 
-    // 2-5. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회 - 체험단
+    // 2-4. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회 - 체험단
     @Transactional(readOnly = true)
     public AdsGroupedResponse getAllAdsByAdStatusGrouped() {
         List<Advertisement> allAds = adRepository.findAll();
@@ -115,23 +107,9 @@ public class AdService {
         return AdResponse.from(updatedAd);
     }
 
-    // 3-2. 광고(캠페인) 수정 (AdStatus: APPROVED/REJECTED, (선택:반려 사유 추가)) - 관리자
-    public AdResponse updateAdByAdmin(Long adNo, AdRequestByAdmin request) {
-        Advertisement ad = adRepository.findByAdNo(adNo)
-                .orElseThrow(() -> new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage()));
-
-        ad.setAdStatus(request.getAdStatus());
-        if (request.getReason() != null && !request.getReason().trim().isEmpty()) {
-            ad.setReason(request.getReason());
-        }
-        Advertisement updatedAd = adRepository.save(ad);
-
-        return AdResponse.from(updatedAd);
-    }
-
-    // 3-3. 광고(캠페인 수정) (applicants 1 증가) - 체험단
-    public AdResponse updateAdByCampaign(Long adNo) {
-        int updatedCount = adRepository.incrementApplicants(adNo);
+    // 3-2. 광고(캠페인 수정) - 체험단
+    public AdResponse updateAdByCampaign(Long adNo, Integer incrementBy) {
+        int updatedCount = adRepository.incrementApplicants(adNo, incrementBy);
         if (updatedCount == 0) {
             throw new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage());
         }

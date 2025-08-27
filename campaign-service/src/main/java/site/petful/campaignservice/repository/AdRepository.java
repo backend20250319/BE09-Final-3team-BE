@@ -12,5 +12,5 @@ import java.util.Optional;
 public interface AdRepository extends JpaRepository<Advertisement, Long> {
     Optional<Advertisement> findByAdNo(Long adNo);
 
-    Page<AdsResponse> findByAdStatus(AdStatus adStatus, Pageable pageable);
+
 }
