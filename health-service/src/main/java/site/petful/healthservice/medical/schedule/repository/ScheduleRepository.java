@@ -1,12 +1,12 @@
-package site.petful.healthservice.schedule.repository;
+package site.petful.healthservice.medical.schedule.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import site.petful.healthservice.schedule.entity.Schedule;
-import site.petful.healthservice.schedule.enums.ScheduleMainType;
-import site.petful.healthservice.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.medical.schedule.entity.Schedule;
+import site.petful.healthservice.medical.schedule.enums.ScheduleMainType;
+import site.petful.healthservice.medical.schedule.enums.ScheduleSubType;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -12,12 +12,11 @@ import site.petful.healthservice.medical.medication.service.MedicationScheduleSe
 import site.petful.healthservice.medical.medication.service.MedicationService;
 
 import java.io.IOException;
-import java.util.Calendar;
 import java.util.List;
 import java.time.LocalDate;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
-import site.petful.healthservice.schedule.entity.Schedule;
+import site.petful.healthservice.medical.schedule.entity.Schedule;
 
 @RestController
 @RequestMapping("/medical")

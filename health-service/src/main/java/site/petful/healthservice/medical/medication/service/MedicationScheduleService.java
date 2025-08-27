@@ -1,13 +1,12 @@
 package site.petful.healthservice.medical.medication.service;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.petful.healthservice.medical.medication.entity.ScheduleMedDetail;
-import site.petful.healthservice.schedule.entity.Schedule;
-import site.petful.healthservice.schedule.enums.ScheduleMainType;
-import site.petful.healthservice.schedule.enums.ScheduleSubType;
-import site.petful.healthservice.schedule.enums.RecurrenceType;
+import site.petful.healthservice.medical.schedule.entity.Schedule;
+import site.petful.healthservice.medical.schedule.enums.ScheduleMainType;
+import site.petful.healthservice.medical.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.medical.schedule.enums.RecurrenceType;
 import site.petful.healthservice.medical.medication.enums.MedicationFrequency;
 import site.petful.healthservice.medical.medication.dto.PrescriptionParsedDTO;
 import site.petful.healthservice.medical.medication.dto.MedicationRequestDTO;
@@ -16,9 +15,9 @@ import site.petful.healthservice.medical.medication.dto.MedicationDetailDTO;
 import site.petful.healthservice.medical.medication.dto.MedicationUpdateRequestDTO;
 import site.petful.healthservice.medical.medication.dto.MedicationUpdateDiffDTO;
 import site.petful.healthservice.medical.medication.repository.ScheduleMedicationDetailRepository;
-import site.petful.healthservice.schedule.repository.ScheduleRepository;
-import site.petful.healthservice.schedule.service.AbstractScheduleService;
-import site.petful.healthservice.schedule.dto.ScheduleRequestDTO;
+import site.petful.healthservice.medical.schedule.repository.ScheduleRepository;
+import site.petful.healthservice.medical.schedule.service.AbstractScheduleService;
+import site.petful.healthservice.medical.schedule.dto.ScheduleRequestDTO;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 public class MedicationScheduleService extends AbstractScheduleService {

@@ -1,12 +1,12 @@
-package site.petful.healthservice.schedule.entity;
+package site.petful.healthservice.medical.schedule.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import site.petful.healthservice.schedule.enums.ScheduleMainType;
-import site.petful.healthservice.schedule.enums.ScheduleSubType;
-import site.petful.healthservice.schedule.enums.RecurrenceType;
+import site.petful.healthservice.medical.schedule.enums.ScheduleMainType;
+import site.petful.healthservice.medical.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.medical.schedule.enums.RecurrenceType;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

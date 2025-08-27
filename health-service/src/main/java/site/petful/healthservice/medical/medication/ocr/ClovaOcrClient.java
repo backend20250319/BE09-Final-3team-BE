@@ -1,4 +1,4 @@
-package site.petful.healthservice.medical.ocr;
+package site.petful.healthservice.medical.medication.ocr;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
