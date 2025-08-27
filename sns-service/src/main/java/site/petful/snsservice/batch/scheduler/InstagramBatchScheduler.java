@@ -22,10 +22,15 @@ public class InstagramBatchScheduler {
     // 매일 새벽 2시 실행
     @Scheduled(cron = "0 0 2 * * *")
     public void runInstagramSyncJob() {
-        log.info("=== [Scheduled] Instagram 배치 작업 시작 - {}",
+        log.info("=== [Scheduled] 배치 작업 시작 - {}",
             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
+        instagramBatchService.runInstagramTokenCleanupBatch();
+
         instagramBatchService.runInstagramSyncBatchAsync(1L);
+
+        log.info("=== [Scheduled] 배치 작업 종료 - {}",
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
     }
 
 }
