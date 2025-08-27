@@ -15,13 +15,13 @@ import site.petful.advertiserservice.dto.advertisement.AdResponse;
 import site.petful.advertiserservice.entity.Advertiser;
 
 @RestController
-@RequestMapping("/admin/advertisers")
+@RequestMapping("/admin")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
-public class AdvertiserAdminConrtoller {
+public class AdvertiserAdminController {
     private final AdvertiserAdminService advertiserAdminService;
 
-    @PostMapping("/{id}/restrict")
+    @PostMapping("/advertiser/{id}/restrict")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> restrict(
             @PathVariable("id") Long id
@@ -30,7 +30,7 @@ public class AdvertiserAdminConrtoller {
         return ApiResponseGenerator.success();
     }
 
-    @GetMapping("/all")
+    @GetMapping("/advertiser/all")
     public ApiResponse<Page<Advertiser>> getAll(
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
@@ -39,7 +39,7 @@ public class AdvertiserAdminConrtoller {
     }
 
 
-    @PatchMapping("/{id}/reject")
+    @PatchMapping("/advertiser/{id}/reject")
     public ApiResponse<Void> reject(
             @PathVariable("id") Long advertiserId,
             @RequestBody String reason
@@ -47,7 +47,7 @@ public class AdvertiserAdminConrtoller {
         advertiserAdminService.rejectAdvertiser(advertiserId, reason);
         return ApiResponseGenerator.success();
     }
-    @PatchMapping("/{id}/approve")
+    @PatchMapping("/advertiser/{id}/approve")
     public ApiResponse<Void> approve(
             @PathVariable("id") Long advertiserId
     ){
@@ -56,7 +56,7 @@ public class AdvertiserAdminConrtoller {
     }
 
 
-    @GetMapping("/trial")
+    @GetMapping("/ad/trial")
     public ApiResponse<Page<AdResponse>> getAllCampaigns(
             @PageableDefault(size = 5, sort = "campaignStart", direction = Sort.Direction.DESC)
             Pageable pageable
@@ -66,7 +66,7 @@ public class AdvertiserAdminConrtoller {
         return ApiResponseGenerator.success(dtoPage);
     }
 
-    @PatchMapping("/{id}/delete")
+    @PatchMapping("/ad/{id}/delete")
     public ApiResponse deleteCampaign(
             @PathVariable Long adId
     ){
@@ -74,7 +74,7 @@ public class AdvertiserAdminConrtoller {
         return ApiResponseGenerator.success();
     }
 
-    @GetMapping("/pending")
+    @GetMapping("/ad/pending")
     public ApiResponse<Page<AdResponse>> getPendingCampaigns(
             @PageableDefault(size = 5, sort = "campaignStart", direction = Sort.Direction.DESC)
             Pageable pageable
@@ -84,7 +84,7 @@ public class AdvertiserAdminConrtoller {
         return ApiResponseGenerator.success(dtoPage);
     }
 
-    @PatchMapping("{id}/approve")
+    @PatchMapping("/ad{id}/approve")
     public ApiResponse<Void> approveCampaign(
             @PathVariable Long adId
     ){
@@ -92,7 +92,7 @@ public class AdvertiserAdminConrtoller {
         return ApiResponseGenerator.success();
     }
 
-    @PatchMapping("{id}/reject")
+    @PatchMapping("/ad/{id}/reject")
     public ApiResponse<Void> rejectCampaign(
             @PathVariable Long adId,
             @RequestParam String reason
