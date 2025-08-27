@@ -25,6 +25,31 @@ public class InstagramBatchController {
     private final InstagramBatchService instagramBatchService;
 
 
+    @PostMapping("/cleanup-tokens")
+    public ResponseEntity<ApiResponse<?>> runTokenCleanupBatch() {
+        log.info("==========수동 Instagram Token 정리 배치 작업 시작==========");
+
+        try {
+
+            instagramBatchService.runInstagramTokenCleanupBatch();
+            log.info("==========수동 Instagram Token 정리 배치 작업 종료==========");
+
+            Map<String, Object> response = Map.of(
+                "status", "success",
+                "message", "Instagram 토큰 삭제 배치 작업이 시작되었습니다",
+                "executionTime",
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            );
+
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (Exception e) {
+            log.error("Instagram token cleanup 작업 실행 중 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST));
+        }
+    }
+
+
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<?>> runInstagramSyncBatch() {
         log.info("==========수동 Instagram 동기화 배치 작업 시작==========");

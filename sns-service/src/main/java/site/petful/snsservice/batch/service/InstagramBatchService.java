@@ -27,6 +27,7 @@ public class InstagramBatchService {
 
     private final JobLauncher jobLauncher;
     private final Job instagramSyncJob;
+    private final Job instagramTokenCleanupJob;
 
     @Async
     public CompletableFuture<ApiResponse<?>> runInstagramSyncBatchAsync(Long monthsToSync) {
@@ -109,6 +110,21 @@ public class InstagramBatchService {
             log.error("사용자 {}에 대한 Instagram 배치 작업 실행 중 오류 발생: {}", userNo, e.getMessage(), e);
             return CompletableFuture.completedFuture(
                 ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST));
+        }
+    }
+
+    public void runInstagramTokenCleanupBatch() {
+        log.info("========== Instagram Token Cleanup 배치 시작 ==========");
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                .addString("executionTime", LocalDateTime.now().toString())
+                .addLong("timestamp", System.currentTimeMillis())
+                .toJobParameters();
+
+            jobLauncher.run(instagramTokenCleanupJob, jobParameters);
+            log.info("========== Instagram Token Cleanup 배치 시작 ==========");
+        } catch (Exception e) {
+            log.error("Instagram Token Cleanup 배치 실패: {}", e.getMessage(), e);
         }
     }
 }
