@@ -4,15 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
-import site.petful.petservice.dto.PetStarResponse;
 import site.petful.petservice.service.PetService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import site.petful.petservice.common.ApiResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

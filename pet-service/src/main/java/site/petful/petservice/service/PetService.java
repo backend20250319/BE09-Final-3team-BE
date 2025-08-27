@@ -5,12 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
-import site.petful.petservice.dto.PetStarResponse;
 import site.petful.petservice.entity.Pet;
 import site.petful.petservice.entity.PetStarStatus;
 import site.petful.petservice.repository.PetRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

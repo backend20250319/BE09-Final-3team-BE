@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.admin.service.AdvertiserAdminService;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
+import site.petful.advertiserservice.dto.advertisement.AdResponse;
 import site.petful.advertiserservice.entity.Advertiser;
 
 @RestController
@@ -53,4 +54,52 @@ public class AdvertiserAdminConrtoller {
         advertiserAdminService.approveAdvertiser(advertiserId);
         return ApiResponseGenerator.success();
     }
+
+
+    @GetMapping("/trial")
+    public ApiResponse<Page<AdResponse>> getAllCampaigns(
+            @PageableDefault(size = 5, sort = "campaignStart", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ){
+        Page<AdResponse> dtoPage = advertiserAdminService.getAllCampaign(pageable)
+                .map(AdResponse::from);
+        return ApiResponseGenerator.success(dtoPage);
+    }
+
+    @PatchMapping("/{id}/delete")
+    public ApiResponse deleteCampaign(
+            @PathVariable Long adId
+    ){
+        advertiserAdminService.deleteCampaign(adId);
+        return ApiResponseGenerator.success();
+    }
+
+    @GetMapping("/pending")
+    public ApiResponse<Page<AdResponse>> getPendingCampaigns(
+            @PageableDefault(size = 5, sort = "campaignStart", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ){
+        Page<AdResponse> dtoPage = advertiserAdminService.getAllCampaign(pageable)
+                .map(AdResponse::from);
+        return ApiResponseGenerator.success(dtoPage);
+    }
+
+    @PatchMapping("{id}/approve")
+    public ApiResponse<Void> approveCampaign(
+            @PathVariable Long adId
+    ){
+        advertiserAdminService.approve(adId);
+        return ApiResponseGenerator.success();
+    }
+
+    @PatchMapping("{id}/reject")
+    public ApiResponse<Void> rejectCampaign(
+            @PathVariable Long adId,
+            @RequestParam String reason
+    ){
+        advertiserAdminService.reject(adId,reason);
+        return ApiResponseGenerator.success();
+    }
+
+
 }
