@@ -1,14 +1,12 @@
-package site.petful.healthservice.common.enums;
+package site.petful.healthservice.medical.care.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
+import site.petful.healthservice.schedule.enums.RecurrenceType;
 
 @Getter
-public enum CareFrequency {
-    DAILY("매일", RecurrenceType.DAILY, 1),
-    WEEKLY("매주", RecurrenceType.WEEKLY, 1),
-    MONTHLY("매월", RecurrenceType.MONTHLY, 1),
+public enum VaccinationFrequency {
     YEARLY_ONCE("연 1회", RecurrenceType.YEARLY, 1),
     HALF_YEARLY_ONCE("반년 1회", RecurrenceType.CUSTOM, 6),
     MONTHLY_ONCE("월 1회", RecurrenceType.MONTHLY, 1),
@@ -18,32 +16,28 @@ public enum CareFrequency {
     private final RecurrenceType recurrenceType;
     private final int interval;
 
-    CareFrequency(String label, RecurrenceType recurrenceType, int interval) {
+    VaccinationFrequency(String label, RecurrenceType recurrenceType, int interval) {
         this.label = label;
         this.recurrenceType = recurrenceType;
         this.interval = interval;
     }
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    public static CareFrequency from(String value) {
+    public static VaccinationFrequency from(String value) {
         if (value == null) return null;
         String v = value.trim();
-        // match by label (한글)
-        for (CareFrequency cf : values()) {
-            if (cf.label.equals(v)) return cf;
+        for (VaccinationFrequency f : values()) {
+            if (f.label.equals(v)) return f;
         }
-        // match by enum name, case-insensitive
         String upper = v.toUpperCase();
-        for (CareFrequency cf : values()) {
-            if (cf.name().equals(upper)) return cf;
+        for (VaccinationFrequency f : values()) {
+            if (f.name().equals(upper)) return f;
         }
         return null;
     }
 
     @JsonValue
-    public String jsonValue() {
-        return label;  // name() 대신 label(한국어) 반환
-    }
+    public String jsonValue() { return name(); }
 }
 
 
