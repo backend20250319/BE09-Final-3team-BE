@@ -66,4 +66,7 @@ public class Pet {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "image_no")
+    private Long imageNo;
 }

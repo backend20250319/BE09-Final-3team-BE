@@ -119,13 +119,28 @@ public class PetService {
 
         // 이미 신청 중이거나 승인된 경우
         if (pet.getPetStarStatus() != PetStarStatus.NONE) {
-            throw new IllegalArgumentException("이미 PetStar 신청이 진행 중이거나 처리되었습니다.");
+            String statusMessage = "";
+            switch (pet.getPetStarStatus()) {
+                case PENDING:
+                    statusMessage = "이미 PetStar 신청이 진행 중입니다.";
+                    break;
+                case ACTIVE:
+                    statusMessage = "이미 PetStar로 승인되어 활성화되었습니다.";
+                    break;
+                case REJECTED:
+                    statusMessage = "이전에 PetStar 신청이 거절되었습니다.";
+                    break;
+                default:
+                    statusMessage = "이미 PetStar 신청이 진행 중이거나 처리되었습니다.";
+            }
+            throw new IllegalArgumentException(statusMessage);
         }
 
         pet.setPetStarStatus(PetStarStatus.PENDING);
         pet.setPendingAt(LocalDateTime.now());
         petRepository.save(pet);
     }
+
     // Pet 엔티티를 PetResponse로 변환
     private PetResponse toPetResponse(Pet pet) {
         return PetResponse.builder()
