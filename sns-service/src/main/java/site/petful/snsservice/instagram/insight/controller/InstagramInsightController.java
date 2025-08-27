@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
+import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
 import site.petful.snsservice.instagram.insight.dto.InstagramEngagementResponseDto;
 import site.petful.snsservice.instagram.insight.dto.InstagramFollowerHistoryResponseDto;
 import site.petful.snsservice.instagram.insight.dto.InstagramInsightResponseDto;
@@ -23,12 +24,15 @@ public class InstagramInsightController {
 
     private final InstagramInsightsService instagramInsightsService;
     private final InstagramFollowerHistoryService instagramFollowerHistoryService;
+    private final InstagramTokenService instagramTokenService;
 
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<Void>> syncInsights(
-        @RequestParam("user_id") Long userId,
+        @RequestParam("user_no") Long userNo,
         @RequestParam("instagram_id") Long instagramId) {
-        instagramInsightsService.syncInsights(instagramId, userId, 6);
+
+        String accessToken = instagramTokenService.getAccessToken(userNo);
+        instagramInsightsService.syncInsights(instagramId, accessToken, 6);
 
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }

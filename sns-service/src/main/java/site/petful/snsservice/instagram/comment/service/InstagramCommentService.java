@@ -71,6 +71,57 @@ public class InstagramCommentService {
             .toList();
     }
 
+    private List<InstagramCommentEntity> processCommentsPage(List<InstagramApiCommentDto> dtos,
+        InstagramMediaEntity media, String accessToken) {
+
+        Map<Long, InstagramCommentEntity> existingCommentsMap = findExistingComments(dtos);
+
+        List<InstagramCommentEntity> entitiesToSave = new ArrayList<>();
+        for (InstagramApiCommentDto dto : dtos) {
+            InstagramCommentEntity existingComment = existingCommentsMap.get(dto.id());
+
+            if (existingComment != null) {
+                existingComment.update(dto);
+                entitiesToSave.add(existingComment);
+            } else {
+                InstagramCommentEntity newComment = createNewCommentWithPolicy(dto, media,
+                    accessToken);
+                entitiesToSave.add(newComment);
+            }
+        }
+        return instagramCommentRepository.saveAll(entitiesToSave);
+    }
+
+    private InstagramCommentEntity createNewCommentWithPolicy(InstagramApiCommentDto dto,
+        InstagramMediaEntity media, String accessToken) {
+
+        InstagramProfileEntity profile = media.getInstagramProfile();
+
+        Sentiment sentiment = clovaApiService.analyzeSentiment(dto.text());
+        Set<String> bannedWords = instagramBannedWordService.getBannedWords(profile);
+        boolean isDeleted = false;
+
+        boolean shouldDelete = profile.getAutoDelete()
+            && (sentiment == Sentiment.NEGATIVE
+            || bannedWords.stream().anyMatch(dto.text()::contains));
+
+        if (shouldDelete) {
+            instagramApiClient.deleteComment(dto.id(), accessToken);
+            isDeleted = true;
+        }
+
+        return new InstagramCommentEntity(dto, sentiment, isDeleted, media, profile);
+    }
+
+    private Map<Long, InstagramCommentEntity> findExistingComments(
+        List<InstagramApiCommentDto> dtos) {
+        List<Long> commentIds = dtos.stream().map(InstagramApiCommentDto::id).toList();
+        return instagramCommentRepository.findAllByIdIn(commentIds).stream()
+            .collect(
+                Collectors.toMap(InstagramCommentEntity::getId, entity -> entity));
+    }
+
+
     public List<InstagramCommentResponseDto> getComments(Long mediaId) {
         List<InstagramCommentResponseDto> comments = instagramCommentRepository.findById(
                 mediaId)
@@ -108,59 +159,6 @@ public class InstagramCommentService {
         return new InstagramCommentStatusResponseDto(totalComments, deletedComments,
             deletionRate, (long) bannedWords);
     }
-
-
-    private List<InstagramCommentEntity> processCommentsPage(List<InstagramApiCommentDto> dtos,
-        InstagramMediaEntity media, String accessToken) {
-
-        Map<Long, InstagramCommentEntity> existingCommentsMap = findExistingComments(dtos);
-
-        List<InstagramCommentEntity> entitiesToSave = new ArrayList<>();
-        for (InstagramApiCommentDto dto : dtos) {
-            InstagramCommentEntity existingComment = existingCommentsMap.get(dto.id());
-
-            if (existingComment != null) {
-                existingComment.update(dto);
-                entitiesToSave.add(existingComment);
-            } else {
-                InstagramCommentEntity newComment = createNewCommentWithPolicy(dto, media,
-                    accessToken);
-                entitiesToSave.add(newComment);
-            }
-        }
-        return instagramCommentRepository.saveAll(entitiesToSave);
-    }
-
-
-    private InstagramCommentEntity createNewCommentWithPolicy(InstagramApiCommentDto dto,
-        InstagramMediaEntity media, String accessToken) {
-
-        InstagramProfileEntity profile = media.getInstagramProfile();
-
-        Sentiment sentiment = clovaApiService.analyzeSentiment(dto.text());
-        Set<String> bannedWords = instagramBannedWordService.getBannedWords(profile);
-        boolean isDeleted = false;
-
-        boolean shouldDelete = profile.getAutoDelete()
-            && (sentiment == Sentiment.NEGATIVE
-            || bannedWords.stream().anyMatch(dto.text()::contains));
-
-        if (shouldDelete) {
-            instagramApiClient.deleteComment(dto.id(), accessToken);
-            isDeleted = true;
-        }
-
-        return new InstagramCommentEntity(dto, sentiment, isDeleted, media, profile);
-    }
-
-    private Map<Long, InstagramCommentEntity> findExistingComments(
-        List<InstagramApiCommentDto> dtos) {
-        List<Long> commentIds = dtos.stream().map(InstagramApiCommentDto::id).toList();
-        return instagramCommentRepository.findAllByIdIn(commentIds).stream()
-            .collect(
-                Collectors.toMap(InstagramCommentEntity::getId, entity -> entity));
-    }
-
 
     public Page<InstagramCommentResponseDto> searchComments(Long instagramId, Boolean isDeleted,
         Sentiment sentiment, String keyword, Pageable pageable) {
