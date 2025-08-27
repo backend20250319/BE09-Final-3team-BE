@@ -46,8 +46,8 @@ public class History {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Portfolio와의 관계 (N:1)
+    // Pet과의 관계 (N:1)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pet_no", insertable = false, updatable = false)
-    private Portfolio portfolio;
+    private Pet pet;
 }

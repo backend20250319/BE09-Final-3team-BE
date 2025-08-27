@@ -67,3 +67,4 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
+

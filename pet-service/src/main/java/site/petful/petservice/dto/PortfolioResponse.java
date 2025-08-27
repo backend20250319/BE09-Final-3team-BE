@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -20,4 +21,5 @@ public class PortfolioResponse {
     private String personality;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<HistoryResponse> histories;
 }

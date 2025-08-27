@@ -7,10 +7,8 @@ import site.petful.petservice.dto.HistoryRequest;
 import site.petful.petservice.dto.HistoryResponse;
 import site.petful.petservice.entity.History;
 import site.petful.petservice.entity.Pet;
-import site.petful.petservice.entity.Portfolio;
 import site.petful.petservice.repository.HistoryRepository;
 import site.petful.petservice.repository.PetRepository;
-import site.petful.petservice.repository.PortfolioRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,7 +20,6 @@ public class HistoryService {
 
     private final HistoryRepository historyRepository;
     private final PetRepository petRepository;
-    private final PortfolioRepository portfolioRepository;
 
     // 활동이력 생성
     @Transactional
@@ -35,17 +32,12 @@ public class HistoryService {
             throw new IllegalArgumentException("해당 반려동물의 활동이력을 생성할 권한이 없습니다.");
         }
 
-        // 포트폴리오 존재 여부 확인
-        Portfolio portfolio = portfolioRepository.findByPetNo(petNo)
-                .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 먼저 생성해주세요."));
-
         // 활동이력 생성
         History history = History.builder()
                 .petNo(petNo)
                 .historyStart(request.getHistoryStart())
                 .historyEnd(request.getHistoryEnd())
                 .content(request.getContent())
-                .portfolio(portfolio)
                 .build();
 
         History savedHistory = historyRepository.save(history);
