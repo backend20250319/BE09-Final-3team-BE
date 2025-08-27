@@ -31,7 +31,7 @@ public class ClovaRequestDto {
             .topP(0.6)
             .topK(0)
             .maxTokens(256)
-            .temperature(0.1)
+            .temperature(0.3)
             .repetitionPenalty(1.1)
             .stop(List.of("###"))
             .seed(0)

@@ -4,3 +4,15 @@ spring:
       configserver:http://localhost:8888
   application:
     name: sns-service
+  batch:
+    job:
+      enabled: false  # 애플리케이션 시작 시 Job 자동 실행 방지
+    jdbc:
+      initialize-schema: always  # 배치 메타데이터 테이블 자동 생성
+
+# 배치 작업 로깅 설정
+logging:
+  level:
+    org.springframework.batch: DEBUG
+    site.petful.snsservice.batch: DEBUG
+

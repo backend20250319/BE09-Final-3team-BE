@@ -33,4 +33,5 @@ public class InstagramTokenService {
                 () -> new IllegalArgumentException("인스타그램 토큰을 찾을 수 없습니다. userId: " + userNo));
         return aesEncryptService.decrypt(token.getToken());
     }
+
 }
