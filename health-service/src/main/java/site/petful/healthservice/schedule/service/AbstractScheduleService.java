@@ -85,7 +85,7 @@ public abstract class AbstractScheduleService {
      */
     protected Schedule findScheduleById(Long scheduleNo) {
         return scheduleRepository.findById(scheduleNo)
-                .orElseThrow(() -> new RuntimeException("일정을 찾을 수 없습니다: " + scheduleNo));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SCHEDULE_NOT_FOUND, "일정을 찾을 수 없습니다: " + scheduleNo));
     }
 
     /**
@@ -164,7 +164,7 @@ public abstract class AbstractScheduleService {
                 site.petful.healthservice.schedule.enums.ScheduleSubType.valueOf(subType.toUpperCase());
             return scheduleRepository.findByUserNoAndSubTypeAndDeletedFalseOrderByStartDateAsc(userNo, targetSubType);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("유효하지 않은 서브타입입니다: " + subType);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "유효하지 않은 서브타입입니다: " + subType);
         }
     }
 }

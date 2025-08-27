@@ -7,23 +7,17 @@ package site.petful.healthservice.schedule.enums;
 public enum ScheduleSubType {
     // 돌봄 관련 서브타입
     WALK("산책"),
-    GROOMING("그루밍"),
     BIRTHDAY("생일"),
+    GROOMING("미용"),
     ETC("기타"),
-    
+
     // 접종 관련 서브타입
     VACCINE("접종"),
-    BOOSTER("부스터"),
-    
+    CHECKUP("건강검진"),
+
     // 투약 관련 서브타입
-    PILL("약"),
-    INJECTION("주사"),
-    DROPS("점안/점이"),
-    
-    // 건강 관련 서브타입
-    CHECKUP("검진"),
-    TREATMENT("치료"),
-    SURGERY("수술");
+    PILL("복용약"),
+    SUPPLEMENT("영양제");
 
     private final String label;
 
@@ -39,14 +33,14 @@ public enum ScheduleSubType {
      * 접종 관련 서브타입인지 확인
      */
     public boolean isVaccinationType() {
-        return this == VACCINE || this == BOOSTER;
+        return this == VACCINE || this == CHECKUP;
     }
 
     /**
      * 투약 관련 서브타입인지 확인
      */
     public boolean isMedicationType() {
-        return this == PILL || this == INJECTION || this == DROPS;
+        return this == PILL || this == SUPPLEMENT;
     }
 
     /**
@@ -54,12 +48,5 @@ public enum ScheduleSubType {
      */
     public boolean isCareType() {
         return this == WALK || this == GROOMING || this == BIRTHDAY || this == ETC;
-    }
-
-    /**
-     * 건강 관련 서브타입인지 확인
-     */
-    public boolean isHealthType() {
-        return this == CHECKUP || this == TREATMENT || this == SURGERY;
     }
 }
