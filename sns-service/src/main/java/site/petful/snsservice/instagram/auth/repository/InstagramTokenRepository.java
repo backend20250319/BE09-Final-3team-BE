@@ -1,5 +1,6 @@
 package site.petful.snsservice.instagram.auth.repository;
 
+import java.time.LocalDateTime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import site.petful.snsservice.instagram.auth.entity.InstagramTokenEntity;
@@ -8,4 +9,5 @@ import site.petful.snsservice.instagram.auth.entity.InstagramTokenEntity;
 public interface InstagramTokenRepository extends JpaRepository<InstagramTokenEntity, Long> {
 
 
+    int deleteByExpireAtBefore(LocalDateTime now);
 }

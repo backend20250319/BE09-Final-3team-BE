@@ -44,7 +44,7 @@ public class CampaignService {
         PetResponse petResponse = petRepository.findByPetNo(petNo);
 
         // advertiser의 applicants 1 증가
-        advertiserFeignClient.updateAdByCampaign(adNo);
+        advertiserFeignClient.updateAdByCampaign(adNo, 1);
 
         return ApplicantResponse.from(saved, petResponse);
     }

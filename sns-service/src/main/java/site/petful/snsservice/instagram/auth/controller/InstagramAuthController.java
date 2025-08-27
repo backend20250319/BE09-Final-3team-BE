@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import site.petful.snsservice.batch.service.InstagramBatchService;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.dto.InstagramConnectRequestDto;
@@ -17,6 +18,7 @@ import site.petful.snsservice.instagram.auth.service.InstagramAuthService;
 public class InstagramAuthController {
 
     private final InstagramAuthService instagramAuthService;
+    private final InstagramBatchService instagramBatchService;
 
     @PostMapping("/connect")
     public ResponseEntity<ApiResponse<String>> connectInstagram(
@@ -24,8 +26,10 @@ public class InstagramAuthController {
         // TODO [유저] 정보도 가져와야됌 쭉 들어가면서 수정 userNo로 저장
         Long userNo = 1L;
         String accessToken = dto.accessToken();
-
         String encryptedToken = instagramAuthService.connect(userNo, accessToken);
+
+        instagramBatchService.runInstagramSyncBatchForUserAsync(userNo, 6L);
+
         return ResponseEntity.ok(ApiResponseGenerator.success(encryptedToken));
     }
 

@@ -28,6 +28,7 @@ public class InstagramMediaService {
     private final InstagramMediaRepository instagramMediaRepository;
     private final InstagramProfileRepository instagramProfileRepository;
 
+    
     @Transactional
     public List<InstagramMediaDto> syncInstagramMedia(Long instagramId, String accessToken) {
 

@@ -59,6 +59,7 @@ public enum ErrorCode {
     ALARM_ALREADY_DISABLED("7027", "알림이 이미 비활성화되어 있습니다."),
     SCHEDULE_ALREADY_DELETED("7028", "삭제된 일정입니다."),
     SCHEDULE_TYPE_MISMATCH("7029", "요청한 일정 타입이 엔드포인트와 일치하지 않습니다."),
+    SCHEDULE_NOT_FOUND("7030", "스케줄 일정이 존재하지 않습니다."),
 
     // 8000번대 : SNS 관리
 
