@@ -3,7 +3,7 @@ package site.petful.healthservice.medical.care.dto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import site.petful.healthservice.schedule.enums.ScheduleSubType;
+import site.petful.healthservice.medical.medication.schedule.enums.ScheduleSubType;
 import site.petful.healthservice.medical.care.enums.CareFrequency;
 
 import java.time.LocalDate;

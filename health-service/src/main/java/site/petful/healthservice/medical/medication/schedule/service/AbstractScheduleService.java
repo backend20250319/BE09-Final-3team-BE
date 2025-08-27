@@ -1,14 +1,12 @@
-package site.petful.healthservice.schedule.service;
+package site.petful.healthservice.medical.medication.schedule.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import site.petful.healthservice.schedule.entity.Schedule;
-import site.petful.healthservice.schedule.enums.ScheduleMainType;
-import site.petful.healthservice.schedule.enums.RecurrenceType;
+import site.petful.healthservice.medical.medication.schedule.entity.Schedule;
+import site.petful.healthservice.medical.medication.schedule.enums.ScheduleMainType;
+import site.petful.healthservice.medical.medication.schedule.enums.ScheduleSubType;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
-import site.petful.healthservice.schedule.repository.ScheduleRepository;
-import site.petful.healthservice.schedule.dto.ScheduleRequestDTO;
+import site.petful.healthservice.medical.medication.schedule.repository.ScheduleRepository;
+import site.petful.healthservice.medical.medication.schedule.dto.ScheduleRequestDTO;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -160,8 +158,8 @@ public abstract class AbstractScheduleService {
      */
     protected List<Schedule> findSchedulesByUserAndSubType(Long userNo, String subType) {
         try {
-            site.petful.healthservice.schedule.enums.ScheduleSubType targetSubType = 
-                site.petful.healthservice.schedule.enums.ScheduleSubType.valueOf(subType.toUpperCase());
+            ScheduleSubType targetSubType =
+                ScheduleSubType.valueOf(subType.toUpperCase());
             return scheduleRepository.findByUserNoAndSubTypeAndDeletedFalseOrderByStartDateAsc(userNo, targetSubType);
         } catch (IllegalArgumentException e) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "유효하지 않은 서브타입입니다: " + subType);
