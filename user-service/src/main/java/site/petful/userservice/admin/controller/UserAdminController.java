@@ -83,9 +83,10 @@ public class UserAdminController {
     public ApiResponse<Void> rejectPetStar(
                     @RequestHeader("X-User-No") Long userNo,
                     @RequestHeader("X-User-Type")String userType,
-                    @RequestParam Long petStarNo
+                    @PathVariable Long petStarNo,
+                    @RequestParam String reason
             ){
-            userAdminService.rejectPetStar(petStarNo);
+            userAdminService.rejectPetStar(petStarNo,reason);
             return ApiResponseGenerator.success();
     }
 }
