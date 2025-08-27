@@ -7,7 +7,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import site.petful.userservice.admin.dto.PetStarResponse;
 import site.petful.userservice.admin.dto.ReportResponse;
 import site.petful.userservice.admin.entity.ActorType;
 import site.petful.userservice.admin.entity.ReportStatus;
@@ -56,37 +55,4 @@ public class UserAdminController {
         return ApiResponseGenerator.success();
     }
 
-    @GetMapping("/petstar/all")
-    public ApiResponse<Page<PetStarResponse>> getAllPetStars(
-            @RequestHeader("X-User-No") Long userNo,
-            @RequestHeader("X-User-Type")String userType,
-            @PageableDefault(
-                    size = 5,
-                    sort = "pendingAt",
-                    direction =Sort.Direction.DESC
-            ) Pageable pageable
-    ){
-        return ApiResponseGenerator.success(userAdminService.getAllPetStars(pageable));
-    }
-
-    @PatchMapping("/petstar/{id}/approve")
-    public ApiResponse<Void> approvePetStar(
-            @RequestHeader("X-User-No") Long userNo,
-            @RequestHeader("X-User-Type")String userType,
-            @RequestParam Long petStarNo
-    ){
-        userAdminService.approvePetStar(petStarNo);
-            return ApiResponseGenerator.success();
-    }
-
-    @PatchMapping("/petstar/{id}/reject")
-    public ApiResponse<Void> rejectPetStar(
-                    @RequestHeader("X-User-No") Long userNo,
-                    @RequestHeader("X-User-Type")String userType,
-                    @PathVariable Long petStarNo,
-                    @RequestParam String reason
-            ){
-            userAdminService.rejectPetStar(petStarNo,reason);
-            return ApiResponseGenerator.success();
-    }
 }
