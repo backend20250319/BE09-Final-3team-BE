@@ -28,21 +28,19 @@ public class PetController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // 반려동물 목록 조회 (인증된 사용자용)
+    // 반려동물 목록 조회
     @GetMapping("/pets")
     public ResponseEntity<ApiResponse<List<PetResponse>>> getPets(@RequestParam Long userNo) {
         List<PetResponse> pets = petService.getPetsByUser(userNo);
         return ResponseEntity.ok(ApiResponse.success(pets));
     }
 
-    // 반려동물 목록 조회 (외부 사용자용)
+     // 반려동물 목록 조회 (외부 사용자용)
     @GetMapping("/pets/external")
     public ResponseEntity<ApiResponse<List<PetResponse>>> getPetsExternal(@RequestParam Long userNo) {
         List<PetResponse> pets = petService.getPetsByUser(userNo);
         return ResponseEntity.ok(ApiResponse.success(pets));
     }
-
-    
 
     // 반려동물 상세 조회
     @GetMapping("/pets/{petNo}")
@@ -85,6 +83,7 @@ public class PetController {
         }
     }
 
+   
     // 펫스타 전체 조회
     @GetMapping("/petstars")
     public ResponseEntity<ApiResponse<List<PetResponse>>> getAllPetStars() {
