@@ -30,9 +30,10 @@ public class InstagramProfileController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> getProfiles(
-        @NotNull @RequestParam(name = "user_no") Long userNO) {
+        @AuthenticationPrincipal String userNo) {
         List<InstagramProfileDto> profilesResponseDto = instagramProfileService.getProfiles(
-            userNO);
+            Long.parseLong(userNo)
+        );
 
         return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
     }
