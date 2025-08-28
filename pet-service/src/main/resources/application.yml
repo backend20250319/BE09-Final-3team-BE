@@ -3,3 +3,12 @@ spring:
     import: configserver:http://localhost:8888
   application:
     name: pet-service
+
+# FTP 서버 설정
+ftp:
+  host: dev.macacolabs.site
+  port: 21
+  username: petful
+  password: petful1234
+  base-folder: /3/pet
+  view-url: http://dev.macacolabs.site:8008/3/pet

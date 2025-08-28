@@ -159,6 +159,8 @@ public class PortfolioService {
                 .collect(Collectors.toList());
     }
 
+
+
     // DTO 변환 메서드
     private PortfolioResponse toPortfolioResponse(Portfolio portfolio) {
         return PortfolioResponse.builder()

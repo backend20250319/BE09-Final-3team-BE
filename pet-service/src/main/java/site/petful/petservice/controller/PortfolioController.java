@@ -72,5 +72,6 @@ public class PortfolioController {
         List<PortfolioResponse> savedPortfolios = portfolioService.getSavedPortfolios(userNo);
         return ResponseEntity.ok(ApiResponse.success(savedPortfolios));
     }
+
 }
 

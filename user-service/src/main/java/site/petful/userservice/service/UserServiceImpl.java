@@ -1,6 +1,7 @@
 package site.petful.userservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +21,17 @@ import site.petful.userservice.dto.ProfileUpdateRequest;
 import site.petful.userservice.dto.SimpleProfileResponse;
 import site.petful.userservice.dto.SignupRequest;
 import site.petful.userservice.dto.SignupResponse;
+import site.petful.userservice.dto.WithdrawRequest;
+import site.petful.userservice.dto.WithdrawResponse;
 import site.petful.userservice.repository.UserProfileRepository;
 import site.petful.userservice.repository.UserRepository;
 import site.petful.userservice.common.ftp.FtpService;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -317,6 +323,55 @@ public class UserServiceImpl implements UserService {
         // Redis에서 인증 코드 삭제 (선택사항 - 보안을 위해 삭제)
         String redisKey = "password_reset:" + request.getEmail();
         redisService.deleteValue(redisKey);
+    }
+    
+    @Override
+    @Transactional
+    public WithdrawResponse withdraw(Long userNo, WithdrawRequest request) {
+        // 사용자 조회
+        User user = userRepository.findById(userNo)
+                .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_FOUND.getDefaultMessage()));
+        
+        // 비밀번호 확인
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+        
+        // 이미 탈퇴한 사용자인지 확인
+        if (!user.getIsActive()) {
+            throw new IllegalStateException("이미 탈퇴한 계정입니다.");
+        }
+        
+        // 탈퇴 정보 저장 (로그 목적)
+        String withdrawInfo = "탈퇴 사유: " + request.getReason() + " (탈퇴일: " + LocalDateTime.now() + ")";
+        log.info("회원탈퇴 - 사용자: {}, 사유: {}", user.getEmail(), request.getReason());
+        
+        // 관련 데이터 정리
+        // - Redis에서 사용자 관련 데이터 삭제
+        String redisKey = "user:" + user.getEmail();
+        redisService.deleteValue(redisKey);
+        
+        // - 프로필 이미지가 있다면 삭제 (선택사항)
+        if (user.getImageNo() != null) {
+            // FTP 서버에서 이미지 삭제 로직 추가 가능
+            log.info("프로필 이미지 삭제 - imageNo: {}", user.getImageNo());
+        }
+        
+        // UserProfile도 함께 삭제 (CASCADE 설정이 있다면 자동 삭제)
+        Optional<UserProfile> userProfileOpt = userProfileRepository.findByUser_UserNo(userNo);
+        if (userProfileOpt.isPresent()) {
+            userProfileRepository.delete(userProfileOpt.get());
+        }
+        
+        // 실제 DB에서 사용자 데이터 삭제 (Hard Delete)
+        userRepository.delete(user);
+        
+        return WithdrawResponse.builder()
+                .userNo(user.getUserNo())
+                .email(user.getEmail())
+                .message("회원탈퇴가 성공적으로 처리되었습니다.")
+                .withdrawnAt(LocalDateTime.now())
+                .build();
     }
     
     @Override

@@ -13,6 +13,8 @@ import site.petful.userservice.dto.ProfileUpdateRequest;
 import site.petful.userservice.dto.SimpleProfileResponse;
 import site.petful.userservice.dto.SignupRequest;
 import site.petful.userservice.dto.SignupResponse;
+import site.petful.userservice.dto.WithdrawRequest;
+import site.petful.userservice.dto.WithdrawResponse;
 
 public interface UserService {
     SignupResponse signup(SignupRequest request);   // ✅ AuthResponse → SignupResponse
@@ -28,6 +30,9 @@ public interface UserService {
     PasswordResetResponse requestPasswordReset(PasswordResetRequest request);
     VerificationConfirmResponse verifyPasswordResetCode(VerificationConfirmRequest request);
     void changePassword(PasswordChangeRequest request);
+    
+    // 회원탈퇴 관련 메서드들
+    WithdrawResponse withdraw(Long userNo, WithdrawRequest request);
     
     // 파일 업로드 관련 메서드들
     FileUploadResponse uploadProfileImage(MultipartFile file, Long userNo);
