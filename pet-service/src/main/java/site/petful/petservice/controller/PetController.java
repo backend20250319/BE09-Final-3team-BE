@@ -66,9 +66,14 @@ public class PetController {
     public ResponseEntity<ApiResponse<Void>> applyPetStar(
             @PathVariable Long petNo,
             @RequestAttribute("X-User-No") Long userNo) {
-        petService.applyPetStar(petNo, userNo);
-        return ResponseEntity.ok(ApiResponse.success());
+        try {
+            petService.applyPetStar(petNo, userNo);
+            return ResponseEntity.ok(ApiResponse.success());
+        } catch (IllegalArgumentException e) {
+            log.error("PetStar 신청 실패: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        }
     }
-
 
 }

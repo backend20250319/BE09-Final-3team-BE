@@ -1,13 +1,13 @@
 package site.petful.snsservice;
 
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableFeignClients
-@EnableBatchProcessing
 @SpringBootApplication
+@EnableScheduling
 public class SnsServiceApplication {
 
     public static void main(String[] args) {

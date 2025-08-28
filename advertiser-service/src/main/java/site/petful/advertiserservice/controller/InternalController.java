@@ -63,14 +63,14 @@ public class InternalController {
     // 3-2. 광고(캠페인) 수정 - 체험단
     @PutMapping("/campaign/{adNo}")
     public ResponseEntity<ApiResponse<?>> updateAdByCampaign(
-            @PathVariable Long adNo, 
-            @RequestParam Integer incrementBy) {
+            @PathVariable Long adNo,
+            @RequestParam Integer incrementBy){
         try {
-            adService.updateAdByCampaign(adNo, incrementBy);
-            return ResponseEntity.ok(ApiResponseGenerator.success(null));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponseGenerator.fail(ErrorCode.AD_INTERNAL_SERVER_ERROR));
+            AdResponse response = adService.updateAdByCampaign(adNo, incrementBy);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
         }
     }
 }

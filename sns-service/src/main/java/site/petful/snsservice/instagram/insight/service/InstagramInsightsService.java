@@ -28,12 +28,7 @@ public class InstagramInsightsService {
 
     private static final String INSIGHT_METRICS = "shares,likes,comments,views,reach";
 
-    public void syncInsightRecentOneMonth(Long instagramId, Long userId) {
-        syncInsights(instagramId, userId, 1);
-    }
-
-    public void syncInsights(Long instagramId, Long userId, int monthsToSync) {
-        String accessToken = instagramTokenService.getAccessToken(userId);
+    public void syncInsights(Long instagramId, String accessToken, int monthsToSync) {
         InstagramProfileEntity profileEntity = instagramProfileRepository.findById(instagramId)
             .orElseThrow(() -> new IllegalArgumentException("인스타 프로필을 찾을 수 없습니다.: " + instagramId));
 

@@ -40,6 +40,15 @@ public class InstagramProfileEntity {
         this.autoDelete = autoDelete;
     }
 
+    public void updateFromDto(InstagramProfileDto dto) {
+        this.username = dto.username();
+        this.name = dto.name();
+        this.profilePictureUrl = dto.profile_picture_url();
+        this.followersCount = dto.followers_count();
+        this.followsCount = dto.follows_count();
+        this.mediaCount = dto.media_count();
+    }
+
     public void setAutoDelete(Boolean autoDelete) {
         if (this.autoDelete == autoDelete) {
             throw new IllegalArgumentException(

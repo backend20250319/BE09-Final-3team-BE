@@ -1,5 +1,6 @@
 package site.petful.snsservice.instagram.auth.service;
 
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,4 +34,10 @@ public class InstagramTokenService {
                 () -> new IllegalArgumentException("인스타그램 토큰을 찾을 수 없습니다. userId: " + userNo));
         return aesEncryptService.decrypt(token.getToken());
     }
+
+    public int deleteExpiredTokens() {
+        return instagramTokenRepository.deleteByExpireAtBefore(
+            LocalDateTime.now());
+    }
+
 }

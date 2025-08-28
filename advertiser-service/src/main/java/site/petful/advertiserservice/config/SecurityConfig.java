@@ -32,7 +32,8 @@ public class SecurityConfig {
             "/advertiser/refresh-token",
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/actuator/**"
+            "/actuator/**",
+            "/internal/**"
     };
 
     @Bean
