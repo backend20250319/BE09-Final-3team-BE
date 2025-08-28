@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,7 @@ public class InstagramMediaController {
     private final InstagramMediaService instagramMediaService;
     private final InstagramTokenService instagramTokenService;
 
+    @PreAuthorize("hasAuthority('Admin')")
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<List<InstagramMediaDto>>> syncMedias(
         @RequestParam(name = "user_no") Long userNo,
@@ -40,6 +42,7 @@ public class InstagramMediaController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<InstagramMediaDto>>> getMedias(
         @NotNull @RequestParam(name = "instagram_id") Long instagramId) {
+
         List<InstagramMediaDto> mediasDto = instagramMediaService.getMedias(instagramId);
         return ResponseEntity.ok(ApiResponseGenerator.success(mediasDto));
     }

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.batch.service.InstagramBatchService;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
-import site.petful.snsservice.common.ErrorCode;
+import site.petful.snsservice.exception.ErrorCode;
 
 @RestController
 @RequestMapping("/batch/instagram")

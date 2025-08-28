@@ -23,9 +23,13 @@ public class InstagramBannedWordService {
 
 
     @Transactional
-    public void addBannedWord(Long instagramId, String word) {
+    public void addBannedWord(Long userNo, Long instagramId, String word) {
         InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
             .orElseThrow(() -> new NoSuchElementException("존재하지 않는 인스타그램 프로필입니다."));
+
+        if (profile.getUserNo() != userNo) {
+            throw new NoSuchElementException("해당 인스타그램 프로필에 대한 권한이 없습니다.");
+        }
 
         InstagramBannedWordEntity entity = new InstagramBannedWordEntity(
             profile.getId(), word);
@@ -34,7 +38,14 @@ public class InstagramBannedWordService {
     }
 
     @Transactional
-    public void deleteBannedWord(Long instagramId, String word) {
+    public void deleteBannedWord(Long userNo, Long instagramId, String word) {
+        InstagramProfileEntity profile = instagramProfileRepository.findById(instagramId)
+            .orElseThrow(() -> new NoSuchElementException("존재하지 않는 인스타그램 프로필입니다."));
+
+        if (profile.getUserNo() != userNo) {
+            throw new NoSuchElementException("해당 인스타그램 프로필에 대한 권한이 없습니다.");
+        }
+        
         instagramBannedWordRepository.deleteById(new InstagramBannedWordId(instagramId, word));
     }
 
