@@ -14,21 +14,7 @@ import java.util.stream.Collectors;
 @Setter
 public class ApplicantsResponse {
 
-    private AdResponse advertisement;
     private List<ApplicantDetail> applicants;
-
-    public static ApplicantsResponse from(Advertisement ad, List<ApplicantResponse> applicantResponses) {
-        ApplicantsResponse res = new ApplicantsResponse();
-        res.advertisement = AdResponse.from(ad);
-        res.applicants = applicantResponses.stream()
-                .map(applicant -> new ApplicantDetail(
-                        applicant.getPet(),
-                        applicant.getContent(),
-                        applicant.getStatus(),
-                        applicant.getCreatedAt()))
-                .collect(Collectors.toList());
-        return res;
-    }
 
     @Getter
     @Setter
