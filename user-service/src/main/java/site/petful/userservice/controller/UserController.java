@@ -22,11 +22,17 @@ import site.petful.userservice.dto.FileUploadResponse;
 import site.petful.userservice.dto.ProfileResponse;
 import site.petful.userservice.dto.ProfileUpdateRequest;
 import site.petful.userservice.dto.SimpleProfileResponse;
+import site.petful.userservice.dto.WithdrawRequest;
+import site.petful.userservice.dto.WithdrawResponse;
+import site.petful.userservice.dto.LogoutRequest;
+import site.petful.userservice.dto.TokenInfoResponse;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
+import site.petful.userservice.security.JwtUtil;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Slf4j
 @RestController
@@ -37,6 +43,7 @@ public class UserController {
     private final UserService userService;              // 회원가입/유저 관련
     private final AuthService authService;              // 토큰 발급/리프레시
     private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
 
     /**
      * 회원가입
@@ -68,11 +75,14 @@ public class UserController {
         String refresh = authService.issueRefresh(username);
 
         long now = System.currentTimeMillis();
+        long accessExpiresAt = now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis();
+        long refreshExpiresAt = now + Duration.ofDays(authService.refreshTtlDays()).toMillis();
+        
         AuthResponse authResponse = AuthResponse.builder()
                 .accessToken(access)
                 .refreshToken(refresh)
-                .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
-                .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
+                .accessExpiresAt(accessExpiresAt)
+                .refreshExpiresAt(refreshExpiresAt)
                 .email(username)
                 .name(user.getNickname() != null ? user.getNickname() : user.getName())
                 .message("로그인 성공")
@@ -86,21 +96,104 @@ public class UserController {
      */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshRequest req) {
-        long now = System.currentTimeMillis();
+        try {
+            long now = System.currentTimeMillis();
 
-        String newAccess = authService.refreshAccess(req.getRefreshToken());
-        // 필요 시에만 롤링. 정책상 롤링을 사용하지 않으려면 아래 한 줄을 제거/주석 처리하면 된다.
-        String newRefresh = authService.rotateRefresh(req.getRefreshToken());
+            String newAccess = authService.refreshAccess(req.getRefreshToken());
+            // 필요 시에만 롤링. 정책상 롤링을 사용하지 않으려면 아래 한 줄을 제거/주석 처리하면 된다.
+            String newRefresh = authService.rotateRefresh(req.getRefreshToken());
 
-        AuthResponse authResponse = AuthResponse.builder()
-                .accessToken(newAccess)
-                .refreshToken(newRefresh)
-                .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
-                .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
-                .message("토큰 재발급 성공")
-                .build();
+            AuthResponse authResponse = AuthResponse.builder()
+                    .accessToken(newAccess)
+                    .refreshToken(newRefresh)
+                    .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
+                    .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
+                    .message("토큰 재발급 성공")
+                    .build();
 
-        return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
+            return ResponseEntity.ok(ApiResponseGenerator.success(authResponse));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<AuthResponse>(ErrorCode.INVALID_REQUEST, "토큰 재발급 실패: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * 토큰 유효성 검증
+     * POST /auth/validate-token
+     */
+    @PostMapping("/validate-token")
+    public ResponseEntity<ApiResponse<Boolean>> validateToken(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.ok(ApiResponseGenerator.success(false));
+            }
+            
+            String token = authHeader.substring(7);
+            boolean isValid = jwtUtil.validateAccessToken(token);
+            
+            return ResponseEntity.ok(ApiResponseGenerator.success(isValid));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponseGenerator.success(false));
+        }
+    }
+
+    /**
+     * 토큰 상태 확인 및 자동 갱신
+     * POST /auth/check-token
+     */
+    @PostMapping("/check-token")
+    public ResponseEntity<ApiResponse<TokenInfoResponse>> checkToken(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(required = false) String refreshToken) {
+        
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, "액세스 토큰이 없습니다.", null));
+            }
+            
+            String accessToken = authHeader.substring(7);
+            
+            // 액세스 토큰이 유효한지 확인
+            if (jwtUtil.validateAccessToken(accessToken)) {
+                // 액세스 토큰이 유효하면 현재 토큰 정보 반환
+                return ResponseEntity.ok(ApiResponseGenerator.success(TokenInfoResponse.builder()
+                        .message("토큰이 유효합니다.")
+                        .tokenType("valid")
+                        .build()));
+            } else {
+                // 액세스 토큰이 만료되었고, 리프레시 토큰이 제공된 경우
+                if (refreshToken != null && !refreshToken.trim().isEmpty()) {
+                    try {
+                        // 새로운 토큰 발급
+                        String newAccess = authService.refreshAccess(refreshToken);
+                        String newRefresh = authService.rotateRefresh(refreshToken);
+                        
+                        long now = System.currentTimeMillis();
+                        long accessExpiresAt = now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis();
+                        long refreshExpiresAt = now + Duration.ofDays(authService.refreshTtlDays()).toMillis();
+                        
+                        TokenInfoResponse response = TokenInfoResponse.builder()
+                                .accessToken(newAccess)
+                                .refreshToken(newRefresh)
+                                .accessExpiresAt(LocalDateTime.now().plusMinutes(authService.accessTtlMinutes()))
+                                .refreshExpiresAt(LocalDateTime.now().plusDays(authService.refreshTtlDays()))
+                                .accessExpiresIn(authService.accessTtlMinutes() * 60)
+                                .refreshExpiresIn(authService.refreshTtlDays() * 24 * 60 * 60)
+                                .tokenType("refreshed")
+                                .message("토큰이 갱신되었습니다.")
+                                .build();
+                        
+                        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+                    } catch (Exception e) {
+                        return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, "리프레시 토큰이 유효하지 않습니다.", null));
+                    }
+                } else {
+                    return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, "액세스 토큰이 만료되었습니다. 리프레시 토큰을 제공해주세요.", null));
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, "토큰 검증 중 오류가 발생했습니다.", null));
+        }
     }
 
     /**
@@ -196,15 +289,42 @@ public class UserController {
             // 업데이트된 프로필 정보가 포함된 응답 반환
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } else {
-            return ResponseEntity.badRequest().body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, response.getMessage(), response));
+            return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, response.getMessage(), response));
         }
     }
     
     /**
-     * 로그아웃(무상태)
+     * 회원탈퇴
+     * DELETE /auth/withdraw
+     */
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<ApiResponse<WithdrawResponse>> withdraw(@Valid @RequestBody WithdrawRequest request) {
+        // Spring Security의 Authentication을 사용하여 사용자 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        // 이메일로 사용자 조회
+        User user = userService.findByEmail(email);
+        Long userNo = user.getUserNo();
+        
+        WithdrawResponse response = userService.withdraw(userNo, request);
+        
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+    
+    /**
+     * 로그아웃
+     * POST /auth/logout
      */
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout() {
-        return ResponseEntity.ok(ApiResponseGenerator.success("로그아웃 성공"));
+    public ResponseEntity<ApiResponse<String>> logout(@Valid @RequestBody LogoutRequest request) {
+        try {
+            // 리프레시 토큰 검증 및 로그아웃 처리
+            authService.logout(request.getRefreshToken());
+            
+            return ResponseEntity.ok(ApiResponseGenerator.success("로그아웃이 성공적으로 처리되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null));
+        }
     }
 }
