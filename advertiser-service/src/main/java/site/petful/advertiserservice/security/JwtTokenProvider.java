@@ -1,6 +1,7 @@
 package site.petful.advertiserservice.security;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,11 +25,11 @@ public class JwtTokenProvider {
     private long refreshExpDays;
 
     private SecretKey getAccessSigningKey() {
-        return Keys.hmacShaKeyFor(accessSecret.getBytes());
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessSecret.trim()));
     }
 
     private SecretKey getRefreshSigningKey() {
-        return Keys.hmacShaKeyFor(refreshSecret.getBytes());
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshSecret.trim()));
     }
 
     public String generateAccessToken(Long advertiserNo, String userType) {
@@ -93,6 +94,14 @@ public class JwtTokenProvider {
     public String getUserTypeFromRefreshToken(String token) {
         Claims claims = getRefreshTokenClaims(token);
         return claims.get("userType", String.class);
+    }
+
+    // userNo 또는 advertiserNo를 반환하는 통합 메서드
+    public Long getUserNoFromAccessToken(String token) {
+        Claims claims = getAccessTokenClaims(token);
+        Long userNo = claims.get("userNo", Long.class);
+        Long advertiserNo = claims.get("advertiserNo", Long.class);
+        return userNo != null ? userNo : advertiserNo;
     }
 
     public boolean validateAccessToken(String token) {
