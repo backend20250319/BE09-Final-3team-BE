@@ -1,6 +1,6 @@
 package site.petful.communityservice.entity;
 
-public enum Status {
+public enum PostStatus {
     DELETED,
     PUBLISHED,
 }
