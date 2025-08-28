@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import site.petful.userservice.common.ApiResponse;
 import site.petful.userservice.common.ApiResponseGenerator;
+import site.petful.userservice.common.ErrorCode;
 import site.petful.userservice.entity.User;
 import site.petful.userservice.dto.*;
 import site.petful.userservice.dto.PasswordChangeRequest;
@@ -17,11 +18,13 @@ import site.petful.userservice.dto.PasswordResetRequest;
 import site.petful.userservice.dto.PasswordResetResponse;
 import site.petful.userservice.dto.VerificationConfirmRequest;
 import site.petful.userservice.dto.VerificationConfirmResponse;
+import site.petful.userservice.dto.FileUploadResponse;
 import site.petful.userservice.dto.ProfileResponse;
 import site.petful.userservice.dto.ProfileUpdateRequest;
 import site.petful.userservice.dto.SimpleProfileResponse;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import java.time.Duration;
 
@@ -171,6 +174,32 @@ public class UserController {
         return ResponseEntity.ok(ApiResponseGenerator.success("비밀번호가 성공적으로 변경되었습니다."));
     }
 
+    /**
+     * 프로필 이미지 업로드
+     * POST /auth/profile/image
+     */
+    @PostMapping("/profile/image")
+    public ResponseEntity<ApiResponse<FileUploadResponse>> uploadProfileImage(
+            @RequestParam("file") MultipartFile file) {
+        
+        // Spring Security의 Authentication을 사용하여 사용자 정보 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        // 이메일로 사용자 조회
+        User user = userService.findByEmail(email);
+        Long userNo = user.getUserNo();
+        
+        FileUploadResponse response = userService.uploadProfileImage(file, userNo);
+        
+        if (response.isSuccess()) {
+            // 업데이트된 프로필 정보가 포함된 응답 반환
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, response.getMessage(), response));
+        }
+    }
+    
     /**
      * 로그아웃(무상태)
      */

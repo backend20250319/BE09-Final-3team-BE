@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import site.petful.userservice.common.ErrorCode;
 import site.petful.userservice.entity.Role;
 import site.petful.userservice.entity.User;
@@ -13,6 +14,7 @@ import site.petful.userservice.dto.PasswordResetRequest;
 import site.petful.userservice.dto.PasswordResetResponse;
 import site.petful.userservice.dto.VerificationConfirmRequest;
 import site.petful.userservice.dto.VerificationConfirmResponse;
+import site.petful.userservice.dto.FileUploadResponse;
 import site.petful.userservice.dto.ProfileResponse;
 import site.petful.userservice.dto.ProfileUpdateRequest;
 import site.petful.userservice.dto.SimpleProfileResponse;
@@ -20,6 +22,7 @@ import site.petful.userservice.dto.SignupRequest;
 import site.petful.userservice.dto.SignupResponse;
 import site.petful.userservice.repository.UserProfileRepository;
 import site.petful.userservice.repository.UserRepository;
+import site.petful.userservice.common.ftp.FtpService;
 
 import java.time.LocalDate;
 
@@ -32,6 +35,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final RedisService redisService;
+    private final FtpService ftpService;
 
     @Override
     public SignupResponse signup(SignupRequest request) {
@@ -315,10 +319,117 @@ public class UserServiceImpl implements UserService {
         redisService.deleteValue(redisKey);
     }
     
+    @Override
+    @Transactional
+    public FileUploadResponse uploadProfileImage(MultipartFile file, Long userNo) {
+        try {
+            // userNo null 체크
+            if (userNo == null) {
+                return FileUploadResponse.builder()
+                        .success(false)
+                        .message("사용자 번호가 유효하지 않습니다.")
+                        .build();
+            }
+            
+            // 파일 검증
+            if (file.isEmpty()) {
+                return FileUploadResponse.builder()
+                        .success(false)
+                        .message("업로드할 파일이 없습니다.")
+                        .build();
+            }
+            
+            // 파일 크기 검증 (10MB 제한)
+            if (file.getSize() > 10 * 1024 * 1024) {
+                return FileUploadResponse.builder()
+                        .success(false)
+                        .message("파일 크기는 10MB를 초과할 수 없습니다.")
+                        .build();
+            }
+            
+            // 파일 타입 검증
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return FileUploadResponse.builder()
+                        .success(false)
+                        .message("이미지 파일만 업로드 가능합니다.")
+                        .build();
+            }
+            
+            String uploadedFilename = ftpService.upload(file);
+            
+            if (uploadedFilename != null) {
+                // FtpService에서 반환된 파일명 사용
+                String fileUrl = ftpService.getFileUrl(uploadedFilename);
+                
+                // 사용자의 프로필 이미지 URL 업데이트
+                updateUserProfileImageUrl(userNo, fileUrl);
+                
+                // 업데이트된 프로필 정보 조회
+                ProfileResponse updatedProfile = getProfile(userNo);
+                
+                return FileUploadResponse.builder()
+                        .fileName(uploadedFilename)
+                        .fileUrl(fileUrl)
+                        .message("프로필 이미지 업로드가 성공했습니다.")
+                        .success(true)
+                        .profileResponse(updatedProfile)  // 업데이트된 프로필 정보 포함
+                        .build();
+            } else {
+                return FileUploadResponse.builder()
+                        .success(false)
+                        .message("파일 업로드에 실패했습니다.")
+                        .build();
+            }
+            
+        } catch (Exception e) {
+            return FileUploadResponse.builder()
+                    .success(false) 
+                    .message("파일 업로드 중 오류가 발생했습니다: " + e.getMessage())
+                    .build();
+        }
+    }
+    
     /**
      * 6자리 숫자 인증 코드 생성
      */
     private String generateVerificationCode() {
         return String.format("%06d", (int) (Math.random() * 1000000));
+    }
+    
+    /**
+     * 사용자의 프로필 이미지 URL 업데이트
+     */
+    private void updateUserProfileImageUrl(Long userNo, String imageUrl) {
+        try {
+            // userNo null 체크
+            if (userNo == null) {
+                throw new IllegalArgumentException("사용자 번호가 null입니다.");
+            }
+            
+            // imageUrl null 체크
+            if (imageUrl == null || imageUrl.trim().isEmpty()) {
+                throw new IllegalArgumentException("이미지 URL이 유효하지 않습니다.");
+            }
+            
+            // 사용자 조회
+            User user = userRepository.findById(userNo)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + userNo));
+            
+            // UserProfile 조회 또는 생성
+            UserProfile profile = userProfileRepository.findByUser_UserNo(userNo)
+                    .orElse(UserProfile.builder()
+                            .user(user)
+                            .build());
+            
+            // 프로필 이미지 URL 업데이트
+            profile.setProfileImageUrl(imageUrl);
+            
+            // 저장
+            userProfileRepository.save(profile);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("프로필 이미지 URL 업데이트 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
     }
 }
