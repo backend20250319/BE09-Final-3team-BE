@@ -34,6 +34,7 @@ public class Comment {
     private Long parentId;
 
     @Enumerated(EnumType.STRING)
+    @Column(name="comment_status")
     private CommentStatus commentStatus = CommentStatus.NORMAL;
     @PrePersist
     protected void onCreate() {if(createdAt == null) createdAt = LocalDateTime.now();}

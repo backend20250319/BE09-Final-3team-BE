@@ -18,7 +18,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
-import site.petful.snsservice.common.ErrorCode;
+import site.petful.snsservice.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor

@@ -3,6 +3,7 @@ package site.petful.snsservice.instagram.insight.controller;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,7 @@ public class InstagramInsightController {
     private final InstagramFollowerHistoryService instagramFollowerHistoryService;
     private final InstagramTokenService instagramTokenService;
 
+    @PreAuthorize("hasRole('Admin')")
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<Void>> syncInsights(
         @RequestParam("user_no") Long userNo,

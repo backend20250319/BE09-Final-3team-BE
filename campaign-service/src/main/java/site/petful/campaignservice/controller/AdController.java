@@ -9,6 +9,7 @@ import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ApiResponseGenerator;
 import site.petful.campaignservice.dto.advertisement.AdsGroupedResponse;
 import site.petful.campaignservice.dto.advertisement.AppliedAdsResponse;
+import site.petful.campaignservice.security.SecurityUtil;
 import site.petful.campaignservice.service.AdService;
 
 @RestController
@@ -16,9 +17,11 @@ import site.petful.campaignservice.service.AdService;
 public class AdController {
 
     private final AdService adService;
+    private final SecurityUtil securityUtil;
 
-    public AdController(AdService adService) {
+    public AdController(AdService adService, SecurityUtil securityUtil) {
         this.adService = adService;
+        this.securityUtil = securityUtil;
     }
 
     // 1. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회
@@ -30,7 +33,8 @@ public class AdController {
 
     // 2. 신청한 광고(캠페인) 전체 조회
     @GetMapping("/applied")
-    public ResponseEntity<ApiResponse<?>> getAppliedAds(@RequestParam Long userNo) {
+    public ResponseEntity<ApiResponse<?>> getAppliedAds() {
+        Long userNo = securityUtil.getCurrentUserNo();
         AppliedAdsResponse ads = adService.getAppliedAds(userNo);
         return ResponseEntity.ok(ApiResponseGenerator.success(ads));
     }

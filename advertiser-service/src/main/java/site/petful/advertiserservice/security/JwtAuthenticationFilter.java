@@ -29,14 +29,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = extractTokenFromRequest(request);
             
             if (StringUtils.hasText(token) && jwtTokenProvider.validateAccessToken(token)) {
-                Long advertiserNo = jwtTokenProvider.getAdvertiserNoFromAccessToken(token);
+                Long userNo = jwtTokenProvider.getUserNoFromAccessToken(token);
                 String userType = jwtTokenProvider.getUserTypeFromAccessToken(token);
                 
                 // 인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    advertiserNo,
+                    userNo,
                     null,
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userType))
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userType.toUpperCase()))
                 );
                 
                 // SecurityContext에 인증 정보 설정

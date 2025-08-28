@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 @Setter
 public class AdResponse {
 
+    private Long adNo;
     private String title;
     private String content;
     private String objective;
@@ -36,6 +37,7 @@ public class AdResponse {
 
     public static AdResponse from(Advertisement ad) {
         AdResponse res = new AdResponse();
+        res.setAdNo(ad.getAdNo());
         res.setTitle(ad.getTitle());
         res.setContent(ad.getContent());
         res.setObjective(ad.getObjective());

@@ -3,7 +3,10 @@ package site.petful.snsservice.instagram.profile.controller;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +19,7 @@ import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
 import site.petful.snsservice.instagram.profile.dto.InstagramProfileDto;
 import site.petful.snsservice.instagram.profile.service.InstagramProfileService;
 
+@Slf4j
 @RestController
 @RequestMapping("/instagram/profiles")
 @RequiredArgsConstructor
@@ -24,11 +28,12 @@ public class InstagramProfileController {
     private final InstagramProfileService instagramProfileService;
     private final InstagramTokenService instagramTokenService;
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> getProfiles(
-        @NotNull @RequestParam(name = "user_no") Long userNO) {
+        @AuthenticationPrincipal String userNo) {
         List<InstagramProfileDto> profilesResponseDto = instagramProfileService.getProfiles(
-            userNO);
+            Long.parseLong(userNo)
+        );
 
         return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
     }
@@ -44,7 +49,7 @@ public class InstagramProfileController {
     }
 
 
-    //TODO [유저] 여기 userId 수정 쭉 들어가면서 userNo로 저장
+    @PreAuthorize("hasAuthority('Admin')")
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> syncProfiles(
         @RequestParam(name = "user_no") Long userNo) {
@@ -60,11 +65,15 @@ public class InstagramProfileController {
     }
 
 
+    @PreAuthorize("hasAuthority('User')")
     @PostMapping("/auto-delete")
     public ResponseEntity<ApiResponse<Void>> autoDeleteComments(
+        @AuthenticationPrincipal String userNo,
         @RequestParam(name = "instagram_id") Long instagramId, @RequestParam Boolean isAutoDelete) {
 
-        instagramProfileService.setAutoDelete(instagramId, isAutoDelete);
+        System.out.println("userNo = " + userNo);
+
+        instagramProfileService.setAutoDelete(Long.parseLong(userNo), instagramId, isAutoDelete);
 
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
