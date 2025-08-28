@@ -8,6 +8,7 @@ import site.petful.userservice.dto.VerificationConfirmRequest;
 import site.petful.userservice.dto.VerificationConfirmResponse;
 import site.petful.userservice.dto.ProfileResponse;
 import site.petful.userservice.dto.ProfileUpdateRequest;
+import site.petful.userservice.dto.SimpleProfileResponse;
 import site.petful.userservice.dto.SignupRequest;
 import site.petful.userservice.dto.SignupResponse;
 
@@ -19,6 +20,7 @@ public interface UserService {
     // 프로필 관련 메서드들
     ProfileResponse getProfile(Long userNo);
     ProfileResponse updateProfile(Long userNo, ProfileUpdateRequest request);
+    SimpleProfileResponse getSimpleProfile(Long userNo);
     
     // 비밀번호 재설정 관련 메서드들
     PasswordResetResponse requestPasswordReset(PasswordResetRequest request);

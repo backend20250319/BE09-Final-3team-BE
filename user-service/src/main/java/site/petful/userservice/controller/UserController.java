@@ -19,6 +19,7 @@ import site.petful.userservice.dto.VerificationConfirmRequest;
 import site.petful.userservice.dto.VerificationConfirmResponse;
 import site.petful.userservice.dto.ProfileResponse;
 import site.petful.userservice.dto.ProfileUpdateRequest;
+import site.petful.userservice.dto.SimpleProfileResponse;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
 import jakarta.validation.Valid;
@@ -127,6 +128,17 @@ public class UserController {
         ProfileResponse updatedProfile = userService.updateProfile(user.getUserNo(), request);
         
         return ResponseEntity.ok(ApiResponseGenerator.success(updatedProfile));
+    }
+    
+    /**
+     * 사용자의 간단한 프로필 정보 조회 (닉네임, 프로필 이미지)
+     * GET /auth/profile/simple?userNo={userNo}
+     */
+    @GetMapping("/profile/simple")
+    public ResponseEntity<ApiResponse<SimpleProfileResponse>> getSimpleProfile(@RequestParam Long userNo) {
+        SimpleProfileResponse simpleProfile = userService.getSimpleProfile(userNo);
+        
+        return ResponseEntity.ok(ApiResponseGenerator.success(simpleProfile));
     }
     
     /**

@@ -14,6 +14,9 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ProfileUpdateRequest {
     
+    @Size(max = 30, message = "닉네임은 30자를 초과할 수 없습니다.")
+    private String nickname;
+    
     @Size(max = 500, message = "프로필 이미지 URL은 500자를 초과할 수 없습니다.")
     private String profileImageUrl;
     
@@ -32,4 +35,5 @@ public class ProfileUpdateRequest {
     private String instagramAccount;
 
 }
+
 
