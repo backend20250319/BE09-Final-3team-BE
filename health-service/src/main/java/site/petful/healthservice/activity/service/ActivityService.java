@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import site.petful.healthservice.activity.dto.ActivityRequest;
 import site.petful.healthservice.activity.dto.ActivityResponse;
+import site.petful.healthservice.activity.dto.ActivityChartResponse;
 import site.petful.healthservice.activity.entity.Activity;
 import site.petful.healthservice.activity.entity.ActivityMeal;
 import site.petful.healthservice.activity.enums.ActivityLevel;
@@ -132,6 +133,94 @@ public class ActivityService {
                 .map(activity -> activity.getActivityDate().toString())
                 .sorted()
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * 차트 데이터 조회 (일/주/월/년 단위)
+     */
+    public ActivityChartResponse getActivityChartData(Long userNo, Long petNo, String periodType, String startDateStr, String endDateStr) {
+        LocalDate startDate = LocalDate.parse(startDateStr);
+        LocalDate endDate = LocalDate.parse(endDateStr);
+        
+        List<Activity> activities = activityRepository.findByPetNoAndDateRange(petNo, startDate, endDate);
+        
+        // 사용자 권한 확인
+        activities = activities.stream()
+                .filter(activity -> activity.getUserNo().equals(userNo))
+                .collect(Collectors.toList());
+        
+        List<ActivityChartResponse.ChartData> chartDataList = activities.stream()
+                .map(activity -> convertToChartData(activity, periodType))
+                .sorted((a, b) -> a.getDate().compareTo(b.getDate()))
+                .collect(Collectors.toList());
+        
+        return ActivityChartResponse.builder()
+                .chartData(chartDataList)
+                .periodType(periodType)
+                .build();
+    }
+    
+    /**
+     * Activity 엔티티를 ChartData DTO로 변환
+     */
+    private ActivityChartResponse.ChartData convertToChartData(Activity activity, String periodType) {
+        String displayDate = getDisplayDate(activity.getActivityDate(), periodType);
+        
+        return ActivityChartResponse.ChartData.builder()
+                .date(activity.getActivityDate().toString())
+                .displayDate(displayDate)
+                .recommendedCaloriesBurned(activity.getRecommendedCaloriesBurned())
+                .actualCaloriesBurned(activity.getCaloriesBurned())
+                .recommendedCaloriesIntake(calculateRecommendedCaloriesIntake(activity.getWeightKg(), activity.getActivityLevel()))
+                .actualCaloriesIntake(calculateTotalConsumedCalories(activity))
+                .poopCount(activity.getPoopCount())
+                .peeCount(activity.getPeeCount())
+                .sleepHours(activity.getSleepHours())
+                .build();
+    }
+    
+    /**
+     * 표시용 날짜 문자열 생성
+     */
+    private String getDisplayDate(LocalDate date, String periodType) {
+        switch (periodType.toUpperCase()) {
+            case "DAY":
+                return getDayOfWeekKorean(date);
+            case "WEEK":
+                return getWeekDisplay(date);
+            case "MONTH":
+                return getMonthDisplay(date);
+            case "YEAR":
+                return getYearDisplay(date);
+            default:
+                return date.toString();
+        }
+    }
+    
+    private String getDayOfWeekKorean(LocalDate date) {
+        String[] days = {"월", "화", "수", "목", "금", "토", "일"};
+        return days[date.getDayOfWeek().getValue() - 1];
+    }
+    
+    private String getWeekDisplay(LocalDate date) {
+        return date.getMonthValue() + "월 " + date.getDayOfMonth() + "일";
+    }
+    
+    private String getMonthDisplay(LocalDate date) {
+        return date.getMonthValue() + "월";
+    }
+    
+    private String getYearDisplay(LocalDate date) {
+        return String.valueOf(date.getYear());
+    }
+    
+    /**
+     * 총 섭취 칼로리 계산
+     */
+    private Integer calculateTotalConsumedCalories(Activity activity) {
+        return activity.getMeals().stream()
+                .mapToInt(ActivityMeal::getConsumedCalories)
+                .sum();
     }
     
     /**

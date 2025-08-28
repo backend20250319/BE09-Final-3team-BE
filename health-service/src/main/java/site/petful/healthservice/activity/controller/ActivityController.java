@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import site.petful.healthservice.activity.dto.ActivityRequest;
 import site.petful.healthservice.activity.dto.ActivityResponse;
+import site.petful.healthservice.activity.dto.ActivityChartResponse;
 import site.petful.healthservice.activity.service.ActivityService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -77,5 +78,22 @@ public class ActivityController {
         Long effectiveUserNo = (userNo != null) ? userNo : 1L;
         List<String> dates = activityService.getActivitySchedule(effectiveUserNo, petNo, year, month);
         return ResponseEntity.ok(ApiResponseGenerator.success(dates));
+    }
+    
+    /**
+     * 활동 데이터 차트 시각화 조회
+     * periodType: DAY(일), WEEK(주), MONTH(월), YEAR(년)
+     */
+    @GetMapping("/chart")
+    public ResponseEntity<ApiResponse<ActivityChartResponse>> getActivityChart(
+            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @RequestParam("petNo") Long petNo,
+            @RequestParam("periodType") String periodType,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate
+    ) {
+        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
+        ActivityChartResponse response = activityService.getActivityChartData(effectiveUserNo, petNo, periodType, startDate, endDate);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 }
