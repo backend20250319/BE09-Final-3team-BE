@@ -21,6 +21,7 @@ public class InstagramInsightSyncTasklet implements Tasklet {
     private final InstagramTokenService tokenService;
     private final InstagramInsightsService insightService;
     private final InstagramProfileService profileService;
+    private final InstagramTokenService instagramTokenService;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
@@ -45,8 +46,7 @@ public class InstagramInsightSyncTasklet implements Tasklet {
                 users = List.of((long) targetUser);
             } else {
                 log.info("모든 사용자에 대해 인사이트 동기화 수행");
-                //Todo: 실제 사용자 목록을 DB에서 가져오도록 수정 필요
-                users = List.of(1L);
+                users = instagramTokenService.getAllUserIds();
             }
 
             log.info("인사이트 동기화 대상 사용자 수: {}", users.size());
