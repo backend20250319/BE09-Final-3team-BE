@@ -15,6 +15,7 @@ import site.petful.userservice.dto.VerificationConfirmRequest;
 import site.petful.userservice.dto.VerificationConfirmResponse;
 import site.petful.userservice.dto.ProfileResponse;
 import site.petful.userservice.dto.ProfileUpdateRequest;
+import site.petful.userservice.dto.SimpleProfileResponse;
 import site.petful.userservice.dto.SignupRequest;
 import site.petful.userservice.dto.SignupResponse;
 import site.petful.userservice.repository.UserProfileRepository;
@@ -142,6 +143,10 @@ public class UserServiceImpl implements UserService {
                         .build());
         
         // 프로필 정보 업데이트
+        if (request.getNickname() != null) {
+            user.setNickname(request.getNickname());
+            userRepository.save(user);
+        }
         if (request.getProfileImageUrl() != null) {
             profile.setProfileImageUrl(request.getProfileImageUrl());
         }
@@ -232,6 +237,21 @@ public class UserServiceImpl implements UserService {
         return PasswordResetResponse.builder()
                 .message("비밀번호 재설정 인증 코드가 이메일로 발송되었습니다.")
                 .email(request.getEmail())
+                .build();
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public SimpleProfileResponse getSimpleProfile(Long userNo) {
+        User user = userRepository.findById(userNo)
+                .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_FOUND.getDefaultMessage()));
+        
+        UserProfile profile = userProfileRepository.findByUser_UserNo(userNo)
+                .orElse(null);
+        
+        return SimpleProfileResponse.builder()
+                .nickname(user.getNickname())
+                .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
                 .build();
     }
     

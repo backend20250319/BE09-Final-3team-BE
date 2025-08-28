@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PasswordResetResponse {
-    private String message;
-    private String email;
+public class SimpleProfileResponse {
+    
+    private String nickname;
+    private String profileImageUrl;
+    
 }
-
-

@@ -15,3 +15,4 @@ public class VerificationConfirmResponse {
     private boolean verified;
 }
 
+
