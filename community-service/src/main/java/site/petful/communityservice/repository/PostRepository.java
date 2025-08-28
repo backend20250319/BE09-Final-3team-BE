@@ -5,19 +5,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import site.petful.communityservice.entity.Post;
+import site.petful.communityservice.entity.PostStatus;
 import site.petful.communityservice.entity.PostType;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post,Long> {
-    Page<Post> findByUserId(Long userNo, Pageable pageable);
 
-    Page<Post> findByUserIdAndType(Long userNo, PostType type, Pageable pageable);
+    Page<Post> findByStatusAndType(PostStatus postStatus, Pageable pageable, PostType type);
 
-    Page<Post> findByStatus(String published, Pageable pageable);
+    Page<Post> findByUserIdAndStatus(Long userNo, PostStatus postStatus, Pageable pageable);
 
-    Page<Post> findByStatusAndType(String published, Pageable pageable, PostType type);
+    Page<Post> findByUserIdAndStatusAndType(Long userNo, PostStatus postStatus, Pageable pageable, PostType type);
 
-    Page<Post> findByUserIdAndStatus(Long userNo, String published, Pageable pageable);
-
-    Page<Post> findByUserIdAndStatusAndType(Long userNo, String published, Pageable pageable, PostType type);
+    Page<Post> findByStatus(PostStatus postStatus, Pageable pageable);
 }
