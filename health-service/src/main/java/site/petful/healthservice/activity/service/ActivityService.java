@@ -11,6 +11,8 @@ import site.petful.healthservice.activity.repository.ActivityRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -90,5 +92,80 @@ public class ActivityService {
     private int calculateConsumedCalories(Integer totalCalories, Double totalWeightG, Double consumedWeightG) {
         double caloriesPerGram = (double) totalCalories / totalWeightG;
         return (int) Math.round(caloriesPerGram * consumedWeightG);
+    }
+    
+    // 권장 섭취 칼로리 = 무게(kg) × 활동계수 × 100
+    private int calculateRecommendedCaloriesIntake(Double weightKg, ActivityLevel activityLevel) {
+        return (int) Math.round(weightKg * activityLevel.getValue() * 100);
+    }
+    
+    /**
+     * 특정 날짜의 활동 데이터 조회
+     */
+    public ActivityResponse getActivity(Long userNo, Long petNo, String activityDateStr) {
+        LocalDate activityDate = LocalDate.parse(activityDateStr);
+        
+        Activity activity = activityRepository.findByPetNoAndActivityDate(petNo, activityDate)
+                .orElseThrow(() -> new IllegalArgumentException("해당 날짜의 활동 데이터가 존재하지 않습니다."));
+        
+        // 사용자 권한 확인
+        if (!activity.getUserNo().equals(userNo)) {
+            throw new IllegalArgumentException("해당 활동 데이터에 대한 접근 권한이 없습니다.");
+        }
+        
+        return convertToResponse(activity);
+    }
+    
+    /**
+     * 스케줄에서 기록이 있는 날짜 목록 조회
+     */
+    public List<String> getActivitySchedule(Long userNo, Long petNo, int year, int month) {
+        // 해당 월의 시작일과 마지막일 계산
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.plusMonths(1).minusDays(1);
+        
+        List<Activity> activities = activityRepository.findByPetNoAndDateRange(petNo, startDate, endDate);
+        
+        // 사용자 권한 확인 및 날짜만 추출
+        return activities.stream()
+                .filter(activity -> activity.getUserNo().equals(userNo))
+                .map(activity -> activity.getActivityDate().toString())
+                .sorted()
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Activity 엔티티를 Response DTO로 변환
+     */
+    private ActivityResponse convertToResponse(Activity activity) {
+        return ActivityResponse.builder()
+                .activityNo(activity.getActivityNo())
+                .userNo(activity.getUserNo())
+                .petNo(activity.getPetNo())
+                .activityDate(activity.getActivityDate())
+                .walkingDistanceKm(activity.getWalkingDistanceKm())
+                .activityLevel(activity.getActivityLevel())
+                .caloriesBurned(activity.getCaloriesBurned())
+                .recommendedCaloriesBurned(activity.getRecommendedCaloriesBurned())
+                .recommendedCaloriesIntake(calculateRecommendedCaloriesIntake(activity.getWeightKg(), activity.getActivityLevel()))
+                .weightKg(activity.getWeightKg())
+                .sleepHours(activity.getSleepHours())
+                .poopCount(activity.getPoopCount())
+                .peeCount(activity.getPeeCount())
+                .memo(activity.getMemo())
+                .meals(activity.getMeals().stream()
+                        .map(meal -> ActivityResponse.MealResponse.builder()
+                                .mealNo(meal.getMealNo())
+                                .totalWeightG(meal.getTotalWeightG())
+                                .totalCalories(meal.getTotalCalories())
+                                .consumedWeightG(meal.getConsumedWeightG())
+                                .consumedCalories(meal.getConsumedCalories())
+                                .mealType(meal.getMealType())
+                                .memo(meal.getMemo())
+                                .build())
+                        .collect(Collectors.toList()))
+                .createdAt(activity.getCreatedAt())
+                .updatedAt(activity.getUpdatedAt())
+                .build();
     }
 }
