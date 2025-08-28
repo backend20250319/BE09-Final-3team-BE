@@ -3,6 +3,7 @@ package site.petful.snsservice.common;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import site.petful.snsservice.exception.ErrorCode;
 
 @NoArgsConstructor
 @Getter
