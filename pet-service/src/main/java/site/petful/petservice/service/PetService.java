@@ -141,6 +141,39 @@ public class PetService {
         petRepository.save(pet);
     }
 
+    // PetStar 상태를 ACTIVE로 변경
+    @Transactional
+    public void activatePetStar(Long petNo) {
+        Pet pet = petRepository.findById(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
+
+        // 이미 ACTIVE 상태인 경우
+        if (pet.getPetStarStatus() == PetStarStatus.ACTIVE) {
+            throw new IllegalArgumentException("이미 PetStar로 활성화되어 있습니다.");
+        }
+
+        // PetStar 상태를 ACTIVE로 변경하고 isPetStar를 true로 설정
+        pet.setPetStarStatus(PetStarStatus.ACTIVE);
+        pet.setIsPetStar(true);
+        petRepository.save(pet);
+    }
+
+    // 펫스타 전체 조회
+    public List<PetResponse> getAllPetStars() {
+        List<Pet> petStars = petRepository.findByIsPetStarTrue();
+        return petStars.stream()
+                .map(this::toPetResponse)
+                .collect(Collectors.toList());
+    }
+
+    // petNos 리스트로 펫 조회
+    public List<PetResponse> getPetsByPetNos(List<Long> petNos) {
+        List<Pet> pets = petRepository.findByPetNos(petNos);
+        return pets.stream()
+                .map(this::toPetResponse)
+                .collect(Collectors.toList());
+    }
+
     // Pet 엔티티를 PetResponse로 변환
     private PetResponse toPetResponse(Pet pet) {
         return PetResponse.builder()
