@@ -34,18 +34,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        log.debug("JWT Filter - Request URI: {}", request.getRequestURI());
-
         String token = extractTokenFromRequest(request);
-        log.debug("JWT Filter - Extracted token: {}", token != null ? "present" : "null");
 
         if (StringUtils.hasText(token) && validateToken(token)) {
-            log.debug("JWT Filter - Token is valid");
             Claims claims = extractClaims(token);
-            Long userNo = claims.get("userNo", Long.class);
-            String userType = claims.get("userType", String.class);
-            log.debug("JWT Filter - Extracted userNo: {}, userType: {}", userNo, userType);
 
+            Long userNo = claims.get("userNo", Long.class);
+            Long advertiserNo = claims.get("advertiserNo", Long.class);
+            userNo = userNo != null ? userNo : advertiserNo;
+
+            String userType = claims.get("userType", String.class);
             request.setAttribute("X-User-No", userNo);
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -54,12 +52,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            log.debug("JWT Filter - Setting X-User-No attribute: {}", userNo);
             filterChain.doFilter(request, response);
             return;
         }
 
-        log.debug("JWT Filter - No valid token found, proceeding without authentication");
         filterChain.doFilter(request, response);
     }
 
@@ -73,14 +69,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean validateToken(String token) {
         try {
-            log.debug("JWT Filter - Validating token with secret: {}", accessSecret != null ? "present" : "null");
             Jwts.parserBuilder()
                     .setSigningKey(Keys.hmacShaKeyFor(Base64.getDecoder().decode(accessSecret.trim())))
                     .build()
                     .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
-            log.error("JWT Filter - Token validation failed: {}", e.getMessage());
             return false;
         }
     }

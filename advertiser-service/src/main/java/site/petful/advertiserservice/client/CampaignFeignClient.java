@@ -3,11 +3,12 @@ package site.petful.advertiserservice.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.common.ApiResponse;
+import site.petful.advertiserservice.config.FeignConfig;
 import site.petful.advertiserservice.dto.campaign.ApplicantResponse;
 import site.petful.advertiserservice.dto.campaign.ApplicantsResponse;
 import site.petful.advertiserservice.entity.ApplicantStatus;
 
-@FeignClient(name = "campaign-service", url = "http://localhost:8000/api/v1/campaign-service/campaign")
+@FeignClient(name = "campaign-service", path = "/internal", configuration= FeignConfig.class)
 public interface CampaignFeignClient {
 
     // 1. 광고별 체험단 전체 조회 - 광고주

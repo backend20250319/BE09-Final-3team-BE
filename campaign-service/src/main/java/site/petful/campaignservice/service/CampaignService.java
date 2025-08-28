@@ -1,7 +1,7 @@
 package site.petful.campaignservice.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.campaignservice.client.AdvertiserFeignClient;
 import site.petful.campaignservice.client.PetFeignClient;

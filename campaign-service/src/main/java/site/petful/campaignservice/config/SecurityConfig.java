@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 프리플라이트 허용
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/internal").hasAnyAuthority("USER", "ADVERTISER")
                         .anyRequest().authenticated()
                 )
 
