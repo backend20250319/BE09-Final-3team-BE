@@ -61,7 +61,7 @@ public class InstagramProfileService {
             InstagramProfileEntity profile = existingProfile.get();
             profile.updateFromDto(response);
             instagramProfileRepository.save(profile);
-            
+
             return InstagramProfileDto.fromEntity(profile);
         }
 
@@ -89,11 +89,15 @@ public class InstagramProfileService {
         return InstagramProfileDto.fromEntity(entity);
     }
 
-    public void setAutoDelete(Long instagramId, Boolean isAutoDelete) {
+    public void setAutoDelete(Long userNo, Long instagramId, Boolean isAutoDelete) {
         InstagramProfileEntity entity = instagramProfileRepository.findById(instagramId)
             .orElseThrow(
                 () -> new NotFoundException("해당 인스타그램의 id를 찾을 수 없습니다.")
             );
+
+        if (entity.getUserNo() != userNo) {
+            throw new NotFoundException("해당 유저의 인스타그램이 아닙니다.");
+        }
 
         entity.setAutoDelete(isAutoDelete);
         instagramProfileRepository.save(entity);
