@@ -15,3 +15,5 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
     Optional<UserProfile> findByUser_UserNo(Long userNo);
 }
 
+
+

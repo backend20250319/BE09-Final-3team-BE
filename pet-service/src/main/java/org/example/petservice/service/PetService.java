@@ -1,16 +1,13 @@
-package org.example.petservice.service;
+package site.petful.petservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.example.petservice.dto.PetRequest;
-import org.example.petservice.dto.PetResponse;
-import org.example.petservice.dto.PetStarResponse;
-import org.example.petservice.entity.Pet;
-import org.example.petservice.entity.PetStarStatus;
-import org.example.petservice.repository.PetRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import site.petful.petservice.dto.PetRequest;
+import site.petful.petservice.dto.PetResponse;
+import site.petful.petservice.entity.Pet;
+import site.petful.petservice.entity.PetStarStatus;
+import site.petful.petservice.repository.PetRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -122,55 +119,25 @@ public class PetService {
 
         // 이미 신청 중이거나 승인된 경우
         if (pet.getPetStarStatus() != PetStarStatus.NONE) {
-            throw new IllegalArgumentException("이미 PetStar 신청이 진행 중이거나 처리되었습니다.");
+            String statusMessage = "";
+            switch (pet.getPetStarStatus()) {
+                case PENDING:
+                    statusMessage = "이미 PetStar 신청이 진행 중입니다.";
+                    break;
+                case ACTIVE:
+                    statusMessage = "이미 PetStar로 승인되어 활성화되었습니다.";
+                    break;
+                case REJECTED:
+                    statusMessage = "이전에 PetStar 신청이 거절되었습니다.";
+                    break;
+                default:
+                    statusMessage = "이미 PetStar 신청이 진행 중이거나 처리되었습니다.";
+            }
+            throw new IllegalArgumentException(statusMessage);
         }
 
         pet.setPetStarStatus(PetStarStatus.PENDING);
         pet.setPendingAt(LocalDateTime.now());
-        petRepository.save(pet);
-    }
-
-    // PetStar 목록 조회 (관리자용)
-    public Page<PetStarResponse> getPetStarApplications(Pageable pageable) {
-        Page<Pet> pets = petRepository.findByPetStarStatus(PetStarStatus.PENDING, pageable);
-        
-        // TODO: User 정보를 Feign Client로 가져와서 PetStarResponse 생성
-        // 현재는 기본 정보만 반환
-        return pets.map(pet -> new PetStarResponse(
-                pet.getSnsProfileNo(),
-                pet.getName(),
-                "사용자명", // TODO: User 정보에서 가져오기
-                "전화번호", // TODO: User 정보에서 가져오기
-                "이메일"   // TODO: User 정보에서 가져오기
-        ));
-    }
-
-    // PetStar 승인 (관리자용)
-    @Transactional
-    public void approvePetStar(Long petNo) {
-        Pet pet = petRepository.findById(petNo)
-                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
-
-        if (pet.getPetStarStatus() != PetStarStatus.PENDING) {
-            throw new IllegalArgumentException("승인 대기 중인 PetStar 신청이 아닙니다.");
-        }
-
-        pet.setPetStarStatus(PetStarStatus.ACTIVE);
-        pet.setIsPetStar(true);
-        petRepository.save(pet);
-    }
-
-    // PetStar 거절 (관리자용)
-    @Transactional
-    public void rejectPetStar(Long petNo) {
-        Pet pet = petRepository.findById(petNo)
-                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
-
-        if (pet.getPetStarStatus() != PetStarStatus.PENDING) {
-            throw new IllegalArgumentException("승인 대기 중인 PetStar 신청이 아닙니다.");
-        }
-
-        pet.setPetStarStatus(PetStarStatus.REJECTED);
         petRepository.save(pet);
     }
 

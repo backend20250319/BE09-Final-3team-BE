@@ -35,6 +35,14 @@ public class PetController {
         return ResponseEntity.ok(ApiResponse.success(pets));
     }
 
+      // 반려동물 목록 조회
+    @GetMapping("/pets")
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getPets(@RequestParam Long userNo) {
+        List<PetResponse> pets = petService.getPetsByUser(userNo);
+        return ResponseEntity.ok(ApiResponse.success(pets));
+    }
+
+
     // 반려동물 상세 조회
     @GetMapping("/pets/{petNo}")
     public ResponseEntity<ApiResponse<PetResponse>> getPet(@PathVariable Long petNo) {
