@@ -2,9 +2,8 @@ package site.petful.campaignservice.dto.campaign;
 
 import lombok.Getter;
 import lombok.Setter;
-import site.petful.campaignservice.dto.advertisement.AdResponse;
+import site.petful.campaignservice.dto.PetResponse;
 import site.petful.campaignservice.entity.ApplicantStatus;
-import site.petful.campaignservice.entity.advertisement.Advertisement;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -10,6 +10,7 @@ import site.petful.campaignservice.dto.campaign.ApplicantResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantsResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantRequest;
 import site.petful.campaignservice.entity.ApplicantStatus;
+import site.petful.campaignservice.security.SecurityUtil;
 import site.petful.campaignservice.service.CampaignService;
 
 @RestController
@@ -18,7 +19,7 @@ public class CampaignController {
 
     private final CampaignService campaignService;
 
-    public CampaignController(CampaignService campaignService) {
+    public CampaignController(CampaignService campaignService, SecurityUtil securityUtil) {
         this.campaignService = campaignService;
     }
 

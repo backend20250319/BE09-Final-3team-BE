@@ -2,6 +2,7 @@ package site.petful.campaignservice.dto.campaign;
 
 import lombok.Getter;
 import lombok.Setter;
+import site.petful.campaignservice.dto.PetResponse;
 import site.petful.campaignservice.dto.advertisement.AdResponse;
 import site.petful.campaignservice.entity.Applicant;
 import site.petful.campaignservice.entity.ApplicantStatus;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 public class ApplicantResponse {
 
-    private AdResponse advertisement;
+    private Long adNo;
     private PetResponse pet;
     private String content;
     private ApplicantStatus status;
@@ -20,7 +21,7 @@ public class ApplicantResponse {
 
     public static ApplicantResponse from(Applicant applicant, PetResponse petResponse) {
         ApplicantResponse res = new ApplicantResponse();
-        res.advertisement = AdResponse.from(applicant.getAdvertisement());
+        res.setAdNo(applicant.getAdNo());
         res.setPet(petResponse);
         res.setContent(applicant.getContent());
         res.setStatus(applicant.getStatus());

@@ -95,6 +95,17 @@ public class AdService {
         return AdsGroupedResponse.from(recruitingAds, endedAds);
     }
 
+    // 2-5. List<Long> adNo에 대한 광고(캠페인) 조회 - 체험단
+    @Transactional(readOnly = true)
+    public AdsResponse getAdsByAdNos(List<Long> adNos) {
+        List<Advertisement> ads = adRepository.findAllById(adNos);
+
+        if (ads.isEmpty()) {
+            throw new RuntimeException(ErrorCode.AD_NOT_MATCHED.getDefaultMessage());
+        }
+
+        return AdsResponse.from(ads);
+    }
 
     // 3-1. 광고(캠페인) 수정 - 광고주
     public AdResponse updateAdByAdvertiser(Long adNo, AdRequest request) {
@@ -107,7 +118,7 @@ public class AdService {
         return AdResponse.from(updatedAd);
     }
 
-    // 3-2. 광고(캠페인 수정) - 체험단
+    // 3-2. 광고(캠페인) 수정 - 체험단
     public AdResponse updateAdByCampaign(Long adNo, Integer incrementBy) {
         int updatedCount = adRepository.incrementApplicants(adNo, incrementBy);
         if (updatedCount == 0) {
@@ -270,5 +281,4 @@ public class AdService {
         }
         ad.setRequirement(existingRequirements);
     }
-
 }

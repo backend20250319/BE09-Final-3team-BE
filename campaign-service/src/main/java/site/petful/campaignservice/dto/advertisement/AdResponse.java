@@ -2,18 +2,17 @@ package site.petful.campaignservice.dto.advertisement;
 
 import lombok.Getter;
 import lombok.Setter;
-import site.petful.campaignservice.entity.advertisement.AdStatus;
-import site.petful.campaignservice.entity.advertisement.Advertisement;
+import site.petful.campaignservice.entity.AdStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
 public class AdResponse {
 
+    private Long adNo;
     private String title;
     private String content;
     private String objective;
@@ -32,43 +31,4 @@ public class AdResponse {
     private List<MissionResponse> mission;
     private List<KeywordResponse> keyword;
     private List<RequirementResponse> requirement;
-
-    public static AdResponse from(Advertisement ad) {
-        AdResponse res = new AdResponse();
-        res.setTitle(ad.getTitle());
-        res.setContent(ad.getContent());
-        res.setObjective(ad.getObjective());
-        res.setAnnounceStart(ad.getAnnounceStart());
-        res.setAnnounceEnd(ad.getAnnounceEnd());
-        res.setCampaignSelect(ad.getCampaignSelect());
-        res.setCampaignStart(ad.getCampaignStart());
-        res.setCampaignEnd(ad.getCampaignEnd());
-        res.setApplicants(ad.getApplicants());
-        res.setMembers(ad.getMembers());
-        res.setAdStatus(ad.getAdStatus());
-        res.setAdUrl(ad.getAdUrl());
-        res.setCreatedAt(ad.getCreatedAt());
-
-        if (ad.getMission() != null) {
-            res.mission = ad.getMission().stream()
-                    .map(MissionResponse::from)
-                    .collect(Collectors.toList());
-        }
-
-        if (ad.getKeyword() != null) {
-            res.keyword = ad.getKeyword().stream()
-                    .map(KeywordResponse::from)
-                    .collect(Collectors.toList());
-        }
-
-        if (ad.getRequirement() != null) {
-            res.requirement = ad.getRequirement().stream()
-                    .map(RequirementResponse::from)
-                    .collect(Collectors.toList());
-        }
-
-        res.advertiser = AdvertiserResponse.from(ad.getAdvertiser());
-
-        return res;
-    }
 }
