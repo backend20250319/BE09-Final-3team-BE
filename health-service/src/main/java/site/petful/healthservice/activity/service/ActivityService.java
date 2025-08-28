@@ -9,6 +9,7 @@ import site.petful.healthservice.activity.entity.Activity;
 import site.petful.healthservice.activity.entity.ActivityMeal;
 import site.petful.healthservice.activity.enums.ActivityLevel;
 import site.petful.healthservice.activity.repository.ActivityRepository;
+import site.petful.healthservice.exception.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,11 @@ public class ActivityService {
     public Long createActivity(Long userNo, ActivityRequest request) {
         log.info("활동 데이터 등록 요청: userNo={}, petNo={}, date={}", 
                 userNo, request.getPetNo(), request.getActivityDate());
+        
+        // 사용자 인증 확인
+        if (userNo == null) {
+            throw new AuthenticationException("사용자 인증이 필요합니다.");
+        }
         
         // 같은 날짜에 이미 활동 데이터가 있는지 확인
         if (activityRepository.existsByPetNoAndActivityDate(request.getPetNo(), request.getActivityDate())) {
@@ -55,25 +61,18 @@ public class ActivityService {
                 .build();
         
         // 식사 정보 추가
-        request.getMeals().forEach(mealRequest -> {
-            // 섭취 칼로리 자동 계산
-            int consumedCalories = calculateConsumedCalories(mealRequest.getTotalCalories(), mealRequest.getTotalWeightG(), mealRequest.getConsumedWeightG());
-            
-            ActivityMeal meal = ActivityMeal.builder()
-                    .totalWeightG(mealRequest.getTotalWeightG())
-                    .totalCalories(mealRequest.getTotalCalories())
-                    .consumedWeightG(mealRequest.getConsumedWeightG())
-                    .consumedCalories(consumedCalories)
-                    .mealType(mealRequest.getMealType())
-                    .memo(mealRequest.getMemo())
-                    .build();
-            
-            activity.addMeal(meal);
-        });
+        request.getMeals().forEach(mealRequest ->
+            activity.addMeal(ActivityMeal.builder()
+                .totalWeightG(mealRequest.getTotalWeightG())
+                .totalCalories(mealRequest.getTotalCalories())
+                .consumedWeightG(mealRequest.getConsumedWeightG())
+                .consumedCalories(mealRequest.getConsumedCalories())
+                .mealType(mealRequest.getMealType())
+                .memo(mealRequest.getMemo())
+                .build())
+        );
         
-        // 저장
         Activity savedActivity = activityRepository.save(activity);
-        
         log.info("활동 데이터 등록 완료: activityNo={}", savedActivity.getActivityNo());
         
         return savedActivity.getActivityNo();
