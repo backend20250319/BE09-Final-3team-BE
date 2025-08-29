@@ -7,12 +7,15 @@ import site.petful.healthservice.activity.dto.ActivityResponse;
 import site.petful.healthservice.activity.dto.ActivityChartResponse;
 import site.petful.healthservice.activity.service.ActivityService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.response.ApiResponseGenerator;
+import site.petful.healthservice.common.response.ErrorCode;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import site.petful.healthservice.common.dto.PetResponse;
 
 @Slf4j
 @RestController
@@ -27,14 +30,15 @@ public class ActivityController {
      */
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<Long>> createActivity(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @Valid @RequestBody ActivityRequest request
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        
+        if (userNo == null) {
+            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
+        }
 
         request = ActivityRequest.builder()
-                .userNo(effectiveUserNo)
+                .userNo(Long.valueOf(userNo))
                 .petNo(request.getPetNo())
                 .activityDate(request.getActivityDate())
                 .walkingDistanceKm(request.getWalkingDistanceKm())
@@ -47,7 +51,7 @@ public class ActivityController {
                 .meals(request.getMeals())
                 .build();
         
-        Long activityNo = activityService.createActivity(effectiveUserNo, request);
+        Long activityNo = activityService.createActivity(Long.valueOf(userNo), request);
         return ResponseEntity.ok(ApiResponseGenerator.success(activityNo));
     }
     
@@ -56,12 +60,15 @@ public class ActivityController {
      */
     @GetMapping("/read")
     public ResponseEntity<ApiResponse<ActivityResponse>> getActivity(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("petNo") Long petNo,
             @RequestParam("activityDate") String activityDate
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        ActivityResponse response = activityService.getActivity(effectiveUserNo, petNo, activityDate);
+        if (userNo == null) {
+            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
+        }
+        
+        ActivityResponse response = activityService.getActivity(Long.valueOf(userNo), petNo, activityDate);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
     
@@ -70,30 +77,51 @@ public class ActivityController {
      */
     @GetMapping("/schedule")
     public ResponseEntity<ApiResponse<List<String>>> getActivitySchedule(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("petNo") Long petNo,
             @RequestParam("year") int year,
             @RequestParam("month") int month
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        List<String> dates = activityService.getActivitySchedule(effectiveUserNo, petNo, year, month);
+        if (userNo == null) {
+            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
+        }
+        
+        List<String> dates = activityService.getActivitySchedule(Long.valueOf(userNo), petNo, year, month);
         return ResponseEntity.ok(ApiResponseGenerator.success(dates));
     }
     
+    /**
+     * 사용자별 펫 프로필 목록 조회
+     */
+    @GetMapping("/pets")
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getUserPets(
+            @AuthenticationPrincipal String userNo
+    ) {
+        if (userNo == null) {
+            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
+        }
+        
+        List<PetResponse> pets = activityService.getUserPets(Long.valueOf(userNo));
+        return ResponseEntity.ok(ApiResponseGenerator.success(pets));
+    }
+
     /**
      * 활동 데이터 차트 시각화 조회
      * periodType: DAY(일), WEEK(주), MONTH(월), YEAR(년)
      */
     @GetMapping("/chart")
     public ResponseEntity<ApiResponse<ActivityChartResponse>> getActivityChart(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("petNo") Long petNo,
             @RequestParam("periodType") String periodType,
             @RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        ActivityChartResponse response = activityService.getActivityChartData(effectiveUserNo, petNo, periodType, startDate, endDate);
+        if (userNo == null) {
+            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
+        }
+        
+        ActivityChartResponse response = activityService.getActivityChartData(Long.valueOf(userNo), petNo, periodType, startDate, endDate);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 }
