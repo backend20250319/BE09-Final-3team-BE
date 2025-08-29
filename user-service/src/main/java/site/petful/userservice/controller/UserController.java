@@ -7,6 +7,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.web.bind.annotation.*;
 import site.petful.userservice.common.ApiResponse;
 import site.petful.userservice.common.ApiResponseGenerator;
@@ -29,6 +30,7 @@ import site.petful.userservice.dto.TokenInfoResponse;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
 import site.petful.userservice.security.JwtUtil;
+import site.petful.userservice.common.UserHeaderUtil;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import java.time.Duration;
@@ -202,12 +204,22 @@ public class UserController {
      */
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<ProfileResponse>> getProfile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        // 헤더에서 사용자 번호를 먼저 시도
+        Long userNo = UserHeaderUtil.getCurrentUserNo();
         
-        User user = userService.findByEmail(email);
-        ProfileResponse profile = userService.getProfile(user.getUserNo());
+        // 헤더가 없으면 기존 JWT 방식으로 fallback
+        if (userNo == null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                User user = userService.findByEmail(email);
+                userNo = user.getUserNo();
+            } else {
+                throw new IllegalStateException("인증 정보가 없습니다.");
+            }
+        }
         
+        ProfileResponse profile = userService.getProfile(userNo);
         return ResponseEntity.ok(ApiResponseGenerator.success(profile));
     }
     
@@ -217,12 +229,22 @@ public class UserController {
      */
     @PatchMapping("/profile")
     public ResponseEntity<ApiResponse<ProfileResponse>> updateProfile(@Valid @RequestBody ProfileUpdateRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        // 헤더에서 사용자 번호를 먼저 시도
+        Long userNo = UserHeaderUtil.getCurrentUserNo();
         
-        User user = userService.findByEmail(email);
-        ProfileResponse updatedProfile = userService.updateProfile(user.getUserNo(), request);
+        // 헤더가 없으면 기존 JWT 방식으로 fallback
+        if (userNo == null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                User user = userService.findByEmail(email);
+                userNo = user.getUserNo();
+            } else {
+                throw new IllegalStateException("인증 정보가 없습니다.");
+            }
+        }
         
+        ProfileResponse updatedProfile = userService.updateProfile(userNo, request);
         return ResponseEntity.ok(ApiResponseGenerator.success(updatedProfile));
     }
     
@@ -275,14 +297,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<FileUploadResponse>> uploadProfileImage(
             @RequestParam("file") MultipartFile file) {
         
-        // Spring Security의 Authentication을 사용하여 사용자 정보 가져오기
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        
-        // 이메일로 사용자 조회
-        User user = userService.findByEmail(email);
-        Long userNo = user.getUserNo();
-        
+        Long userNo = UserHeaderUtil.getCurrentUserNoOrThrow();
         FileUploadResponse response = userService.uploadProfileImage(file, userNo);
         
         if (response.isSuccess()) {
@@ -299,17 +314,33 @@ public class UserController {
      */
     @DeleteMapping("/withdraw")
     public ResponseEntity<ApiResponse<WithdrawResponse>> withdraw(@Valid @RequestBody WithdrawRequest request) {
-        // Spring Security의 Authentication을 사용하여 사용자 정보 가져오기
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        
-        // 이메일로 사용자 조회
-        User user = userService.findByEmail(email);
-        Long userNo = user.getUserNo();
-        
+        Long userNo = UserHeaderUtil.getCurrentUserNoOrThrow();
         WithdrawResponse response = userService.withdraw(userNo, request);
         
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+
+    /**
+     * 현재 인증된 사용자 정보 확인 (테스트용)
+     * GET /auth/me
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser() {
+        Long userNo = UserHeaderUtil.getCurrentUserNoOrThrow();
+        String userType = UserHeaderUtil.getCurrentUserType();
+        
+        User user = userService.findByUserNo(userNo);
+        
+        UserInfoResponse userInfo = UserInfoResponse.builder()
+                .userNo(user.getUserNo())
+                .email(user.getEmail())
+                .name(user.getName())
+                .nickname(user.getNickname())
+                .userType(user.getUserType().name())
+                .headerUserType(userType)
+                .build();
+        
+        return ResponseEntity.ok(ApiResponseGenerator.success(userInfo));
     }
     
     /**

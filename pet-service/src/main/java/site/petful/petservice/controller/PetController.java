@@ -24,7 +24,7 @@ public class PetController {
     // 반려동물 등록
     @PostMapping("/pets")
     public ResponseEntity<ApiResponse<PetResponse>> createPet(
-            @RequestAttribute("X-User-No") Long userNo,
+            @RequestHeader("X-User-No") Long userNo,
             @RequestBody PetRequest request) {
         PetResponse response = petService.createPet(userNo, request);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -32,7 +32,7 @@ public class PetController {
 
     // 반려동물 목록 조회
     @GetMapping("/pets")
-    public ResponseEntity<ApiResponse<List<PetResponse>>> getPets(@RequestAttribute("X-User-No") Long userNo) {
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getPets(@RequestHeader("X-User-No") Long userNo) {
         List<PetResponse> pets = petService.getPetsByUser(userNo);
         return ResponseEntity.ok(ApiResponse.success(pets));
     }
@@ -55,7 +55,7 @@ public class PetController {
     @PutMapping("/pets/{petNo}")
     public ResponseEntity<ApiResponse<PetResponse>> updatePet(
             @PathVariable Long petNo,
-            @RequestAttribute("X-User-No") Long userNo,
+            @RequestHeader("X-User-No") Long userNo,
             @RequestBody PetRequest request) {
         PetResponse response = petService.updatePet(petNo, userNo, request);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -65,7 +65,7 @@ public class PetController {
     @DeleteMapping("/pets/{petNo}")
     public ResponseEntity<ApiResponse<Void>> deletePet(
             @PathVariable Long petNo,
-            @RequestAttribute("X-User-No") Long userNo) {
+            @RequestHeader("X-User-No") Long userNo) {
         petService.deletePet(petNo, userNo);
         return ResponseEntity.ok(ApiResponse.success());
     }
@@ -74,7 +74,7 @@ public class PetController {
     @PostMapping("/pets/{petNo}/petstar/apply")
     public ResponseEntity<ApiResponse<Void>> applyPetStar(
             @PathVariable Long petNo,
-            @RequestAttribute("X-User-No") Long userNo) {
+            @RequestHeader("X-User-No") Long userNo) {
         try {
             petService.applyPetStar(petNo, userNo);
             return ResponseEntity.ok(ApiResponse.success());
@@ -104,7 +104,7 @@ public class PetController {
     @PostMapping("/pets/{petNo}/image")
     public ResponseEntity<ApiResponse<FileUploadResponse>> uploadPetImage(
             @PathVariable Long petNo,
-            @RequestAttribute("X-User-No") Long userNo,
+            @RequestHeader("X-User-No") Long userNo,
             @RequestParam("file") MultipartFile file) {
         
         FileUploadResponse response = petService.uploadPetImage(file, petNo, userNo);

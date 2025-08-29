@@ -21,7 +21,7 @@ public class HistoryController {
     @PostMapping("/{petNo}/histories")
     public ResponseEntity<ApiResponse<HistoryResponse>> createHistory(
             @PathVariable Long petNo,
-            @RequestAttribute("X-User-No") Long userNo,
+            @RequestHeader("X-User-No") Long userNo,
             @RequestBody HistoryRequest request) {
         HistoryResponse response = historyService.createHistory(petNo, userNo, request);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -32,7 +32,7 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<HistoryResponse>> getHistory(
             @PathVariable Long petNo,
             @PathVariable Long historyNo,
-            @RequestAttribute("X-User-No") Long userNo) {
+            @RequestHeader("X-User-No") Long userNo) {
         HistoryResponse response = historyService.getHistory(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -41,7 +41,7 @@ public class HistoryController {
     @GetMapping("/{petNo}/histories")
     public ResponseEntity<ApiResponse<List<HistoryResponse>>> getHistories(
             @PathVariable Long petNo,
-            @RequestAttribute("X-User-No") Long userNo) {
+            @RequestHeader("X-User-No") Long userNo) {
         List<HistoryResponse> responses = historyService.getHistories(petNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
@@ -51,7 +51,7 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<HistoryResponse>> updateHistory(
             @PathVariable Long petNo,
             @PathVariable Long historyNo,
-            @RequestAttribute("X-User-No") Long userNo,
+            @RequestHeader("X-User-No") Long userNo,
             @RequestBody HistoryRequest request) {
         HistoryResponse response = historyService.updateHistory(petNo, historyNo, userNo, request);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -62,7 +62,7 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<Void>> deleteHistory(
             @PathVariable Long petNo,
             @PathVariable Long historyNo,
-            @RequestAttribute("X-User-No") Long userNo) {
+            @RequestHeader("X-User-No") Long userNo) {
         historyService.deleteHistory(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

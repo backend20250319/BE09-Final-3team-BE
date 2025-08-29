@@ -46,15 +46,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String userType = claims.get("userType", String.class);
             log.debug("JWT Filter - Extracted userNo: {}, userType: {}", userNo, userType);
             
-            request.setAttribute("X-User-No", userNo);
-            
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 userNo, null, List.of(new SimpleGrantedAuthority("ROLE_" + userType))
             );
             
             SecurityContextHolder.getContext().setAuthentication(authentication);
             
-            log.debug("JWT Filter - Setting X-User-No attribute: {}", userNo);
+            log.debug("JWT Filter - Authentication set for userNo: {}", userNo);
             filterChain.doFilter(request, response);
             return;
         }
