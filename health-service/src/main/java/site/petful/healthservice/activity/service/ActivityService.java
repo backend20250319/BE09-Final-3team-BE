@@ -14,13 +14,14 @@ import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import site.petful.healthservice.activity.client.PetServiceClient;
-import site.petful.healthservice.activity.dto.PetResponse;
+import site.petful.healthservice.common.client.PetServiceClient;
+import site.petful.healthservice.common.dto.PetResponse;
 import site.petful.healthservice.common.response.ApiResponse;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -292,6 +293,30 @@ public class ActivityService {
                 .createdAt(activity.getCreatedAt())
                 .updatedAt(activity.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * 사용자별 펫 프로필 목록 조회
+     */
+    public List<PetResponse> getUserPets(Long userNo) {
+        // 사용자 인증 확인
+        if (userNo == null) {
+            throw new AuthenticationException("사용자 인증이 필요합니다.");
+        }
+        
+        try {
+            ApiResponse<List<PetResponse>> petsResponse = petServiceClient.getPets(userNo);
+            
+            if (petsResponse != null && petsResponse.getData() != null) {
+                return petsResponse.getData();
+            }
+            
+            return new ArrayList<>();
+            
+        } catch (Exception e) {
+            log.error("사용자 펫 목록 조회 중 예외 발생: userNo={}", userNo, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "펫 목록 조회 중 오류가 발생했습니다.");
+        }
     }
 
     // 펫 소유권 검증 메서드

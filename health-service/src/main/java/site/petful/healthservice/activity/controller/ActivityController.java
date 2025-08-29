@@ -15,6 +15,7 @@ import site.petful.healthservice.common.response.ErrorCode;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import site.petful.healthservice.common.dto.PetResponse;
 
 @Slf4j
 @RestController
@@ -89,6 +90,21 @@ public class ActivityController {
         return ResponseEntity.ok(ApiResponseGenerator.success(dates));
     }
     
+    /**
+     * 사용자별 펫 프로필 목록 조회
+     */
+    @GetMapping("/pets")
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getUserPets(
+            @AuthenticationPrincipal String userNo
+    ) {
+        if (userNo == null) {
+            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
+        }
+        
+        List<PetResponse> pets = activityService.getUserPets(Long.valueOf(userNo));
+        return ResponseEntity.ok(ApiResponseGenerator.success(pets));
+    }
+
     /**
      * 활동 데이터 차트 시각화 조회
      * periodType: DAY(일), WEEK(주), MONTH(월), YEAR(년)

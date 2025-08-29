@@ -1,11 +1,11 @@
-package site.petful.healthservice.activity.client;
+package site.petful.healthservice.common.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import site.petful.healthservice.common.response.ApiResponse;
-import site.petful.healthservice.activity.dto.PetResponse;
+import site.petful.healthservice.common.dto.PetResponse;
 
 import java.util.List;
 

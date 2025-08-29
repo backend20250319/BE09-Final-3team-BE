@@ -1,4 +1,4 @@
-package site.petful.healthservice.activity.dto;
+package site.petful.healthservice.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
