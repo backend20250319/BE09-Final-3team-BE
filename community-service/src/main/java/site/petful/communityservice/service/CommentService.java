@@ -117,20 +117,24 @@ public class CommentService {
     public CommentPageDto listComments(Long postId, Pageable pageable) {
         Page<Comment> roots = commentRepository.findByPostIdAndParentIdIsNull(postId, pageable);
 
+        // 대댓글
         List<Long> rootIds = roots.getContent().stream().map(Comment::getId).toList();
         List<Comment> children = roots.isEmpty()
                 ? List.of()
                 : commentRepository.findByPostIdAndParentIdIn(postId, rootIds);
 
+        // 유저 정보 조회
         Set<Long> userIds = new HashSet<>();
         roots.forEach(c -> userIds.add(c.getUserId()));
         children.forEach(c -> userIds.add(c.getUserId()));
 
         Map<Long, UserBriefDto> userMap = fetchUsers(userIds);
 
+        // parentId -> 자식 매핑
         Map<Long, List<Comment>> childByParent = children.stream()
                 .collect(Collectors.groupingBy(Comment::getParentId));
 
+        // DTO 변환
         List<CommentView> content = roots.getContent().stream()
                 .map(root -> toView(root, childByParent.getOrDefault(root.getId(), List.of()), userMap))
                 .toList();
@@ -147,18 +151,17 @@ public class CommentService {
     private CommentView toView(Comment c, List<Comment> kids, Map<Long, UserBriefDto> umap) {
         AuthorDto author = toAuthor(umap.get(c.getUserId()), c.getUserId());
 
-        List<CommentView> childViews = kids.stream().map(k -> {
-            AuthorDto childAuthor = toAuthor(umap.get(k.getUserId()), k.getUserId());
-            return CommentView.builder()
-                    .id(k.getId())
-                    .parentId(k.getParentId())
-                    .userId(k.getUserId())
-                    .author(childAuthor)
-                    .content(k.getContent())
-                    .createdAt(k.getCreatedAt())
-                    .children(List.of())
-                    .build();
-        }).toList();
+        List<CommentView> childViews = kids.stream().map(k -> CommentView.builder()
+                .id(k.getId())
+                .parentId(k.getParentId())
+                .userId(k.getUserId())
+                .author(toAuthor(umap.get(k.getUserId()), k.getUserId()))
+                .content(k.getContent())
+                .createdAt(k.getCreatedAt())
+                .commentStatus(k.getCommentStatus())
+                .children(List.of())
+                .build()
+        ).toList();
 
         return CommentView.builder()
                 .id(c.getId())
@@ -167,21 +170,20 @@ public class CommentService {
                 .author(author)
                 .content(c.getContent())
                 .createdAt(c.getCreatedAt())
+                .commentStatus(c.getCommentStatus())
                 .children(childViews)
                 .build();
     }
 
-    private AuthorDto toAuthor(UserBriefDto u, Long id) {
-        String nick = (u != null && u.getName() != null && !u.getName().isBlank())
-                ? u.getName() : "익명";
-        String avatar = (u != null && u.getPorfileUrl() != null && !u.getPorfileUrl().isBlank())
-                ? u.getPorfileUrl() : "/default-avatar.png";
-
-        return AuthorDto.builder()
-                .id(id)
-                .nickname(nick)
-                .profileImageUrl(avatar)
-                .build();
+    private AuthorDto toAuthor(UserBriefDto u, Long userId) {
+        if (u == null) {
+            return AuthorDto.builder()
+                    .id(userId)
+                    .nickname("익명")
+                    .profileImageUrl(null)
+                    .build();
+        }
+        return AuthorDto.from(u);
     }
 
     private Map<Long, UserBriefDto> fetchUsers(Set<Long> ids) {
