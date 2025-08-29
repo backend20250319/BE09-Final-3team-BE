@@ -9,7 +9,6 @@ import site.petful.healthservice.activity.entity.Activity;
 import site.petful.healthservice.activity.entity.ActivityMeal;
 import site.petful.healthservice.activity.enums.ActivityLevel;
 import site.petful.healthservice.activity.repository.ActivityRepository;
-import site.petful.healthservice.exception.AuthenticationException;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 import org.springframework.stereotype.Service;
@@ -34,10 +33,7 @@ public class ActivityService {
     
     @Transactional
     public Long createActivity(Long userNo, ActivityRequest request) {
-        // 사용자 인증 확인
-        if (userNo == null) {
-            throw new AuthenticationException("사용자 인증이 필요합니다.");
-        }
+
         
         // 펫 소유권 검증
         if (!isPetOwnedByUser(request.getPetNo(), userNo)) {
@@ -70,16 +66,23 @@ public class ActivityService {
                 .build();
         
         // 식사 정보 추가
-        request.getMeals().forEach(mealRequest ->
+        request.getMeals().forEach(mealRequest -> {
+            // 섭취 칼로리 자동 계산
+            int consumedCalories = calculateConsumedCalories(
+                mealRequest.getTotalCalories(),
+                mealRequest.getTotalWeightG(),
+                mealRequest.getConsumedWeightG()
+            );
+            
             activity.addMeal(ActivityMeal.builder()
                 .totalWeightG(mealRequest.getTotalWeightG())
                 .totalCalories(mealRequest.getTotalCalories())
                 .consumedWeightG(mealRequest.getConsumedWeightG())
-                .consumedCalories(mealRequest.getConsumedCalories())
+                .consumedCalories(consumedCalories)
                 .mealType(mealRequest.getMealType())
                 .memo(mealRequest.getMemo())
-                .build())
-        );
+                .build());
+        });
         
         Activity savedActivity = activityRepository.save(activity);
         
@@ -111,10 +114,7 @@ public class ActivityService {
      * 특정 날짜의 활동 데이터 조회
      */
     public ActivityResponse getActivity(Long userNo, Long petNo, String activityDateStr) {
-        // 사용자 인증 확인
-        if (userNo == null) {
-            throw new AuthenticationException("사용자 인증이 필요합니다.");
-        }
+
         
         // 펫 소유권 검증
         if (!isPetOwnedByUser(petNo, userNo)) {
@@ -138,11 +138,7 @@ public class ActivityService {
      * 스케줄에서 기록이 있는 날짜 목록 조회
      */
     public List<String> getActivitySchedule(Long userNo, Long petNo, int year, int month) {
-        // 사용자 인증 확인
-        if (userNo == null) {
-            throw new AuthenticationException("사용자 인증이 필요합니다.");
-        }
-        
+
         // 펫 소유권 검증
         if (!isPetOwnedByUser(petNo, userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
@@ -166,11 +162,7 @@ public class ActivityService {
      * 차트 데이터 조회 (일/주/월/년 단위)
      */
     public ActivityChartResponse getActivityChartData(Long userNo, Long petNo, String periodType, String startDateStr, String endDateStr) {
-        // 사용자 인증 확인
-        if (userNo == null) {
-            throw new AuthenticationException("사용자 인증이 필요합니다.");
-        }
-        
+
         // 펫 소유권 검증
         if (!isPetOwnedByUser(petNo, userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
@@ -220,18 +212,13 @@ public class ActivityService {
      * 표시용 날짜 문자열 생성
      */
     private String getDisplayDate(LocalDate date, String periodType) {
-        switch (periodType.toUpperCase()) {
-            case "DAY":
-                return getDayOfWeekKorean(date);
-            case "WEEK":
-                return getWeekDisplay(date);
-            case "MONTH":
-                return getMonthDisplay(date);
-            case "YEAR":
-                return getYearDisplay(date);
-            default:
-                return date.toString();
-        }
+        return switch (periodType.toUpperCase()) {
+            case "DAY" -> getDayOfWeekKorean(date);
+            case "WEEK" -> getWeekDisplay(date);
+            case "MONTH" -> getMonthDisplay(date);
+            case "YEAR" -> getYearDisplay(date);
+            default -> date.toString();
+        };
     }
     
     private String getDayOfWeekKorean(LocalDate date) {
@@ -299,13 +286,9 @@ public class ActivityService {
      * 사용자별 펫 프로필 목록 조회
      */
     public List<PetResponse> getUserPets(Long userNo) {
-        // 사용자 인증 확인
-        if (userNo == null) {
-            throw new AuthenticationException("사용자 인증이 필요합니다.");
-        }
-        
+
         try {
-            ApiResponse<List<PetResponse>> petsResponse = petServiceClient.getPets(userNo);
+            ApiResponse<List<PetResponse>> petsResponse = petServiceClient.getPetsByUser(userNo);
             
             if (petsResponse != null && petsResponse.getData() != null) {
                 return petsResponse.getData();
