@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.healthservice.activity.client.PetServiceClient;
 import site.petful.healthservice.activity.dto.PetResponse;
+import site.petful.healthservice.common.response.ApiResponse;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -296,12 +297,12 @@ public class ActivityService {
     // 펫 소유권 검증 메서드
     private boolean isPetOwnedByUser(Long petNo, Long userNo) {
         try {
-            PetResponse pet = petServiceClient.getPetById(petNo);
+            ApiResponse<PetResponse> petResponse = petServiceClient.getPet(petNo);
             
-            if (pet != null && pet.getData() != null) {
-                PetResponse.PetData petData = pet.getData();
-                if (petData.getUserNo() != null) {
-                    return petData.getUserNo().equals(userNo);
+            if (petResponse != null && petResponse.getData() != null) {
+                PetResponse pet = petResponse.getData();
+                if (pet.getUserNo() != null) {
+                    return pet.getUserNo().equals(userNo);
                 }
             }
             return false;

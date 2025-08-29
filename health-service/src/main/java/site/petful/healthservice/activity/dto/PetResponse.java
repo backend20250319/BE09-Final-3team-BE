@@ -1,68 +1,22 @@
 package site.petful.healthservice.activity.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
-@NoArgsConstructor
+@Setter
 @AllArgsConstructor
-@Builder
 public class PetResponse {
-    
-    @JsonProperty("code")
-    private String code;
-    
-    @JsonProperty("message")
-    private String message;
-    
-    @JsonProperty("data")
-    private PetData data;
-    
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class PetData {
-        @JsonProperty("petNo")
-        private Long petNo;
-        
-        @JsonProperty("userNo")
-        private Long userNo;
-        
-        @JsonProperty("name")
-        private String name;
-        
-        @JsonProperty("type")
-        private String type;
-        
-        @JsonProperty("age")
-        private Integer age;
-        
-        @JsonProperty("gender")
-        private String gender;
-        
-        @JsonProperty("weight")
-        private Double weight;
-        
-        @JsonProperty("imageUrl")
-        private String imageUrl;
-        
-        @JsonProperty("isPetStar")
-        private Boolean isPetStar;
-        
-        @JsonProperty("snsProfileNo")
-        private Long snsProfileNo;
-        
-        @JsonProperty("petStarStatus")
-        private String petStarStatus;
-        
-        @JsonProperty("pendingAt")
-        private String pendingAt;
-        
-        @JsonProperty("createdAt")
-        private String createdAt;
-        
-        @JsonProperty("updatedAt")
-        private String updatedAt;
-    }
+    private Long petNo;
+    private Long userNo;
+    private String name;
+    private String type;
+    private String imageUrl;
+    private Integer age;
+    private String gender;
+    private Double weight;
+    private Boolean isPetStar;
+    private Long snsProfileNo;
+    private String petStarStatus;
 }
