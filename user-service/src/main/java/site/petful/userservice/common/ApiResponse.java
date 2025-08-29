@@ -27,7 +27,7 @@ public class ApiResponse<T> {
         this.data = data;
     }
 
-    ApiResponse(ErrorCode errorCode, String responseMessage, T data) {
+    public ApiResponse(ErrorCode errorCode, String responseMessage, T data) {
         this.code = errorCode.getCode();
         this.message = (responseMessage == null ? errorCode.getDefaultMessage() : responseMessage);
         this.data = data;
