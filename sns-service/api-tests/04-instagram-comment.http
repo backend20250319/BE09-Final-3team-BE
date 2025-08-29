@@ -1,0 +1,135 @@
+### SNS Service API Tests - Instagram 댓글 (간단 예시)
+
+### 공통 변수
+@authToken = example.eyJzdWIiOiJkYXJhdG82ODY4QG5hdmVyLmNvbSIsInR5cCI6ImFjY2VzcyIsInVzZXJObyI6MjAsInVzZXJUeXBlIjoiVXNlciIsImlhdCI6MTc1NjQ1MDYyMywiZXhwIjoxNzU2NDU0MjIzfQ.CdJw2FWyDXQwLABUbSzJydP6ou6QsAIqjb6BDvigD5g
+@baseUrl = http://localhost:8000/api/v1/sns-service
+@testUserId = 20
+@testInstagramId = 17841475913854291
+@testMediaId = 18086433919695970
+@testCommentId = 18410498320104278
+
+### 댓글 검색 (예시 요청)
+# 권한: User, Admin
+# 설명: 특정 Instagram 계정의 댓글을 검색합니다. 페이징, 정렬, 검색 기능을 지원합니다.
+GET {{baseUrl}}/instagram/comments/search?instagram_id={{testInstagramId}}&page=0&size=20&
+    sort=timestamp,desc
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": { {
+#        "id": "18038856143421314",
+#        "username": "fdsah_einf",
+#        "like_count": "0",
+#        "text": "😍",
+#        "timestamp": "2025-08-27T10:30:45Z",
+#        "sentiment": "POSITIVE",
+#        "is_deleted": false
+#      }, ],
+# }
+
+### 댓글 삭제 (예시 요청)
+# 권한: User, Admin
+# 설명: 특정 댓글을 삭제합니다.
+DELETE {{baseUrl}}/instagram/comments/{{testCommentId}}?comment_id={{testCommentId}}
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": null
+# }
+
+### 금지어 추가 (예시 요청)
+# 권한: User, Admin
+# 설명: 특정 Instagram 계정에 금지어를 추가합니다.
+POST {{baseUrl}}/instagram/comments/banned-words?instagram_id={{testInstagramId}}&word=spam
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": null
+# }
+
+
+### 금지어 목록 조회 (예시 요청)
+# 권한: User, Admin
+# 설명: 특정 Instagram 계정의 금지어 목록을 조회합니다.
+GET {{baseUrl}}/instagram/comments/banned-words?instagram_id={{testInstagramId}}
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": [ { "id": 1, "word": "스팸" } ]
+# }
+
+
+
+### 금지어 삭제 (예시 요청)
+# 권한: User, Admin
+# 설명: 특정 Instagram 계정에 금지어를 삭제합니다.
+DELETE {{baseUrl}}/instagram/comments/banned-words?instagram_id={{testInstagramId}}&word=spam
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": null
+# }
+
+### 댓글 현황 조회 (예시 요청)
+# 권한: User, Admin
+# 설명: 특정 Instagram 계정의 댓글 현황(총 댓글 수, 긍정 댓글 수 등)를 조회합니다.
+GET {{baseUrl}}/instagram/comments/status?instagram_id={{testInstagramId}}
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": {
+#    "total_comments": "11",
+#    "auto_deleted_comments": "1",
+#    "auto_delete_rate": 9.090909090909092,
+#    "banned_word_comments": "1"
+#  }
+# }
+
+### 감정 분석 비율 조회 (예시 요청)
+# 권한: User, Admin
+# 설명: 특정 Instagram 계정의 댓글 감정 분석 비율(긍정, 부정, 중립)을 조회합니다.
+GET {{baseUrl}}/instagram/comments/sentiment-ratio?instagram_id={{testInstagramId}}
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": { "positiveRatio": 0.6, "negativeRatio": 0.2, "neutralRatio": 0.2 }
+# }
+
+
+
+
