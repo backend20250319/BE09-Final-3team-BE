@@ -34,16 +34,19 @@ public class PostService {
     }
 
     public Page<PostItem> getPosts(Pageable pageable, PostType type) {
-        Page<Post> page = (type==null)
-                ? postRepository.findByStatus(PostStatus.PUBLISHED,pageable)
-                : postRepository.findByStatusAndType(PostStatus.PUBLISHED,pageable,type);
+        Page<Post> page = (type == null)
+                ? postRepository.findByStatus(PostStatus.PUBLISHED, pageable)
+                : postRepository.findByStatusAndType(PostStatus.PUBLISHED, pageable, type);
+
         List<Post> posts = page.getContent();
+
         Set<Long> userIds = posts.stream()
                 .map(Post::getUserId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        Map<Long,UserBriefDto> userMap = Collections.emptyMap();
-        if(!userIds.isEmpty()) {
+
+        Map<Long, UserBriefDto> userMap = Collections.emptyMap();
+        if (!userIds.isEmpty()) {
             try {
                 List<UserBriefDto> users = userClient.getUsersBrief(new ArrayList<>(userIds));
                 userMap = users.stream().collect(Collectors.toMap(UserBriefDto::getId, Function.identity()));
@@ -56,41 +59,24 @@ public class PostService {
                 userMap = tmp;
             }
         }
-        Map<Long, Long> countMap = Collections.emptyMap();
-        if (!posts.isEmpty()) {
-            List<Long> postIds = posts.stream().map(Post::getId).toList();
 
-            var rows = commentRepository.findByPostIdInAndCommentStatus(postIds, CommentStatus.NORMAL);
-            countMap = rows.stream().collect(
-                    Collectors.groupingBy(CommentRepository.PostId::getPostId, Collectors.counting())
-            );
-        }
-        Map<Long, Long> finalCountMap = countMap;
         Map<Long, UserBriefDto> finalUserMap = userMap;
+
         return page.map(p -> {
-               UserBriefDto u =finalUserMap.get(p.getUserId());
-               long cnt = finalCountMap.getOrDefault(p.getId(), 0L);
-               return PostItem.from(p,cnt,u);
+            UserBriefDto u = finalUserMap.get(p.getUserId());
+            int cnt = commentRepository.countByPostId(p.getId());
+            return PostItem.from(p, cnt, u);
         });
     }
 
     public Page<PostItem> getMyPosts(Long userNo, Pageable pageable, PostType type) {
-        Page<Post> page = (type==null)
-                ? postRepository.findByUserIdAndStatus(userNo,PostStatus.PUBLISHED,pageable)
-                : postRepository.findByUserIdAndStatusAndType(userNo,PostStatus.PUBLISHED,pageable,type);
-        List<Post> posts = page.getContent();
-        Map<Long, Long> countMap = Map.of();
-        if (!posts.isEmpty()) {
-            List<Long> postIds = posts.stream().map(Post::getId).toList();
+        Page<Post> page = (type == null)
+                ? postRepository.findByUserIdAndStatus(userNo, PostStatus.PUBLISHED, pageable)
+                : postRepository.findByUserIdAndStatusAndType(userNo, PostStatus.PUBLISHED, pageable, type);
 
-            var rows = commentRepository.findByPostIdInAndCommentStatus(postIds, CommentStatus.NORMAL);
-            countMap = rows.stream().collect(
-                    Collectors.groupingBy(CommentRepository.PostId::getPostId, Collectors.counting())
-            );
-        }
-        Map<Long, Long> finalCountMap = countMap;
+        // 각 게시물마다 commentCount 조회
         return page.map(p -> {
-            long cnt = finalCountMap.getOrDefault(p.getId(), 0L);
+            int cnt = commentRepository.countByPostId(p.getId()); // ✅ 게시글 ID로 카운트 조회
             return PostItem.from(p, cnt);
         });
     }

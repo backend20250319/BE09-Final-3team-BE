@@ -13,7 +13,7 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment,Long> {
     boolean existsByParentId(Long parentId);
 
-    List<PostId> findByPostIdInAndCommentStatus(List<Long> postIds, CommentStatus commentStatus);
+    List<Comment> findByPostIdInAndCommentStatus(List<Long> postIds, CommentStatus commentStatus);
 
     int countByPostId(Long postId);
 
