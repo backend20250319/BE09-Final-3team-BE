@@ -10,17 +10,13 @@ import site.petful.healthservice.common.response.ApiResponseGenerator;
 import site.petful.healthservice.common.response.ErrorCode;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import site.petful.healthservice.exception.AuthenticationException;
+
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiResponse<?>> handleAuthenticationException(AuthenticationException e) {
-        log.warn("Authentication exception occurred: {}", e.getMessage());
-        return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.UNAUTHORIZED, e.getMessage()));
-    }
+
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<?>> handleBusinessException(BusinessException e) {

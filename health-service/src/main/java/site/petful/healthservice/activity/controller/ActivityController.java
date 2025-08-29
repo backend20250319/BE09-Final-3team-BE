@@ -33,10 +33,6 @@ public class ActivityController {
             @AuthenticationPrincipal String userNo,
             @Valid @RequestBody ActivityRequest request
     ) {
-        if (userNo == null) {
-            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
-        }
-
         request = ActivityRequest.builder()
                 .userNo(Long.valueOf(userNo))
                 .petNo(request.getPetNo())
@@ -64,10 +60,6 @@ public class ActivityController {
             @RequestParam("petNo") Long petNo,
             @RequestParam("activityDate") String activityDate
     ) {
-        if (userNo == null) {
-            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
-        }
-        
         ActivityResponse response = activityService.getActivity(Long.valueOf(userNo), petNo, activityDate);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
@@ -82,10 +74,6 @@ public class ActivityController {
             @RequestParam("year") int year,
             @RequestParam("month") int month
     ) {
-        if (userNo == null) {
-            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
-        }
-        
         List<String> dates = activityService.getActivitySchedule(Long.valueOf(userNo), petNo, year, month);
         return ResponseEntity.ok(ApiResponseGenerator.success(dates));
     }
@@ -97,10 +85,6 @@ public class ActivityController {
     public ResponseEntity<ApiResponse<List<PetResponse>>> getUserPets(
             @AuthenticationPrincipal String userNo
     ) {
-        if (userNo == null) {
-            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
-        }
-        
         List<PetResponse> pets = activityService.getUserPets(Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(pets));
     }
@@ -117,10 +101,6 @@ public class ActivityController {
             @RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate
     ) {
-        if (userNo == null) {
-            return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
-        }
-        
         ActivityChartResponse response = activityService.getActivityChartData(Long.valueOf(userNo), petNo, periodType, startDate, endDate);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }

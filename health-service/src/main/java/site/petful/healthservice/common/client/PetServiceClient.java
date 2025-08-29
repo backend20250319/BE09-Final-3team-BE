@@ -16,6 +16,6 @@ public interface PetServiceClient {
     @GetMapping("/pets/{petNo}")
     ApiResponse<PetResponse> getPet(@PathVariable Long petNo);
     
-    @GetMapping("/pets/jwt")
-    ApiResponse<List<PetResponse>> getPets(@RequestHeader("X-User-No") Long userNo);
+    @GetMapping("/pets/external")
+    ApiResponse<List<PetResponse>> getPetsByUser(@RequestHeader("X-User-No") Long userNo);
 }

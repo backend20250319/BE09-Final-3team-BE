@@ -12,7 +12,7 @@ import org.springframework.security.config.annotation.web.configurers.FormLoginC
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import site.petful.healthservice.jwt.HeaderAuthenticationFilter;
+import site.petful.healthservice.security.HeaderAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -37,9 +37,8 @@ public class SecurityConfig {
                     .anyRequest().authenticated()
             )
             .addFilterBefore(headerAuthenticationFilter(),
-                UsernamePasswordAuthenticationFilter.class)
-        ;
-
+                UsernamePasswordAuthenticationFilter.class);
+        
         return http.build();
     }
 
@@ -47,5 +46,4 @@ public class SecurityConfig {
     public HeaderAuthenticationFilter headerAuthenticationFilter() {
         return new HeaderAuthenticationFilter();
     }
-
 }
