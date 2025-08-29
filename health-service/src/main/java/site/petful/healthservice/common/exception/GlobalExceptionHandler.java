@@ -2,6 +2,7 @@ package site.petful.healthservice.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,7 +30,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<?>> handleValidationException(MethodArgumentNotValidException e) {
         String msg = e.getBindingResult().getAllErrors().stream()
                 .findFirst()
-                .map(err -> err.getDefaultMessage())
+                .map(ObjectError::getDefaultMessage)
                 .orElse("요청 데이터가 올바르지 않습니다.");
         return ResponseEntity.ok(ApiResponseGenerator.failWithData(ErrorCode.MEDICATION_VALIDATION_FAILED, msg));
     }
@@ -48,7 +49,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<?>> handleNotReadable(HttpMessageNotReadableException e) {
-        Throwable root = e.getMostSpecificCause() != null ? e.getMostSpecificCause() : e.getCause();
+        Throwable root = e.getMostSpecificCause();
         if (root instanceof java.time.format.DateTimeParseException || root instanceof InvalidFormatException) {
             log.warn("Date parse error: {}", root.getMessage());
             return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.INVALID_DATE_FORMAT));

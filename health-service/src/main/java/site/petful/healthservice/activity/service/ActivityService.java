@@ -9,7 +9,6 @@ import site.petful.healthservice.activity.entity.Activity;
 import site.petful.healthservice.activity.entity.ActivityMeal;
 import site.petful.healthservice.activity.enums.ActivityLevel;
 import site.petful.healthservice.activity.repository.ActivityRepository;
-import site.petful.healthservice.common.exception.AuthenticationException;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 import org.springframework.stereotype.Service;
@@ -67,16 +66,23 @@ public class ActivityService {
                 .build();
         
         // 식사 정보 추가
-        request.getMeals().forEach(mealRequest ->
+        request.getMeals().forEach(mealRequest -> {
+            // 섭취 칼로리 자동 계산
+            int consumedCalories = calculateConsumedCalories(
+                mealRequest.getTotalCalories(),
+                mealRequest.getTotalWeightG(),
+                mealRequest.getConsumedWeightG()
+            );
+            
             activity.addMeal(ActivityMeal.builder()
                 .totalWeightG(mealRequest.getTotalWeightG())
                 .totalCalories(mealRequest.getTotalCalories())
                 .consumedWeightG(mealRequest.getConsumedWeightG())
-                .consumedCalories(mealRequest.getConsumedCalories())
+                .consumedCalories(consumedCalories)
                 .mealType(mealRequest.getMealType())
                 .memo(mealRequest.getMemo())
-                .build())
-        );
+                .build());
+        });
         
         Activity savedActivity = activityRepository.save(activity);
         
@@ -206,18 +212,13 @@ public class ActivityService {
      * 표시용 날짜 문자열 생성
      */
     private String getDisplayDate(LocalDate date, String periodType) {
-        switch (periodType.toUpperCase()) {
-            case "DAY":
-                return getDayOfWeekKorean(date);
-            case "WEEK":
-                return getWeekDisplay(date);
-            case "MONTH":
-                return getMonthDisplay(date);
-            case "YEAR":
-                return getYearDisplay(date);
-            default:
-                return date.toString();
-        }
+        return switch (periodType.toUpperCase()) {
+            case "DAY" -> getDayOfWeekKorean(date);
+            case "WEEK" -> getWeekDisplay(date);
+            case "MONTH" -> getMonthDisplay(date);
+            case "YEAR" -> getYearDisplay(date);
+            default -> date.toString();
+        };
     }
     
     private String getDayOfWeekKorean(LocalDate date) {
