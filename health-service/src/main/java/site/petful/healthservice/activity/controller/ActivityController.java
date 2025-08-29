@@ -7,6 +7,7 @@ import site.petful.healthservice.activity.dto.ActivityResponse;
 import site.petful.healthservice.activity.dto.ActivityChartResponse;
 import site.petful.healthservice.activity.service.ActivityService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.response.ApiResponseGenerator;
@@ -28,7 +29,7 @@ public class ActivityController {
      */
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<Long>> createActivity(
-            @RequestAttribute("X-User-No") Long userNo,
+            @AuthenticationPrincipal String userNo,
             @Valid @RequestBody ActivityRequest request
     ) {
         if (userNo == null) {
@@ -36,7 +37,7 @@ public class ActivityController {
         }
 
         request = ActivityRequest.builder()
-                .userNo(userNo)
+                .userNo(Long.valueOf(userNo))
                 .petNo(request.getPetNo())
                 .activityDate(request.getActivityDate())
                 .walkingDistanceKm(request.getWalkingDistanceKm())
@@ -49,7 +50,7 @@ public class ActivityController {
                 .meals(request.getMeals())
                 .build();
         
-        Long activityNo = activityService.createActivity(userNo, request);
+        Long activityNo = activityService.createActivity(Long.valueOf(userNo), request);
         return ResponseEntity.ok(ApiResponseGenerator.success(activityNo));
     }
     
@@ -58,7 +59,7 @@ public class ActivityController {
      */
     @GetMapping("/read")
     public ResponseEntity<ApiResponse<ActivityResponse>> getActivity(
-            @RequestAttribute("X-User-No") Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("petNo") Long petNo,
             @RequestParam("activityDate") String activityDate
     ) {
@@ -66,7 +67,7 @@ public class ActivityController {
             return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
         }
         
-        ActivityResponse response = activityService.getActivity(userNo, petNo, activityDate);
+        ActivityResponse response = activityService.getActivity(Long.valueOf(userNo), petNo, activityDate);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
     
@@ -75,7 +76,7 @@ public class ActivityController {
      */
     @GetMapping("/schedule")
     public ResponseEntity<ApiResponse<List<String>>> getActivitySchedule(
-            @RequestAttribute("X-User-No") Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("petNo") Long petNo,
             @RequestParam("year") int year,
             @RequestParam("month") int month
@@ -84,7 +85,7 @@ public class ActivityController {
             return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
         }
         
-        List<String> dates = activityService.getActivitySchedule(userNo, petNo, year, month);
+        List<String> dates = activityService.getActivitySchedule(Long.valueOf(userNo), petNo, year, month);
         return ResponseEntity.ok(ApiResponseGenerator.success(dates));
     }
     
@@ -94,7 +95,7 @@ public class ActivityController {
      */
     @GetMapping("/chart")
     public ResponseEntity<ApiResponse<ActivityChartResponse>> getActivityChart(
-            @RequestAttribute("X-User-No") Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("petNo") Long petNo,
             @RequestParam("periodType") String periodType,
             @RequestParam("startDate") String startDate,
@@ -104,7 +105,7 @@ public class ActivityController {
             return ResponseEntity.badRequest().body(ApiResponseGenerator.failGeneric(ErrorCode.UNAUTHORIZED, "인증이 필요합니다."));
         }
         
-        ActivityChartResponse response = activityService.getActivityChartData(userNo, petNo, periodType, startDate, endDate);
+        ActivityChartResponse response = activityService.getActivityChartData(Long.valueOf(userNo), petNo, periodType, startDate, endDate);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 }
