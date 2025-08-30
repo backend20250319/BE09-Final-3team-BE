@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .requestMatchers("/**").permitAll()
                 .anyRequest().permitAll()
             );
-        
+
         return http.build();
     }
 }

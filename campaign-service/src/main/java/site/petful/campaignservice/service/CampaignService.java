@@ -18,7 +18,6 @@ import site.petful.campaignservice.repository.CampaignRepository;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -69,14 +68,7 @@ public class CampaignService {
                 .distinct()
                 .toList();
 
-        List<PetResponse> pets = petNos.stream()
-                .map(petNo -> {
-                    ApiResponse<PetResponse> response = petFeignClient.getPet(petNo);
-                    return response != null ? response.getData() : null;
-                })
-                .filter(Objects::nonNull)
-                .toList();
-
+        List<PetResponse> pets = petFeignClient.getPetsByPetNos(petNos).getData();
 
         Map<Long, PetResponse> petMap = pets.stream()
                 .collect(Collectors.toMap(PetResponse::getPetNo, pet -> pet));
