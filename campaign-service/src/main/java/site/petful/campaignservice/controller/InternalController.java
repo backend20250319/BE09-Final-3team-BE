@@ -55,7 +55,7 @@ public class InternalController {
 
     /* 리뷰 API */
     // 1. 리뷰 생성
-    @PostMapping("/{applicantNo}")
+    @PostMapping("/review/{applicantNo}")
     public ResponseEntity<ApiResponse<?>> createReview(@PathVariable Long applicantNo) {
         try {
             ReviewResponse response = reviewService.createReview(applicantNo);
@@ -66,8 +66,20 @@ public class InternalController {
         }
     }
 
-    // 3-2. 리뷰 수정 - 광고주 (url 인증 여부, 반려 사유)
-    @PatchMapping("/{applicantNo}")
+    // 2. 리뷰 조회
+    @GetMapping("/review/{applicantNo}")
+    public ResponseEntity<ApiResponse<?>> getReview(@PathVariable Long applicantNo) {
+        try {
+            ReviewResponse response = reviewService.getReview(applicantNo);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.APPLICANT_NOT_FOUND));
+        }
+    }
+
+    // 3. 리뷰 수정 - 광고주
+    @PutMapping("/review/{applicantNo}")
     public ResponseEntity<ApiResponse<?>> updateReview(
             @PathVariable Long applicantNo,
             @RequestBody ReviewRequest request) {
@@ -76,7 +88,7 @@ public class InternalController {
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseGenerator.fail(ErrorCode.APPLICANT_NOT_FOUND));
+                    .body(ApiResponseGenerator.fail(ErrorCode.APPLICANT_NOT_FOUND, e.getMessage()));
         }
     }
 }

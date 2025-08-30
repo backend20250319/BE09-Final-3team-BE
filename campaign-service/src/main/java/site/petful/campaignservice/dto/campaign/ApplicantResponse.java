@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 public class ApplicantResponse {
 
+    private Long applicantNo;
     private Long adNo;
     private PetResponse pet;
     private String content;
@@ -21,6 +22,7 @@ public class ApplicantResponse {
 
     public static ApplicantResponse from(Applicant applicant, PetResponse petResponse) {
         ApplicantResponse res = new ApplicantResponse();
+        res.setApplicantNo(applicant.getApplicantNo());
         res.setAdNo(applicant.getAdNo());
         res.setPet(petResponse);
         res.setContent(applicant.getContent());
