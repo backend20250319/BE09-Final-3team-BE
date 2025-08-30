@@ -50,8 +50,12 @@ Authorization: Bearer {{authToken}}
 ### 금지어 추가 (예시 요청)
 # 권한: User, Admin
 # 설명: 특정 Instagram 계정에 금지어를 추가합니다.
-POST {{baseUrl}}/instagram/comments/banned-words?instagram_id={{testInstagramId}}&word=spam
+POST {{baseUrl}}/instagram/comments/banned-words
 Authorization: Bearer {{authToken}}
+{
+    "instagram_id": "{{testInstagramId}}",
+    "word": "spam"
+}
 
 ### 예상 응답
 # 200 OK

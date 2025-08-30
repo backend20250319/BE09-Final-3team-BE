@@ -60,8 +60,12 @@ Authorization: Bearer {{authToken}}
 ### 자동 삭제 설정
 # 권한: User
 # 설명: Instagram 프로필의 자동 삭제 설정 변경
-POST {{baseUrl}}/instagram/profiles/auto-delete?instagram_id={{testInstagramId}}&isAutoDelete=false
+PUT {{baseUrl}}/instagram/profiles/auto-delete
 Authorization: Bearer {{authToken}}
+{
+    "instagram_id": "{{testInstagramId}}",
+    "auto_delete": true
+}
 
 ### 예상 응답
 # 200 OK
