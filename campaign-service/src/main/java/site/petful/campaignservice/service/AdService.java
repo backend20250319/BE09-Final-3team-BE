@@ -35,7 +35,7 @@ public class AdService {
 
     // 2. 신청한 광고(캠페인) 전체 조회
     public AppliedAdsResponse getAppliedAds(Long userNo) {
-        ApiResponse<List<PetResponse>> pets = petFeignClient.getPets(userNo);
+        ApiResponse<List<PetResponse>> pets = petFeignClient.getPetsExternal(userNo);
 
         List<Long> allPetNos = Optional.ofNullable(pets)
                 .map(ApiResponse::getData)

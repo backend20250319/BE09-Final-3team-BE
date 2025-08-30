@@ -34,4 +34,7 @@ public class Applicant {
 
     @Column(nullable = false)
     private Long petNo;
+
+    @OneToOne(mappedBy = "applicant", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Review review;
 }

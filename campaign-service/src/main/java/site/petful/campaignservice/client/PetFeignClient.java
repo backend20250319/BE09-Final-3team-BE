@@ -1,9 +1,7 @@
 package site.petful.campaignservice.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.dto.PetResponse;
 
@@ -17,6 +15,10 @@ public interface PetFeignClient{
     ApiResponse<PetResponse> getPet(@PathVariable Long petNo);
 
     // 2. 반려동물 목록 조회
-    @GetMapping("/pets")
-    ApiResponse<List<PetResponse>> getPets(@RequestParam Long userNo);
+    @GetMapping("/pets/external")
+    ApiResponse<List<PetResponse>> getPetsExternal(@RequestParam Long userNo);
+
+    // 3. petNos 리스트로 펫 조회
+    @PostMapping("/petsByPetNos")
+    ApiResponse<List<PetResponse>> getPetsByPetNos(@RequestBody List<Long> petNos);
 }
