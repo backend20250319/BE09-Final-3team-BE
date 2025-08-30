@@ -12,7 +12,7 @@ import site.petful.advertiserservice.admin.service.AdvertiserAdminService;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.dto.advertisement.AdResponse;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 
 @RestController
 @RequestMapping("/admin")

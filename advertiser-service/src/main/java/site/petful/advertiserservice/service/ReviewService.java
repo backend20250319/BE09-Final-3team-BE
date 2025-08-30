@@ -2,6 +2,7 @@ package site.petful.advertiserservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import site.petful.advertiserservice.client.CampaignFeignClient;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ErrorCode;
@@ -42,6 +43,7 @@ public class ReviewService {
     }
 
     // 2. 체험단 리뷰 승인/반려
+    @Transactional
     public ReviewResponse updateReview(Long applicantNo, ReviewRequest request) {
         return campaignFeignClient.updateReview(applicantNo, request).getData();
      }

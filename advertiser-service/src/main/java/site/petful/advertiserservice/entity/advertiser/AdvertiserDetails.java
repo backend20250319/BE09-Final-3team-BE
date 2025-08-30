@@ -1,4 +1,4 @@
-package site.petful.advertiserservice.entity;
+package site.petful.advertiserservice.entity.advertiser;
 
 import lombok.Getter;
 

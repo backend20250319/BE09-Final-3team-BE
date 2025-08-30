@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import site.petful.advertiserservice.entity.advertisement.AdStatus;
 import site.petful.advertiserservice.entity.advertisement.Advertisement;
 import site.petful.advertiserservice.repository.AdRepository;

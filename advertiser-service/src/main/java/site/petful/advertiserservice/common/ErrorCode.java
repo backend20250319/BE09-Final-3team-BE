@@ -28,6 +28,10 @@ public enum ErrorCode {
     AD_INTERNAL_SERVER_ERROR("4003", "서버 내부 오류가 발생했습니다."),
     AD_NOT_MATCHED("4004", "해당 조건에 맞는 광고가 없습니다."),
     APPLICANT_NOT_FOUND("4005", "해당 지원자는 존재하지 않습니다."),
+    FILE_EMPTY("4006", "업로드할 파일이 없습니다."),
+    FILE_SIZE_EXCEEDED("4007", "파일 크기는 10MB를 초과할 수 없습니다."),
+    FILE_TYPE_IMAGE("4008", "이미지 파일만 업로드 가능합니다"),
+    FILE_NOT_FOUND("4009", "해당 파일은 존재하지 않습니다."),
 
 
     // 5000번대 : 관리자
