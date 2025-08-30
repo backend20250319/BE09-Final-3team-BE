@@ -16,7 +16,7 @@ import java.util.Optional;
 @Getter
 @Builder
 public class PostItem {
-    private Long id;
+    private Long postId;
     private String title;
     private String contentPreview;
     private PostType type;
@@ -25,30 +25,17 @@ public class PostItem {
     private AuthorDto author;
     public static PostItem from(Post p , long commentCount , UserBriefDto u){
         String preview = p.getContent();
-        if(preview != null && preview.length() > 100 ) {
+        if (preview != null && preview.length() > 100) {
             preview = preview.substring(0, 100) + "... ";
         }
         return PostItem.builder()
-                .id(p.getId())
+                .postId(p.getId())
                 .title(p.getTitle())
                 .contentPreview(preview)
                 .createdAt(p.getCreatedAt())
                 .type(p.getType())
                 .author(AuthorDto.from(u))
-                .commentCount((int)commentCount)
-                .build();
-    }
-
-    public static PostItem from(Post p, long commentCount) {
-        String content = Optional.ofNullable(p.getContent()).orElse("");
-        String preview = content.substring(0, Math.min(140, content.length()));
-        return PostItem.builder()
-                .id(p.getId())
-                .title(Optional.ofNullable(p.getTitle()).orElse(""))
-                .contentPreview(preview)
-                .createdAt(p.getCreatedAt())
-                .type(p.getType())
-                .commentCount((int)commentCount)
+                .commentCount((int) commentCount)
                 .build();
     }
 }

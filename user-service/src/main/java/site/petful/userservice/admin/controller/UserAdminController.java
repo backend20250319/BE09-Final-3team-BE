@@ -5,7 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.userservice.admin.dto.ReportResponse;
 import site.petful.userservice.admin.entity.ActorType;
@@ -23,36 +25,36 @@ public class UserAdminController {
     private final UserAdminService userAdminService;
 
     @GetMapping("/restrict/all")
-    public ApiResponse<Page<ReportResponse>> getReportUsers(
-            @RequestHeader("X-User-No") Long adminId,
-            @RequestHeader("X-User-Type") String adminType,
+    public ResponseEntity<ApiResponse<Page<ReportResponse>>> getReportUsers(
+            @AuthenticationPrincipal Long adminId,
+            @AuthenticationPrincipal String adminType,
             @RequestParam(required = false) ActorType targetType,
             @RequestParam(required = false) ReportStatus status,
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        Page<ReportResponse> page = userAdminService.getAllReports(targetType, status, pageable);
-        return ApiResponseGenerator.success(page);
+        Page<ReportResponse> page = userAdminService.getAllReports(adminId,adminType,targetType, status, pageable);
+        return ResponseEntity.ok(ApiResponseGenerator.success(page));
     }
 
     @PatchMapping("/restrict/{reportId}")
-    public ApiResponse<Void> restrictReportUser(
-            @RequestHeader("X-User-No") Long userNo,
-            @RequestHeader("X-User-Type") String userType,
+    public ResponseEntity<ApiResponse<Void>> restrictReportUser(
+            @AuthenticationPrincipal Long adminId,
+            @AuthenticationPrincipal String adminType,
             @PathVariable Long reportId
     ) {
         userAdminService.restrictByReport(reportId);
-        return ApiResponseGenerator.success();
+        return ResponseEntity.ok(ApiResponseGenerator.success());
     }
 
     @PatchMapping("/restrict/{reportId}/reject")
-    public ApiResponse<Void> rejectReport(
-            @RequestHeader("X-User-No") Long userNo,
-            @RequestHeader("X-User-Type") String userType,
+    public ResponseEntity<ApiResponse<Void>> rejectReport(
+            @AuthenticationPrincipal Long adminId,
+            @AuthenticationPrincipal String adminType,
             @PathVariable Long reportId
     ) {
         userAdminService.rejectByReport(reportId);
-        return ApiResponseGenerator.success();
+        return ResponseEntity.ok(ApiResponseGenerator.success());
     }
 
 }
