@@ -288,7 +288,7 @@ public class ActivityService {
     public List<PetResponse> getUserPets(Long userNo) {
 
         try {
-            ApiResponse<List<PetResponse>> petsResponse = petServiceClient.getPetsByUser(userNo);
+            ApiResponse<List<PetResponse>> petsResponse = petServiceClient.getPets(userNo);
             
             if (petsResponse != null && petsResponse.getData() != null) {
                 return petsResponse.getData();
