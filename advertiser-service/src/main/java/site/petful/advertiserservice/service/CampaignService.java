@@ -23,6 +23,9 @@ public class CampaignService {
     // 2. 체험단 선정
     public ApplicantResponse updateApplicant(Long applicantNo, ApplicantStatus status) {
         ApiResponse<ApplicantResponse> response = campaignFeignClient.updateApplicantByAdvertiser(applicantNo, status);
+        if (status == ApplicantStatus.SELECTED) {
+            campaignFeignClient.createReview(applicantNo);
+        }
         return response.getData();
     }
 }

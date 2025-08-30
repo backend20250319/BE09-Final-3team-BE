@@ -54,9 +54,15 @@ public class ReviewService {
         Review review = reviewRepository.findReviewByApplicantNo(applicantNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.REVIEW_NOT_FOUND.getDefaultMessage()));
 
-        review.setReviewUrl(request.getReviewUrl());
-        review.setReason(request.getReason());
-        review.setIsApproved(request.getIsApproved());
+        if (request.getReviewUrl() != null) {
+            review.setReviewUrl(request.getReviewUrl());
+        }
+        if (request.getReason() != null) {
+            review.setReason(request.getReason());
+        }
+        if (request.getIsApproved() != null) {
+            review.setIsApproved(request.getIsApproved());
+        }
 
         Review saved = reviewRepository.save(review);
 
