@@ -1,6 +1,7 @@
 package site.petful.healthservice.medical.medication.ocr;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class ClovaOcrClient {
 
@@ -48,12 +50,12 @@ public class ClovaOcrClient {
 		if (invokeUrl == null || invokeUrl.trim().isEmpty() ||
 			secretKey == null || secretKey.trim().isEmpty() ||
 			templateId == null || templateId.trim().isEmpty()) {
-			System.out.println("=== MOCK OCR 응답 반환 (설정값 부족) ===");
+			log.info("=== MOCK OCR 응답 반환 (설정값 부족) ===");
 			return createMockOcrResponse();
 		}
 		
 		// 실제 OCR API 호출
-		System.out.println("=== 실제 Clova OCR API 호출 ===");
+		log.info("=== 실제 Clova OCR API 호출 ===");
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 		headers.setAccept(List.of(MediaType.APPLICATION_JSON));

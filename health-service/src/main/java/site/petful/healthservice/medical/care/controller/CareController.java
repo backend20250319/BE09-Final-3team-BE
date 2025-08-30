@@ -3,6 +3,7 @@ package site.petful.healthservice.medical.care.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.response.ApiResponseGenerator;
@@ -12,7 +13,7 @@ import site.petful.healthservice.medical.care.service.CareScheduleService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/care")
+@RequestMapping("/medical/care")
 @RequiredArgsConstructor
 public class CareController {
 
@@ -26,23 +27,22 @@ public class CareController {
 
     @GetMapping("/read")
     public ResponseEntity<ApiResponse<List<CareResponseDTO>>> readCare(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
+            @RequestParam(value = "petNo") Long petNo,
             @RequestParam(value = "from", required = false) String from,
             @RequestParam(value = "to", required = false) String to,
             @RequestParam(value = "subType", required = false) String subType
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        List<CareResponseDTO> result = careScheduleService.listCareSchedules(effectiveUserNo, from, to, subType);
+        List<CareResponseDTO> result = careScheduleService.listCareSchedules(Long.valueOf(userNo), petNo, from, to, subType);
         return ResponseEntity.ok(ApiResponseGenerator.success(result));
     }
 
     @GetMapping("/{calNo}")
     public ResponseEntity<ApiResponse<CareDetailDTO>> getCareDetail(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @PathVariable("calNo") Long calNo
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        CareDetailDTO dto = careScheduleService.getCareDetail(calNo, effectiveUserNo);
+        CareDetailDTO dto = careScheduleService.getCareDetail(calNo, Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(dto));
     }
 
@@ -51,11 +51,10 @@ public class CareController {
      */
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<Long>> createCare(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @Valid @RequestBody CareRequestDTO request
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        Long calNo = careScheduleService.createCareSchedule(effectiveUserNo, request);
+        Long calNo = careScheduleService.createCareSchedule(Long.valueOf(userNo), request);
         return ResponseEntity.ok(ApiResponseGenerator.success(calNo));
     }
 
@@ -65,12 +64,11 @@ public class CareController {
      */
     @PatchMapping("/update")
     public ResponseEntity<ApiResponse<Long>> updateCare(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("calNo") Long calNo,
             @RequestBody CareUpdateRequestDTO request
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        Long updatedCalNo = careScheduleService.updateCareSchedule(calNo, request, effectiveUserNo);
+        Long updatedCalNo = careScheduleService.updateCareSchedule(calNo, request, Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(updatedCalNo));
     }
 
@@ -80,11 +78,10 @@ public class CareController {
      */
     @DeleteMapping("/delete")
     public ResponseEntity<ApiResponse<Long>> deleteCare(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("calNo") Long calNo
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        Long deletedCalNo = careScheduleService.deleteCareSchedule(calNo, effectiveUserNo);
+        Long deletedCalNo = careScheduleService.deleteCareSchedule(calNo, Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(deletedCalNo));
     }
 
@@ -95,11 +92,10 @@ public class CareController {
      */
     @PatchMapping("/alarm")
     public ResponseEntity<ApiResponse<Boolean>> toggleAlarm(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("calNo") Long calNo
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        Boolean alarmEnabled = careScheduleService.toggleAlarm(calNo, effectiveUserNo);
+        Boolean alarmEnabled = careScheduleService.toggleAlarm(calNo, Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(alarmEnabled));
     }
 

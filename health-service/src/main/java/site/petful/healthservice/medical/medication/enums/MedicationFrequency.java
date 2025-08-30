@@ -29,7 +29,9 @@ public enum MedicationFrequency {
         for (MedicationFrequency mf : values()) {
             if (mf.label.equals(v)) return mf;
         }
-        try { return valueOf(v); } catch (Exception ignored) { }
+        try { 
+            return valueOf(v); 
+        } catch (IllegalArgumentException ignored) { }
         return null;
     }
 }

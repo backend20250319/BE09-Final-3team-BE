@@ -26,8 +26,10 @@ public enum ReminderOffset {
         try {
             int d = Integer.parseInt(v);
             for (ReminderOffset r : values()) if (r.days == d) return r;
-        } catch (Exception ignored) { }
-        try { return valueOf(v); } catch (Exception ignored) { }
+        } catch (NumberFormatException ignored) { }
+        try { 
+            return valueOf(v); 
+        } catch (IllegalArgumentException ignored) { }
         return null;
     }
 }

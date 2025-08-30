@@ -1,6 +1,8 @@
 package site.petful.healthservice.medical.medication.service;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import site.petful.healthservice.medical.medication.entity.ScheduleMedDetail;
 import site.petful.healthservice.medical.schedule.entity.Schedule;
@@ -20,6 +22,9 @@ import site.petful.healthservice.medical.schedule.service.AbstractScheduleServic
 import site.petful.healthservice.medical.schedule.dto.ScheduleRequestDTO;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
+import site.petful.healthservice.common.response.ApiResponse;
+import site.petful.healthservice.common.client.PetServiceClient;
+import site.petful.healthservice.common.dto.PetResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,16 +33,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class MedicationScheduleService extends AbstractScheduleService {
 
     private final ScheduleMedicationDetailRepository medicationDetailRepository;
+    private final PetServiceClient petServiceClient;
 
     public MedicationScheduleService(ScheduleRepository scheduleRepository, 
-                                   ScheduleMedicationDetailRepository medicationDetailRepository) {
+                                   ScheduleMedicationDetailRepository medicationDetailRepository,
+                                   PetServiceClient petServiceClient) {
         super(scheduleRepository);
         this.medicationDetailRepository = medicationDetailRepository;
+        this.petServiceClient = petServiceClient;
     }
 
 
@@ -45,53 +55,61 @@ public class MedicationScheduleService extends AbstractScheduleService {
      * 복용약/영양제 일정 생성 (캘린더 기반)
      */
     public Long createMedication(Long userNo, @Valid MedicationRequestDTO request) {
-
-
-        int days = request.getDurationDays();
-        MedicationFrequency freq = request.getMedicationFrequency();
-
-        PrescriptionParsedDTO dto = new PrescriptionParsedDTO();
-        PrescriptionParsedDTO.MedicationInfo info = new PrescriptionParsedDTO.MedicationInfo();
-        info.setDrugName(request.getName());
-        info.setDosage(request.getAmount());
-        info.setAdministration(request.getInstruction());
-        info.setFrequency(freq.getLabel());
-        info.setPrescriptionDays(days + "일");
-        info.setTimes(request.getTimes());
-        dto.setMedications(List.of(info));
-
-
-
-        LocalDate base = request.getStartDate();
-
-        ScheduleSubType subTypeEnum = ScheduleSubType.PILL; // 기본값으로 PILL 사용
-
-        List<Schedule> saved = registerMedicationSchedules(dto, userNo, base, subTypeEnum);
-
-        // reminderDaysBefore가 설정되어 있으면 해당 값으로, 없으면 기본값(0)으로 알림 설정
-        for (Schedule c : saved) {
-            if (request.getReminderDaysBefore() != null) {
-                c.updateReminders(request.getReminderDaysBefore());
-            } else {
-                // 기본값으로 당일 알림 활성화
-                c.updateReminders(0);
-            }
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(request.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
         }
 
-        return saved.isEmpty() ? null : saved.get(0).getScheduleNo();
+        // 공통 DTO로 변환하여 상속된 공통 로직 활용
+        ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
+                .petNo(request.getPetNo())
+                .title(request.getName())  // 약 이름을 title로 사용
+                .startDate(request.getStartDate())
+                .endDate(request.getStartDate().plusDays(request.getDurationDays() - 1))
+                .subType(ScheduleSubType.PILL)  // 약의 경우 기본값으로 PILL 사용
+                .times(request.getTimes())
+                .frequency(RecurrenceType.DAILY)  // 약의 경우 기본값으로 DAILY 사용
+                .recurrenceInterval(1)
+                .recurrenceEndDate(request.getStartDate().plusDays(request.getDurationDays() - 1))
+                .reminderDaysBefore(request.getReminderDaysBefore())
+                .frequencyText(request.getMedicationFrequency().getLabel())
+                .build();
+
+        // 상속된 공통 서비스 사용
+        Schedule entity = createScheduleEntity(userNo, commonRequest, ScheduleMainType.MEDICATION);
+        Long scheduleNo = saveSchedule(entity);
+
+        // 약 관련 상세 정보 저장
+        ScheduleMedDetail detail = ScheduleMedDetail.builder()
+                .scheduleNo(scheduleNo)
+                .medicationName(request.getName())
+                .dosage(request.getAmount())
+                .instructions(request.getInstruction())
+                .durationDays(request.getDurationDays())
+                .build();
+
+        medicationDetailRepository.save(detail);
+
+        return scheduleNo;
     }
+
+
 
     /**
      * 파싱된 처방전 정보를 기반으로 투약 일정을 생성/저장합니다.
      */
-    public List<Schedule> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, LocalDate baseDate) {
-        return registerMedicationSchedules(parsed, userNo, baseDate, ScheduleSubType.PILL);
+    public List<Schedule> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, Long petNo, LocalDate baseDate) {
+        return registerMedicationSchedules(parsed, userNo, petNo, baseDate, ScheduleSubType.PILL);
     }
 
     /**
      * 서브타입을 지정하여 일정을 생성/저장합니다.
      */
-    public List<Schedule> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, LocalDate baseDate, ScheduleSubType subType) {
+    public List<Schedule> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, Long petNo, LocalDate baseDate, ScheduleSubType subType) {
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(petNo, userNo)) {
+            throw new BusinessException(ErrorCode.PET_OWNERSHIP_VERIFICATION_FAILED, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
         List<Schedule> created = new ArrayList<>();
         if (parsed == null || parsed.getMedications() == null || parsed.getMedications().isEmpty()) {
             return created;
@@ -128,6 +146,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
         
         // 공통 DTO로 변환
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
+                .petNo(1L) // OCR의 경우 기본값으로 1L 사용 (사용자가 나중에 수정할 수 있음)
                 .title(buildTitle(drugName, dosage))
                 .startDate(startDay)
                 .endDate(endDay)
@@ -145,14 +164,14 @@ public class MedicationScheduleService extends AbstractScheduleService {
                     
                     // 저장된 ID 확인
                     if (savedId == null) {
-                        throw new RuntimeException("스케줄 저장 후 ID가 null입니다.");
+                        throw new BusinessException(ErrorCode.SCHEDULE_SAVE_FAILED, "스케줄 저장 후 ID가 null입니다.");
                     }
 
                     // 상세 정보 저장 - 더 안전한 방식으로 변경
         try {
             // Schedule 엔티티를 다시 조회하여 최신 상태 확인
             Schedule savedSchedule = scheduleRepository.findById(savedId)
-                .orElseThrow(() -> new RuntimeException("저장된 스케줄을 찾을 수 없습니다: " + savedId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SCHEDULE_NOT_FOUND, "저장된 스케줄을 찾을 수 없습니다: " + savedId));
             
             // 새로운 ScheduleMedDetail 엔티티 생성 (ID 없음)
             ScheduleMedDetail detail = new ScheduleMedDetail();
@@ -166,19 +185,19 @@ public class MedicationScheduleService extends AbstractScheduleService {
             // saveAndFlush로 즉시 DB에 반영
             ScheduleMedDetail savedDetail = medicationDetailRepository.saveAndFlush(detail);
             if (savedDetail.getScheduleNo() == null) {
-                throw new RuntimeException("상세 정보 저장 후 schedule_no가 null입니다.");
+                throw new BusinessException(ErrorCode.MEDICATION_DETAIL_SAVE_FAILED, "상세 정보 저장 후 schedule_no가 null입니다.");
             }
             
             // 디버깅용 로그
-            System.out.println("=== ScheduleMedDetail 저장 성공 ===");
-            System.out.println("schedule_no: " + savedDetail.getScheduleNo());
-            System.out.println("medication_name: " + savedDetail.getMedicationName());
+            log.info("=== ScheduleMedDetail 저장 성공 ===");
+            log.info("schedule_no: {}", savedDetail.getScheduleNo());
+            log.info("medication_name: {}", savedDetail.getMedicationName());
             
+        } catch (BusinessException e) {
+            throw e; // BusinessException은 그대로 던지기
         } catch (Exception e) {
-            System.err.println("=== ScheduleMedDetail 저장 실패 ===");
-            System.err.println("에러: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("투약 상세 정보 저장 실패: " + e.getMessage(), e);
+            log.error("투약 상세 정보 저장 중 예외 발생", e);
+            throw new BusinessException(ErrorCode.MEDICATION_DETAIL_SAVE_FAILED, "투약 상세 정보 저장 실패: " + e.getMessage());
         }
 
             created.add(entity);
@@ -192,7 +211,12 @@ public class MedicationScheduleService extends AbstractScheduleService {
     /**
      * 투약 일정 목록 조회
      */
-    public List<MedicationResponseDTO> listMedications(Long userNo, String from, String to, String subType) {
+    public List<MedicationResponseDTO> listMedications(Long userNo, Long petNo, String from, String to, String subType) {
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(petNo, userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+
         LocalDateTime start;
         LocalDateTime end;
         try {
@@ -203,16 +227,17 @@ public class MedicationScheduleService extends AbstractScheduleService {
                     ? LocalDate.now().plusMonths(1).atTime(23, 59, 59)
                     : LocalDate.parse(to).atTime(23, 59, 59);
         } catch (java.time.format.DateTimeParseException e) {
-            throw new BusinessException(ErrorCode.INVALID_DATE_FORMAT, "유효하지 않은 날짜 형식입니다.");
+            throw new BusinessException(ErrorCode.MEDICAL_DATE_FORMAT_ERROR, "건강관리 일정의 날짜 형식이 올바르지 않습니다.");
         }
         if (start.isAfter(end)) {
-            throw new BusinessException(ErrorCode.INVALID_DATE_RANGE, "from이 to보다 늦을 수 없습니다.");
+            throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, "건강관리 일정의 날짜 범위가 올바르지 않습니다.");
         }
 
         List<Schedule> items = scheduleRepository.findByUserNoAndDateRange(userNo, start, end);
 
         var stream = items.stream()
-                .filter(c -> c.getMainType() == ScheduleMainType.MEDICATION);
+                .filter(c -> c.getMainType() == ScheduleMainType.MEDICATION)
+                .filter(c -> c.getPetNo().equals(petNo)); // 특정 펫의 일정만 필터링
         if (subType != null && !subType.isBlank()) {
             stream = stream.filter(c -> c.getSubType().name().equalsIgnoreCase(subType));
         }
@@ -254,6 +279,11 @@ public class MedicationScheduleService extends AbstractScheduleService {
      */
     public MedicationDetailDTO getMedicationDetail(Long calNo, Long userNo) {
         Schedule c = findScheduleById(calNo);
+
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(c.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
 
         if (!c.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -300,6 +330,11 @@ public class MedicationScheduleService extends AbstractScheduleService {
     public MedicationUpdateDiffDTO updateMedication(Long calNo, MedicationUpdateRequestDTO request, Long userNo) {
         // 조회 및 소유자 검증
         Schedule entity = findScheduleById(calNo);
+        
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
         
         if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
@@ -415,8 +450,13 @@ public class MedicationScheduleService extends AbstractScheduleService {
     /**
      * 투약 일정 알림 on/off
      */
-    public Long toggleAlarm(Long calNo, Long userNo, boolean enabled) {
+    public Boolean toggleAlarm(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
+
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
 
         if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
@@ -429,7 +469,14 @@ public class MedicationScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "삭제된 일정입니다.");
         }
 
-        return super.toggleAlarm(calNo, enabled);
+        // 현재 알림 상태를 반대로 토글
+        boolean currentAlarmEnabled = entity.getReminderDaysBefore() != null;
+        boolean newAlarmState = !currentAlarmEnabled;
+        
+        // AbstractScheduleService의 공통 메서드 사용
+        super.toggleAlarm(calNo, newAlarmState);
+        
+        return newAlarmState;
     }
     
     /**
@@ -437,6 +484,11 @@ public class MedicationScheduleService extends AbstractScheduleService {
      */
     public Long deleteMedication(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
+
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
 
         if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
@@ -523,7 +575,12 @@ public class MedicationScheduleService extends AbstractScheduleService {
     }
 
     private int parseIntSafe(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
+        try { 
+            return Integer.parseInt(s); 
+        } catch (NumberFormatException e) { 
+            log.debug("숫자 파싱 실패, 기본값 사용: {} -> {}", s, def);
+            return def; 
+        }
     }
 
 
@@ -571,6 +628,24 @@ public class MedicationScheduleService extends AbstractScheduleService {
         public RecurrenceType getRecurrenceType() { return recurrenceType; }
         public int getInterval() { return interval; }
         public int getTimesPerDay() { return timesPerDay; }
+    }
+
+    private boolean isPetOwnedByUser(Long petNo, Long userNo) {
+        try {
+            ApiResponse<PetResponse> response = petServiceClient.getPet(petNo);
+            
+            if (response != null && response.getData() != null) {
+                PetResponse pet = response.getData();
+                if (pet.getUserNo() != null) {
+                    return pet.getUserNo().equals(userNo);
+                }
+            }
+            return false;
+            
+        } catch (Exception e) {
+            log.error("펫 소유권 검증 중 예외 발생: petNo={}, userNo={}", petNo, userNo, e);
+            return false;
+        }
     }
 }
 
