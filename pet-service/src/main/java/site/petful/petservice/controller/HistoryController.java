@@ -3,9 +3,11 @@ package site.petful.petservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import site.petful.petservice.common.ApiResponse;
 import site.petful.petservice.dto.HistoryRequest;
 import site.petful.petservice.dto.HistoryResponse;
+import site.petful.petservice.dto.MultipleFileUploadResponse;
 import site.petful.petservice.service.HistoryService;
 
 import java.util.List;
@@ -65,6 +67,23 @@ public class HistoryController {
             @RequestAttribute("X-User-No") Long userNo) {
         historyService.deleteHistory(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 활동이력 이미지 업로드
+    @PostMapping("/{petNo}/histories/{historyNo}/images")
+    public ResponseEntity<ApiResponse<MultipleFileUploadResponse>> uploadHistoryImages(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo,
+            @RequestParam("files") List<MultipartFile> files) {
+        
+        MultipleFileUploadResponse response = historyService.uploadHistoryImages(files, petNo, historyNo, userNo);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
+        }
     }
 
 }
