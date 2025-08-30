@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.communityservice.common.ApiResponse;
@@ -43,20 +44,18 @@ public class PostController {
     }
     //전체 게시글 조회
     @GetMapping("/all")
-    public ApiResponse<PageResponse<PostItem>> getPosts(
-            @AuthenticationPrincipal Long userNo,
-            @AuthenticationPrincipal String userType,
+    public ResponseEntity<ApiResponse<PageResponse<PostItem>>> getPosts(
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)Pageable pageable,
             @RequestParam(required = false)PostType type
             ){
+        log.info("page={}, size={} type={}", pageable.getPageNumber(), pageable.getPageSize(), type);
            Page<PostItem> result = postService.getPosts(pageable,type);
-           return ApiResponseGenerator.success(PageResponse.of(result));
+           return ResponseEntity.ok(ApiResponseGenerator.success(PageResponse.of(result)));
     }
     // 게시글 조회
     @GetMapping("/me")
     public ApiResponse<PageResponse<PostItem>> getMyPosts(
-            @AuthenticationPrincipal Long userNo,
-            @AuthenticationPrincipal String userType,
+            @RequestHeader("X-User-No") Long userNo,
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)Pageable pageable,
             @RequestParam(required = false)PostType type
     ){

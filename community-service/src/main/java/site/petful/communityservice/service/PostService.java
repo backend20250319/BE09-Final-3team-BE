@@ -1,11 +1,14 @@
 package site.petful.communityservice.service;
 
 
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import site.petful.communityservice.client.UserClient;
 import site.petful.communityservice.dto.*;
 import site.petful.communityservice.entity.*;
@@ -28,6 +31,30 @@ public class PostService {
 
     @Transactional
     public PostDto registNewPost(Long userNo, PostCreateRequest request) {
+        // 401: 인증 필요
+        if (userNo == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        }
+
+        // 400: 본문/필수 필드 검사
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 비어있습니다.");
+        }
+
+        final String title   = request.getTitle()   == null ? "" : request.getTitle().trim();
+        final String content = request.getContent() == null ? "" : request.getContent().trim();
+        final PostType type  = request.getType(); // enum
+
+        if (title.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "제목을 입력하세요.");
+        }
+        if (content.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "내용을 입력하세요.");
+        }
+        if (type == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시글 유형(type)은 필수입니다.");
+        }
+
         Post saved = postRepository.save(new Post(userNo, request.getTitle(),request.getContent(),request.getType()));
         return new PostDto(saved.getId(), saved.getUserId(), saved.getTitle(),
                 saved.getContent(), saved.getCreatedAt(),saved.getType());
@@ -73,16 +100,28 @@ public class PostService {
         Page<Post> page = (type == null)
                 ? postRepository.findByUserIdAndStatus(userNo, PostStatus.PUBLISHED, pageable)
                 : postRepository.findByUserIdAndStatusAndType(userNo, PostStatus.PUBLISHED, pageable, type);
-
-        // 각 게시물마다 commentCount 조회
+        UserBriefDto u;
+        try {
+            u = userClient.getUserBrief(userNo);
+        } catch (Exception e) {
+            u = null;
+        }
+        if (u == null || u.getId() == null) {
+            u = UserBriefDto.builder()
+                    .id(userNo)
+                    .name("익명")
+                    .profileUrl(null)
+                    .build();
+        }
+        final UserBriefDto tmp = u;
         return page.map(p -> {
-            int cnt = commentRepository.countByPostId(p.getId()); // ✅ 게시글 ID로 카운트 조회
-            return PostItem.from(p, cnt);
+            int cnt = commentRepository.countByPostId(p.getId());
+            return PostItem.from(p, cnt, tmp);
         });
     }
 
     @Transactional(readOnly = true)
-    public PostDetailDto getPostDetail(Long me, Long postId) {
+    public PostDetailDto getPostDetail(Long userId, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
@@ -90,11 +129,11 @@ public class PostService {
         if ("DELETED".equals(post.getType().name())) {
             throw new RuntimeException("이미 삭제된 게시물입니다.");
         }
+        UserBriefDto u = userClient.getUserBrief(userId);
 
-        // 댓글 포함하지 않음
         int commentCount = commentRepository.countByPostId(postId);
 
-        return PostDetailDto.from(post, me, commentCount); // comments 없음
+        return PostDetailDto.from(post, commentCount, u);
     }
 
     private List<CommentNode> buildTree(List<Comment> comments) {
@@ -122,10 +161,21 @@ public class PostService {
 
     @Transactional
     public void deletePost(Long userNo, Long postId) throws AccessDeniedException {
-        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("삭제할 게시물이 존재하지 않습니다.d"));
-        if(!post.getUserId().equals(userNo)){
-            throw new AccessDeniedException("게시물을 삭제할 권한이 없습니다.");
+        if (userNo == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
         }
+
+        // 404: 게시글 없음
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "삭제할 게시물이 존재하지 않습니다.")
+                );
+
+        // 403: 권한 없음
+        if (!Objects.equals(post.getUserId(), userNo)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "게시물을 삭제할 권한이 없습니다.");
+        }
+
         post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
     }

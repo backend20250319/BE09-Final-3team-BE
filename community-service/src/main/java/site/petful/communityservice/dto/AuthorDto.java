@@ -21,7 +21,7 @@ public class AuthorDto {
         return AuthorDto.builder()
                 .id(u.getId())
                 .nickname(u.getName())
-                .profileImageUrl(u.getPorfileUrl())
+                .profileImageUrl(u.getProfileUrl())
                 .build();
     }
 }
