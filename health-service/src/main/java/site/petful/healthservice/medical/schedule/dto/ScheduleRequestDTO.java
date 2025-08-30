@@ -19,6 +19,9 @@ import java.util.List;
 @SuperBuilder
 public class ScheduleRequestDTO {
     
+    @NotNull(message = "반려동물 번호는 필수입니다")
+    private Long petNo;
+    
     @NotBlank(message = "제목은 필수입니다.")
     private String title;
     

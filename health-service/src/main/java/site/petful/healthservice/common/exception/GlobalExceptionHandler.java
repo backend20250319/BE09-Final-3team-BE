@@ -32,7 +32,15 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .map(ObjectError::getDefaultMessage)
                 .orElse("요청 데이터가 올바르지 않습니다.");
-        return ResponseEntity.ok(ApiResponseGenerator.failWithData(ErrorCode.MEDICATION_VALIDATION_FAILED, msg));
+        
+        String requestURI = e.getNestedPath();
+        if (requestURI != null && requestURI.contains("/care")) {
+            return ResponseEntity.ok(ApiResponseGenerator.failWithData(ErrorCode.MEDICAL_SCHEDULE_CREATION_FAILED, msg));
+        } else if (requestURI != null && requestURI.contains("/medication")) {
+            return ResponseEntity.ok(ApiResponseGenerator.failWithData(ErrorCode.MEDICATION_VALIDATION_FAILED, msg));
+        } else {
+            return ResponseEntity.ok(ApiResponseGenerator.failWithData(ErrorCode.INVALID_REQUEST, msg));
+        }
     }
 
     @ExceptionHandler(Exception.class)
@@ -44,7 +52,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidFormatException.class)
     public ResponseEntity<ApiResponse<?>> handleInvalidFormat(InvalidFormatException e) {
         log.warn("Invalid format: {}", e.getOriginalMessage());
-        return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.INVALID_DATE_FORMAT));
+        return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.MEDICAL_DATE_FORMAT_ERROR));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -52,7 +60,7 @@ public class GlobalExceptionHandler {
         Throwable root = e.getMostSpecificCause();
         if (root instanceof java.time.format.DateTimeParseException || root instanceof InvalidFormatException) {
             log.warn("Date parse error: {}", root.getMessage());
-            return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.INVALID_DATE_FORMAT));
+            return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.MEDICAL_DATE_FORMAT_ERROR));
         }
         log.warn("Invalid request body: {}", e.getMessage());
         return ResponseEntity.ok(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST));

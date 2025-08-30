@@ -3,6 +3,7 @@ package site.petful.healthservice.medical.medication.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import site.petful.healthservice.common.exception.BusinessException;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MedicationService {
@@ -25,7 +27,7 @@ public class MedicationService {
     /**
      * 처방전 이미지를 OCR로 분석하고 파싱된 정보를 반환합니다.
      */
-    public PrescriptionParsedDTO processPrescription(MultipartFile file) throws IOException {
+    public PrescriptionParsedDTO processPrescription(MultipartFile file) {
         // 파일 검증
         validateFile(file);
         
@@ -45,6 +47,9 @@ public class MedicationService {
             
             // 2단계: OCR 응답 JSON 파싱
             return parsePrescription(ocrResponseJson);
+        } catch (IOException e) {
+            log.error("처방전 처리 중 IO 예외 발생", e);
+            throw new BusinessException(ErrorCode.OCR_PROCESSING_FAILED, "처방전 파일 처리 중 오류가 발생했습니다: " + e.getMessage());
         } finally {
             if (temp != null && temp.exists()) temp.delete();
         }
@@ -71,13 +76,13 @@ public class MedicationService {
             
             // images 배열에서 첫 번째 이미지의 fields 추출
             JsonNode images = rootNode.get("images");
-            System.out.println("=== DEBUG: Parsing started ===");
-            System.out.println("Images array size: " + (images != null ? images.size() : "null"));
+            log.debug("=== DEBUG: Parsing started ===");
+            log.debug("Images array size: {}", images != null ? images.size() : "null");
             
             if (images != null && images.isArray() && images.size() > 0) {
                 JsonNode firstImage = images.get(0);
                 JsonNode fields = firstImage.get("fields");
-                System.out.println("Fields array size: " + (fields != null ? fields.size() : "null"));
+                log.debug("Fields array size: {}", fields != null ? fields.size() : "null");
                 
                 if (fields != null && fields.isArray()) {
                     // 약물 정보를 임시로 저장할 맵
@@ -87,17 +92,17 @@ public class MedicationService {
                         String name = field.get("name").asText();
                         String value = field.get("inferText").asText();
                         
-                        System.out.println("Processing field: " + name + " = " + value);
+                        log.debug("Processing field: {} = {}", name, value);
                         
                         // 빈 값이면 건너뛰기
                         if (value == null || value.trim().isEmpty()) {
-                            System.out.println("Skipping empty field: " + name);
+                            log.debug("Skipping empty field: {}", name);
                             continue;
                         }
                         
                         // 약물 번호 추출 (1번, 2번 등)
                         int medicationNumber = extractMedicationNumber(name);
-                        System.out.println("Medication number: " + medicationNumber + " from: " + name);
+                        log.debug("Medication number: {} from: {}", medicationNumber, name);
                         
                         if (medicationNumber > 0) {
                             // 해당 번호의 약물 정보가 없으면 생성
@@ -134,19 +139,19 @@ public class MedicationService {
                     }
                     
                     // 유효한 약물 정보만 결과에 추가
-                    System.out.println("Temp medications size: " + tempMedications.size());
+                    log.debug("Temp medications size: {}", tempMedications.size());
                     for (PrescriptionParsedDTO.MedicationInfo med : tempMedications) {
-                        System.out.println("Checking medication: drugName=" + med.getDrugName() + ", dosage=" + med.getDosage());
+                        log.debug("Checking medication: drugName={}, dosage={}", med.getDrugName(), med.getDosage());
                         if (med.getDrugName() != null && !med.getDrugName().trim().isEmpty()) {
                             // 복용 빈도 추출 (용법에서 "하루 X회" 부분)
                             String frequency = extractFrequency(med.getAdministration());
                             med.setFrequency(frequency);
                             
                             result.getMedications().add(med);
-                            System.out.println("Added medication: " + med.getDrugName());
+                            log.debug("Added medication: {}", med.getDrugName());
                         }
                     }
-                    System.out.println("Final result medications size: " + result.getMedications().size());
+                    log.debug("Final result medications size: {}", result.getMedications().size());
                 }
                 
                 // 템플릿 이름 설정 (images[0]에서 가져오기)
@@ -157,9 +162,8 @@ public class MedicationService {
             }
             
         } catch (Exception e) {
-            // 파싱 실패 시 기본값 설정
-            result.setMedications(new ArrayList<>());
-            result.setTemplateName("처방전");
+            log.error("처방전 JSON 파싱 중 예외 발생", e);
+            throw new BusinessException(ErrorCode.OCR_PARSING_FAILED, "처방전 정보 파싱에 실패했습니다: " + e.getMessage());
         }
         
         return result;

@@ -43,6 +43,7 @@ public abstract class AbstractScheduleService {
                 .allDay(false)
                 .alarmTime(startDt)
                 .userNo(userNo)
+                .petNo(request.getPetNo())
                 .recurrenceType(request.getFrequency())
                 .recurrenceInterval(request.getRecurrenceInterval())
                 .recurrenceEndDate(endDt)
@@ -72,7 +73,7 @@ public abstract class AbstractScheduleService {
         Schedule saved = scheduleRepository.saveAndFlush(schedule);
         
         if (saved.getScheduleNo() == null) {
-            throw new RuntimeException("스케줄 저장 후 ID가 생성되지 않았습니다.");
+            throw new BusinessException(ErrorCode.SCHEDULE_SAVE_FAILED, "스케줄 저장 후 ID가 생성되지 않았습니다.");
         }
         
         return saved.getScheduleNo();
@@ -102,6 +103,7 @@ public abstract class AbstractScheduleService {
         schedule.updateReminders(request.getReminderDaysBefore());
         schedule.updateTimes(request.getTimes());
         schedule.updateSubType(request.getSubType());
+        schedule.updatePetNo(request.getPetNo());
 
         return schedule;
     }
