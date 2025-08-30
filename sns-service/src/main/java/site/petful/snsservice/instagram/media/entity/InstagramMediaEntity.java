@@ -26,7 +26,6 @@ public class InstagramMediaEntity {
 
     @Id
     private Long id;
-    @Column(nullable = false)
     private String caption;
     @Column(nullable = false)
     private String mediaType;

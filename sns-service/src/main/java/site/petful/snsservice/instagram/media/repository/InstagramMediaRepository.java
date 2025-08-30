@@ -1,5 +1,6 @@
 package site.petful.snsservice.instagram.media.repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -13,7 +14,13 @@ public interface InstagramMediaRepository extends JpaRepository<InstagramMediaEn
 
     List<InstagramMediaEntity> findAllByIdIn(List<Long> mediaIds);
 
-    List<InstagramMediaEntity> findTop5ByInstagramProfileOrderByLikeCountDesc(
+    List<InstagramMediaEntity> findTop3ByInstagramProfileOrderByLikeCountDesc(
         InstagramProfileEntity profileEntity);
+
+    List<InstagramMediaEntity> findAllByInstagramProfileAndTimestampBetween(
+        InstagramProfileEntity profileEntity,
+        OffsetDateTime start,
+        OffsetDateTime end
+    );
 }
 

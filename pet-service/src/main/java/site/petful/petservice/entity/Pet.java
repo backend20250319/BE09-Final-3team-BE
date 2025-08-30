@@ -31,7 +31,7 @@ public class Pet {
     @Column(name = "type", length = 255, nullable = false)
     private String type;
 
-    @Column(name = "image_url", length = 255)
+    @Column(name = "image_url", length = 255, nullable = true)
     private String imageUrl;
 
     @Column(name = "age", nullable = false)

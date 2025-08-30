@@ -1,6 +1,7 @@
 package site.petful.snsservice.instagram.auth.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,10 @@ public class InstagramTokenService {
     public int deleteExpiredTokens() {
         return instagramTokenRepository.deleteByExpireAtBefore(
             LocalDateTime.now());
+    }
+
+    public List<Long> getAllUserIds() {
+        return instagramTokenRepository.findAllUserNos();
     }
 
 }

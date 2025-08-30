@@ -38,8 +38,8 @@ public class Post {
     private PostType type;
 
     @Enumerated(EnumType.STRING)
-    @Column(name="status", nullable = true)
-    private Status status;
+    @Column(name="post_status", nullable = false)
+    private PostStatus status = PostStatus.PUBLISHED;
     public Post(Long userId, String title, String content, PostType type) {
         this.userId = userId;
         this.title = title;

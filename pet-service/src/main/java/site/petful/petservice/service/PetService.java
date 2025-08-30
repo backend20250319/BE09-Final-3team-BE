@@ -5,11 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
+import site.petful.petservice.dto.FileUploadResponse;
 import site.petful.petservice.entity.Pet;
 import site.petful.petservice.entity.PetStarStatus;
 import site.petful.petservice.repository.PetRepository;
+import site.petful.petservice.common.ftp.FtpService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class PetService {
 
     private final PetRepository petRepository;
+    private final FtpService ftpService;
 
     // 반려동물 등록
     @Transactional
@@ -174,8 +178,43 @@ public class PetService {
                 .collect(Collectors.toList());
     }
 
+    // 반려동물 이미지 업로드
+    @Transactional
+    public FileUploadResponse uploadPetImage(MultipartFile file, Long petNo, Long userNo) {
+        // 반려동물 존재 여부 및 소유권 확인
+        Pet pet = petRepository.findById(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
+
+        if (!pet.getUserNo().equals(userNo)) {
+            throw new IllegalArgumentException("해당 반려동물의 이미지를 업로드할 권한이 없습니다.");
+        }
+
+        // 파일 업로드
+        String filename = ftpService.upload(file);
+        
+        if (filename == null) {
+            return FileUploadResponse.builder()
+                    .success(false)
+                    .message("파일 업로드에 실패했습니다.")
+                    .build();
+        }
+
+        // 반려동물 이미지 URL 업데이트
+        String fileUrl = ftpService.getFileUrl(filename);
+        pet.setImageUrl(fileUrl);
+        petRepository.save(pet);
+
+        return FileUploadResponse.builder()
+                .success(true)
+                .message("반려동물 이미지가 성공적으로 업로드되었습니다.")
+                .filename(filename)
+                .fileUrl(fileUrl)
+                .build();
+    }
+
     // Pet 엔티티를 PetResponse로 변환
     private PetResponse toPetResponse(Pet pet) {
+        log.debug("Pet 엔티티 변환 - petNo: {}, imageUrl: {}", pet.getPetNo(), pet.getImageUrl());
         return PetResponse.builder()
                 .petNo(pet.getPetNo())
                 .userNo(pet.getUserNo())

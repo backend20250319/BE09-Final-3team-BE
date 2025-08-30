@@ -3,24 +3,19 @@ package site.petful.communityservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.petful.communityservice.client.UserClient;
 import site.petful.communityservice.dto.*;
-import site.petful.communityservice.entity.Comment;
-import site.petful.communityservice.entity.Post;
-import site.petful.communityservice.entity.PostType;
-import site.petful.communityservice.entity.Status;
+import site.petful.communityservice.entity.*;
 import site.petful.communityservice.repository.CommentRepository;
 import site.petful.communityservice.repository.PostRepository;
 
 import java.nio.file.AccessDeniedException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,59 +24,77 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final UserClient userClient;
 
+    @Transactional
     public PostDto registNewPost(Long userNo, PostCreateRequest request) {
         Post saved = postRepository.save(new Post(userNo, request.getTitle(),request.getContent(),request.getType()));
         return new PostDto(saved.getId(), saved.getUserId(), saved.getTitle(),
                 saved.getContent(), saved.getCreatedAt(),saved.getType());
     }
 
-    public Page<PostItem> getPosts(Integer page, Integer size, PostType type) {
-        Pageable pageable = PageRequest.of(
-                page == null ? 0 : page,
-                size == null ? 5 : size,
-                Sort.by(Sort.Direction.DESC,"createdAt")
-        );
+    public Page<PostItem> getPosts(Pageable pageable, PostType type) {
+        Page<Post> page = (type == null)
+                ? postRepository.findByStatus(PostStatus.PUBLISHED, pageable)
+                : postRepository.findByStatusAndType(PostStatus.PUBLISHED, pageable, type);
 
-        Page<Post> posts = (type==null)
-                ? postRepository.findByStatus("PUBLISHED",pageable)
-                : postRepository.findByStatusAndType("PUBLISHED",pageable,type);
+        List<Post> posts = page.getContent();
 
-        return posts.map(p -> {
-                int cnt = commentRepository.countByPostId(p.getId());
-                return PostItem.from(p, cnt);
+        Set<Long> userIds = posts.stream()
+                .map(Post::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, UserBriefDto> userMap = Collections.emptyMap();
+        if (!userIds.isEmpty()) {
+            try {
+                List<UserBriefDto> users = userClient.getUsersBrief(new ArrayList<>(userIds));
+                userMap = users.stream().collect(Collectors.toMap(UserBriefDto::getId, Function.identity()));
+            } catch (Exception batchFail) {
+                Map<Long, UserBriefDto> tmp = new HashMap<>();
+                for (Long id : userIds) {
+                    try { tmp.put(id, userClient.getUserBrief(id)); }
+                    catch (Exception ignore) { tmp.put(id, null); }
                 }
-              );
+                userMap = tmp;
+            }
+        }
+
+        Map<Long, UserBriefDto> finalUserMap = userMap;
+
+        return page.map(p -> {
+            UserBriefDto u = finalUserMap.get(p.getUserId());
+            int cnt = commentRepository.countByPostId(p.getId());
+            return PostItem.from(p, cnt, u);
+        });
     }
 
-    public Page<PostItem> getMyPosts(Long userNo, Integer page, Integer size, PostType type) {
-        Pageable pageable = PageRequest.of(
-                page == null ? 0 : page,
-                size == null ? 5 : size,
-                Sort.by(Sort.Direction.DESC,"createdAt")
-        );
+    public Page<PostItem> getMyPosts(Long userNo, Pageable pageable, PostType type) {
+        Page<Post> page = (type == null)
+                ? postRepository.findByUserIdAndStatus(userNo, PostStatus.PUBLISHED, pageable)
+                : postRepository.findByUserIdAndStatusAndType(userNo, PostStatus.PUBLISHED, pageable, type);
 
-        Page<Post> posts = (type==null)
-                ? postRepository.findByUserIdAndStatus(userNo,"PUBLISHED",pageable)
-                : postRepository.findByUserIdAndStatusAndType(userNo,"PUBLISHED",pageable,type);
-
-        return posts.map(p -> {
-                    int cnt = commentRepository.countByPostId(p.getId());
-                    return PostItem.from(p, cnt);
-                }
-        );
+        // 각 게시물마다 commentCount 조회
+        return page.map(p -> {
+            int cnt = commentRepository.countByPostId(p.getId()); // ✅ 게시글 ID로 카운트 조회
+            return PostItem.from(p, cnt);
+        });
     }
 
-    public PostDetail getPostDetail(Long userNo, Long postId) {
-        Post detail = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
-        if(detail.getType().name() == "DELETED"){
+    @Transactional(readOnly = true)
+    public PostDetailDto getPostDetail(Long me, Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        // 문자열 비교는 == 금지
+        if ("DELETED".equals(post.getType().name())) {
             throw new RuntimeException("이미 삭제된 게시물입니다.");
         }
-        List<Comment> all = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
-        List<CommentNode> tree = buildTree(all);
 
-        int commentCount = all.size();
-        return PostDetail.from(detail,userNo,commentCount).withComments(tree);
+        // 댓글 포함하지 않음
+        int commentCount = commentRepository.countByPostId(postId);
+
+        return PostDetailDto.from(post, me, commentCount); // comments 없음
     }
 
     private List<CommentNode> buildTree(List<Comment> comments) {
@@ -113,7 +126,7 @@ public class PostService {
         if(!post.getUserId().equals(userNo)){
             throw new AccessDeniedException("게시물을 삭제할 권한이 없습니다.");
         }
-        post.setStatus(Status.DELETED);
+        post.setStatus(PostStatus.DELETED);
         postRepository.save(post);
     }
 
