@@ -1,7 +1,7 @@
 package site.petful.advertiserservice.dto.advertiser;
 
 import lombok.*;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 
 @Getter
 @Setter

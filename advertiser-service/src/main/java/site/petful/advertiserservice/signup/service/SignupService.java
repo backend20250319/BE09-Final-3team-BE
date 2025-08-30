@@ -5,7 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.advertiserservice.common.ErrorCode;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import site.petful.advertiserservice.repository.AdvertiserRepository;
 import site.petful.advertiserservice.signup.dto.EmailVerificationConfirmRequest;
 import site.petful.advertiserservice.signup.dto.SignupRequest;
