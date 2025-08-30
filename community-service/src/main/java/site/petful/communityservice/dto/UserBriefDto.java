@@ -10,7 +10,6 @@ import lombok.*;
 @Builder
 public class UserBriefDto {
     private Long id;
-    private String name;
-    private String profileUrl;
-
+    private String nickname;
+    private String profileImageUrl;
 }

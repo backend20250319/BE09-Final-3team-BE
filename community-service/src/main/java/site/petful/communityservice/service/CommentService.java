@@ -2,6 +2,7 @@ package site.petful.communityservice.service;
 
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class CommentService {
 
     private final CommentRepository commentRepository;
@@ -79,10 +81,13 @@ public class CommentService {
         );
 
         // 작성자 정보 (없어도 저장은 되게, 표시용만 안전 처리)
-        UserBriefDto user = null;
-        try { user = userClient.getUserBrief(userNo); } catch (Exception ignored) {}
-        String nickname = Optional.ofNullable(user).map(UserBriefDto::getName).filter(s -> !s.isBlank()).orElse("익명");
-        String avatar = Optional.ofNullable(user).map(UserBriefDto::getProfileUrl).filter(s -> s != null && !s.isBlank()).orElse("/default-avatar.png");
+        SimpleProfileResponse u = null;
+        try {  var resp = userClient.getUserBrief(userNo); // ApiResponse<SimpleProfileResponse>
+            if (resp != null) u = resp.getData(); } catch (Exception ignored) {}
+        String nickname = (u != null && u.getNickname() != null && !u.getNickname().isBlank()) ? u.getNickname() : "익명";
+        String avatar   = (u != null && u.getProfileImageUrl() != null && !u.getProfileImageUrl().isBlank())
+                ? u.getProfileImageUrl()
+                : "/user/avatar-placeholder.jpg";
 
         AuthorDto author = AuthorDto.builder()
                 .id(userNo)
@@ -220,12 +225,22 @@ public class CommentService {
         if (ids == null || ids.isEmpty()) return Map.of();
         try {
             List<Long> list = new ArrayList<>(ids);
-            List<UserBriefDto> brief = userClient.getUsersBrief(list); // Feign 호출
-            return brief.stream()
-                    .filter(u -> u.getId() != null)
+
+            // Feign 배치 호출
+            var resp = userClient.getUsersBrief(list);
+            List<SimpleProfileResponse> profiles =
+                    (resp != null && resp.getData() != null) ? resp.getData() : List.of();
+
+            // SimpleProfileResponse -> UserBriefDto 매핑
+            return profiles.stream()
+                    .filter(p -> p.getId() != null)
+                    .map(p -> new UserBriefDto(p.getId(), p.getNickname(), p.getProfileImageUrl()))
                     .collect(Collectors.toMap(UserBriefDto::getId, u -> u, (a, b) -> a));
+
         } catch (Exception e) {
-            return Map.of(); // 실패 시 폴백
+            log.warn("fetchUsers failed: {}", e.getMessage());
+            return Map.of(); // 실패 시 빈 맵 리턴
         }
+
     }
 }

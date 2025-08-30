@@ -3,6 +3,7 @@ package site.petful.communityservice.service;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -75,13 +77,29 @@ public class PostService {
         Map<Long, UserBriefDto> userMap = Collections.emptyMap();
         if (!userIds.isEmpty()) {
             try {
-                List<UserBriefDto> users = userClient.getUsersBrief(new ArrayList<>(userIds));
-                userMap = users.stream().collect(Collectors.toMap(UserBriefDto::getId, Function.identity()));
+                // ★ 배치 호출: ApiResponse<List<SimpleProfileResponse>>
+                var resp = userClient.getUsersBrief(new ArrayList<>(userIds));
+                List<SimpleProfileResponse> list =
+                        (resp != null && resp.getData() != null) ? resp.getData() : List.of();
+
+                userMap = list.stream()
+                        .map(this::toBrief)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toMap(UserBriefDto::getId, u -> u, (a, b) -> a));
+
             } catch (Exception batchFail) {
+                log.warn("getUsersBrief batch failed: {}", batchFail.getMessage());
                 Map<Long, UserBriefDto> tmp = new HashMap<>();
                 for (Long id : userIds) {
-                    try { tmp.put(id, userClient.getUserBrief(id)); }
-                    catch (Exception ignore) { tmp.put(id, null); }
+                    try {
+                        // ★ 단건 호출: ApiResponse<SimpleProfileResponse>
+                        var single = userClient.getUserBrief(id);
+                        SimpleProfileResponse p = (single != null) ? single.getData() : null;
+                        tmp.put(id, toBrief(p));  // null이면 그대로 null 저장(익명 폴백 용)
+                    } catch (Exception e) {
+                        log.warn("getUserBrief({}) failed: {}", id, e.getMessage());
+                        tmp.put(id, null);
+                    }
                 }
                 userMap = tmp;
             }
@@ -96,24 +114,37 @@ public class PostService {
         });
     }
 
+
+    private  UserBriefDto toBrief(SimpleProfileResponse p) {
+        if (p == null || p.getId() == null) return null;
+        return new UserBriefDto(
+                p.getId(),
+                p.getNickname(),
+                p.getProfileImageUrl()
+        );
+    }
+
     public Page<PostItem> getMyPosts(Long userNo, Pageable pageable, PostType type) {
         Page<Post> page = (type == null)
                 ? postRepository.findByUserIdAndStatus(userNo, PostStatus.PUBLISHED, pageable)
                 : postRepository.findByUserIdAndStatusAndType(userNo, PostStatus.PUBLISHED, pageable, type);
-        UserBriefDto u;
+        UserBriefDto brief = null;
         try {
-            u = userClient.getUserBrief(userNo);
-        } catch (Exception e) {
-            u = null;
-        }
-        if (u == null || u.getId() == null) {
-            u = UserBriefDto.builder()
+            var resp = userClient.getUserBrief(userNo);                 // ApiResponse<SimpleProfileResponse>
+            SimpleProfileResponse payload = (resp != null ? resp.getData() : null);
+            if (payload != null && payload.getId() != null) {
+                brief = new UserBriefDto(payload.getId(), payload.getNickname(), payload.getProfileImageUrl());
+            }
+        } catch (Exception ignored) { /* 로그 필요시 추가 */ }
+
+        if (brief == null || brief.getId() == null) {
+            brief = UserBriefDto.builder()
                     .id(userNo)
-                    .name("익명")
-                    .profileUrl(null)
+                    .nickname("익명")
+                    .profileImageUrl(null)
                     .build();
         }
-        final UserBriefDto tmp = u;
+        final UserBriefDto tmp = brief;
         return page.map(p -> {
             int cnt = commentRepository.countByPostId(p.getId());
             return PostItem.from(p, cnt, tmp);
@@ -129,11 +160,22 @@ public class PostService {
         if ("DELETED".equals(post.getType().name())) {
             throw new RuntimeException("이미 삭제된 게시물입니다.");
         }
-        UserBriefDto u = userClient.getUserBrief(userId);
+        UserBriefDto author = null;
+        try {
+            var resp = userClient.getUserBrief(post.getUserId()); // ApiResponse<SimpleProfileResponse>
+            SimpleProfileResponse payload = (resp != null ? resp.getData() : null);
+            author = toBrief(payload);
+        } catch (Exception e) {
+            author = UserBriefDto.builder()
+                    .id(post.getUserId())
+                    .nickname("익명")
+                    .profileImageUrl(null)
+                    .build();
+        }
 
         int commentCount = commentRepository.countByPostId(postId);
 
-        return PostDetailDto.from(post, commentCount, u);
+        return PostDetailDto.from(post, commentCount, author);
     }
 
     private List<CommentNode> buildTree(List<Comment> comments) {

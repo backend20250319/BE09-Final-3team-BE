@@ -55,7 +55,8 @@ public class PostController {
     // 게시글 조회
     @GetMapping("/me")
     public ApiResponse<PageResponse<PostItem>> getMyPosts(
-            @RequestHeader("X-User-No") Long userNo,
+            @AuthenticationPrincipal Long userNo,
+            @AuthenticationPrincipal String userType,
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)Pageable pageable,
             @RequestParam(required = false)PostType type
     ){

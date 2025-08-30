@@ -20,8 +20,8 @@ public class AuthorDto {
         }
         return AuthorDto.builder()
                 .id(u.getId())
-                .nickname(u.getName())
-                .profileImageUrl(u.getProfileUrl())
+                .nickname(u.getNickname())
+                .profileImageUrl(u.getProfileImageUrl())
                 .build();
     }
 }
