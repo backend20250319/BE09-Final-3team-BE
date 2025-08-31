@@ -18,6 +18,8 @@ import java.util.List;
 import site.petful.healthservice.common.dto.PetResponse;
 import site.petful.healthservice.activity.dto.ActivityLevelResponse;
 import site.petful.healthservice.activity.enums.ActivityLevel;
+import site.petful.healthservice.activity.dto.ActivityUpdateRequest;
+import main.java.site.petful.healthservice.activity.dto.ActivityUpdateResponse;
 
 @Slf4j
 @RestController
@@ -134,6 +136,24 @@ public class ActivityController {
             @RequestParam("endDate") String endDate
     ) {
         ActivityChartResponse response = activityService.getActivityChartData(Long.valueOf(userNo), petNo, periodType, startDate, endDate);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+
+    /**
+     * 활동 데이터 부분 수정 (PATCH)
+     */
+    @PatchMapping("/update/{activityNo}")
+    public ResponseEntity<ApiResponse<ActivityUpdateResponse>> updateActivity(
+            @AuthenticationPrincipal String userNo,
+            @PathVariable Long activityNo,
+            @RequestBody ActivityUpdateRequest request
+    ) {
+        log.info("활동 데이터 부분 수정 요청: userNo={}, activityNo={}, request={}", userNo, activityNo, request);
+        
+        ActivityUpdateResponse response = activityService.updateActivity(Long.valueOf(userNo), activityNo, request);
+        
+        log.info("활동 데이터 부분 수정 완료: activityNo={}, 수정 전후 데이터 포함", activityNo);
+        
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 }

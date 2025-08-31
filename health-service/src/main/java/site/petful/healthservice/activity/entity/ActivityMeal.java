@@ -26,8 +26,6 @@ public class ActivityMeal {
     @JoinColumn(name = "activity_id", nullable = false)
     private Activity activity;
     
-
-    
     @Column(name = "total_weight_g", nullable = false)
     private Double totalWeightG; // 총 무게 (g)
     
