@@ -80,7 +80,6 @@ public class ActivityService {
                 .consumedWeightG(mealRequest.getConsumedWeightG())
                 .consumedCalories(consumedCalories)
                 .mealType(mealRequest.getMealType())
-                .memo(mealRequest.getMemo())
                 .build());
         });
         
@@ -274,7 +273,6 @@ public class ActivityService {
                                 .consumedWeightG(meal.getConsumedWeightG())
                                 .consumedCalories(meal.getConsumedCalories())
                                 .mealType(meal.getMealType())
-                                .memo(meal.getMemo())
                                 .build())
                         .collect(Collectors.toList()))
                 .createdAt(activity.getCreatedAt())

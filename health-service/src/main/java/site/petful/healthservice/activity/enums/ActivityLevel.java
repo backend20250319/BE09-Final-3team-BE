@@ -4,10 +4,10 @@ import lombok.Getter;
 
 @Getter
 public enum ActivityLevel {
-    LOW(1.2, "낮음"),
-    MEDIUM_LOW(1.5, "보통 낮음"),
-    MEDIUM_HIGH(1.7, "보통 높음"),
-    HIGH(1.9, "높음");
+    LOW(1.2, "거의 안 움직여요"),
+    MEDIUM_LOW(1.5, "가끔 산책해요"),
+    MEDIUM_HIGH(1.7, "자주 뛰어놀아요"),
+    HIGH(1.9, "매우 활동적이에요");
 
     private final double value;
     private final String label;

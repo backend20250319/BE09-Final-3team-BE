@@ -16,6 +16,8 @@ import site.petful.healthservice.common.response.ErrorCode;
 import jakarta.validation.Valid;
 import java.util.List;
 import site.petful.healthservice.common.dto.PetResponse;
+import site.petful.healthservice.activity.dto.ActivityLevelResponse;
+import site.petful.healthservice.activity.enums.ActivityLevel;
 
 @Slf4j
 @RestController
@@ -87,6 +89,36 @@ public class ActivityController {
     ) {
         List<PetResponse> pets = activityService.getUserPets(Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(pets));
+    }
+
+    /**
+     * 활동량 옵션 목록 조회
+     */
+    @GetMapping("/activity-levels")
+    public ResponseEntity<ApiResponse<List<ActivityLevelResponse>>> getActivityLevels() {
+        List<ActivityLevelResponse> levels = List.of(
+            ActivityLevelResponse.builder()
+                .value("LOW")
+                .label("거의 안 움직여요")
+                .numericValue(1.2)
+                .build(),
+            ActivityLevelResponse.builder()
+                .value("MEDIUM_LOW")
+                .label("가끔 산책해요")
+                .numericValue(1.5)
+                .build(),
+            ActivityLevelResponse.builder()
+                .value("MEDIUM_HIGH")
+                .label("자주 뛰어놀아요")
+                .numericValue(1.7)
+                .build(),
+            ActivityLevelResponse.builder()
+                .value("HIGH")
+                .label("매우 활동적이에요")
+                .numericValue(1.9)
+                .build()
+        );
+        return ResponseEntity.ok(ApiResponseGenerator.success(levels));
     }
 
     /**
