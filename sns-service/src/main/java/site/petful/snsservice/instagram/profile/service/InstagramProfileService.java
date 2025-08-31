@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import site.petful.snsservice.instagram.client.InstagramApiClient;
 import site.petful.snsservice.instagram.insight.service.InstagramFollowerHistoryService;
 import site.petful.snsservice.instagram.profile.dto.InstagramProfileDto;
@@ -89,6 +90,7 @@ public class InstagramProfileService {
         return InstagramProfileDto.fromEntity(entity);
     }
 
+    @Transactional
     public void setAutoDelete(Long userNo, Long instagramId, Boolean isAutoDelete) {
         InstagramProfileEntity entity = instagramProfileRepository.findById(instagramId)
             .orElseThrow(

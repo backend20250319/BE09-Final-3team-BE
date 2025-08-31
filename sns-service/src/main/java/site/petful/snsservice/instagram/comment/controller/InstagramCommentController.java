@@ -1,5 +1,6 @@
 package site.petful.snsservice.instagram.comment.controller;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,13 +12,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
+import site.petful.snsservice.instagram.comment.dto.BannedWordRequestDto;
 import site.petful.snsservice.instagram.comment.dto.BannedWordResponseDto;
 import site.petful.snsservice.instagram.comment.dto.CommentSentimentRatioResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
@@ -64,7 +68,7 @@ public class InstagramCommentController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponse<Void>> deleteInstagramComment(
         @AuthenticationPrincipal String userNo,
-        @RequestParam(name = "comment_id") Long commentId) {
+        @PathVariable Long commentId) {
         String accessToken = instagramTokenService.getAccessToken(Long.valueOf(userNo));
 
         instagramCommentService.deleteComment(commentId, accessToken);
@@ -76,10 +80,10 @@ public class InstagramCommentController {
     @PostMapping("/banned-words")
     public ResponseEntity<ApiResponse<Void>> addBannedWord(
         @AuthenticationPrincipal String userNo,
-        @RequestParam(name = "instagram_id") Long instagramId,
-        @RequestParam(name = "word") String word) {
+        @Valid @RequestBody BannedWordRequestDto request) {
 
-        instagramBannedWordService.addBannedWord(Long.valueOf(userNo), instagramId, word);
+        instagramBannedWordService.addBannedWord(Long.valueOf(userNo), request.instagramId(),
+            request.word());
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
 
