@@ -1,14 +1,19 @@
 package site.petful.communityservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class AuthorDto {
+    @JsonProperty("id")
     private Long id;
+    
+    @JsonProperty("nickname")
     private String nickname;
+    
+    @JsonProperty("profileImageUrl")
     private String profileImageUrl;
-
 
     public static AuthorDto from(UserBriefDto u) {
         if (u == null) {
@@ -20,7 +25,7 @@ public class AuthorDto {
         }
         return AuthorDto.builder()
                 .id(u.getId())
-                .nickname(u.getNickname())
+                .nickname(u.getNickname() != null ? u.getNickname() : "익명")
                 .profileImageUrl(u.getProfileImageUrl())
                 .build();
     }

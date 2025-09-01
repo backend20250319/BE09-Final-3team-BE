@@ -48,9 +48,25 @@ public class PostController {
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)Pageable pageable,
             @RequestParam(required = false)PostType type
             ){
-        log.info("page={}, size={} type={}", pageable.getPageNumber(), pageable.getPageSize(), type);
-           Page<PostItem> result = postService.getPosts(pageable,type);
-           return ResponseEntity.ok(ApiResponseGenerator.success(PageResponse.of(result)));
+        log.info("getPosts called - page={}, size={}, type={}", pageable.getPageNumber(), pageable.getPageSize(), type);
+        try {
+            Page<PostItem> result = postService.getPosts(pageable,type);
+            log.info("getPosts completed - total elements: {}, total pages: {}", result.getTotalElements(), result.getTotalPages());
+            
+            // 첫 번째 항목의 author 정보 로깅 (디버깅용)
+            if (!result.getContent().isEmpty()) {
+                PostItem firstItem = result.getContent().get(0);
+                log.info("First post author info - id: {}, nickname: {}, profileImageUrl: {}", 
+                        firstItem.getAuthor() != null ? firstItem.getAuthor().getId() : "null",
+                        firstItem.getAuthor() != null ? firstItem.getAuthor().getNickname() : "null",
+                        firstItem.getAuthor() != null ? firstItem.getAuthor().getProfileImageUrl() : "null");
+            }
+            
+            return ResponseEntity.ok(ApiResponseGenerator.success(PageResponse.of(result)));
+        } catch (Exception e) {
+            log.error("Error in getPosts: ", e);
+            throw e;
+        }
     }
     // 게시글 조회
     @GetMapping("/me")
