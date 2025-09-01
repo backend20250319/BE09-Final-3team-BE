@@ -11,6 +11,7 @@ import site.petful.notificationservice.entity.Notification;
 import site.petful.notificationservice.repository.NotificationRepository;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -126,8 +127,17 @@ public class NotificationService {
         log.info("📅 [NotificationService] 예약 알림 생성: eventId={}, type={}, delayMinutes={}", 
                 eventMessage.getEventId(), eventMessage.getType(), delayMinutes);
 
+       // delayMinutes가 음수인 경우 처리
+        if (delayMinutes <= 0) {
+            log.warn("⚠️ [NotificationService] delayMinutes가 0 이하입니다. 즉시 알림으로 생성합니다. delayMinutes={}", delayMinutes);
+            return createImmediateNotification(eventMessage);
+        }
+
         // delayMinutes 후에 발송되도록 예약
         LocalDateTime scheduledAt = LocalDateTime.now().plusMinutes(delayMinutes);
+        
+        log.info("🔍 [NotificationService] 예약 시간 계산: now={}, delayMinutes={}, scheduledAt={}", 
+                LocalDateTime.now(), delayMinutes, scheduledAt);
         
         // 이벤트 타입에 따른 알림 내용 생성
         NotificationContent content = createNotificationContent(eventMessage);
@@ -150,6 +160,8 @@ public class NotificationService {
 
         return savedNotification;
     }
+
+
 
     /**
      * 이벤트 타입에 따른 알림 내용을 생성합니다.
@@ -186,6 +198,53 @@ public class NotificationService {
                     "새로운 팔로워",
                     actorName + "님이 회원님을 팔로우하기 시작했습니다.",
                     "/users/" + eventMessage.getActor().getId()
+                );
+                
+            case "health.schedule":
+                return new NotificationContent(
+                    "새로운 건강 일정",
+                    "새로운 건강 일정이 등록되었습니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.enroll":
+                String enrollMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "새로운 건강 일정",
+                    enrollMessage != null ? enrollMessage : "새로운 건강 일정이 등록되었습니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.reserve":
+                String reserveMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "복용 시간",
+                    reserveMessage != null ? reserveMessage : "복용 시간입니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.reminder":
+                String reminderMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "복용 알림 예정",
+                    reminderMessage != null ? reminderMessage : "복용 시간이 예정되어 있습니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.medication":
+                String medicationMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "복용 시간",
+                    medicationMessage != null ? medicationMessage : "복용 시간입니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.notification":
+                String notificationMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "스케줄 알림",
+                    notificationMessage != null ? notificationMessage : "스케줄 시간입니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
                 );
                 
             default:
