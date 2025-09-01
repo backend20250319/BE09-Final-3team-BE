@@ -58,7 +58,7 @@ public class AdService {
         }
 
         if (ads.isEmpty()) {
-            throw new RuntimeException(ErrorCode.AD_NOT_MATCHED.getDefaultMessage());
+            return new AdsResponse(Collections.emptyList());
         }
 
         return AdsResponse.from(ads);
@@ -71,7 +71,7 @@ public class AdService {
         List<Advertisement> ads = adRepository.findByAdStatus(adStatus);
 
         if (ads.isEmpty()) {
-            throw new RuntimeException(ErrorCode.AD_NOT_MATCHED.getDefaultMessage());
+            return new AdsResponse(Collections.emptyList());
         }
 
         return AdsResponse.from(ads);
@@ -101,7 +101,7 @@ public class AdService {
         List<Advertisement> ads = adRepository.findAllById(adNos);
 
         if (ads.isEmpty()) {
-            throw new RuntimeException(ErrorCode.AD_NOT_MATCHED.getDefaultMessage());
+            return new AdsResponse(Collections.emptyList());
         }
 
         return AdsResponse.from(ads);

@@ -37,15 +37,18 @@ public class Advertiser {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(nullable = false)
+    private String businessNumber;
+
     @CreatedDate
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
-    private Boolean isActive = false;
+    private Boolean isActive;
 
     @Column(nullable = false)
-    private Boolean isApproved = false;
+    private Boolean isApproved;
 
     private String reason;
 
