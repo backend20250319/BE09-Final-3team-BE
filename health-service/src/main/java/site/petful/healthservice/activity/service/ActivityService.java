@@ -364,8 +364,46 @@ public class ActivityService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
         }
         
-        LocalDate startDate = LocalDate.parse(startDateStr);
-        LocalDate endDate = LocalDate.parse(endDateStr);
+        LocalDate startDate;
+        LocalDate endDate;
+        
+        // startDate, endDate가 제공되지 않은 경우 periodType에 따른 기본 기간 사용
+        if (startDateStr == null || endDateStr == null) {
+            try {
+                PeriodType periodTypeEnum = PeriodType.valueOf(periodType.toUpperCase());
+                PeriodType.DateRange dateRange = periodTypeEnum.calculateDateRange();
+                startDate = dateRange.getStartDate();
+                endDate = dateRange.getEndDate();
+            } catch (IllegalArgumentException e) {
+                // 기존 periodType (DAY, WEEK, MONTH, YEAR) 처리
+                LocalDate today = LocalDate.now();
+                switch (periodType.toUpperCase()) {
+                    case "DAY" -> {
+                        startDate = today;
+                        endDate = today;
+                    }
+                    case "WEEK" -> {
+                        startDate = today.minusDays(6);
+                        endDate = today;
+                    }
+                    case "MONTH" -> {
+                        startDate = today.minusDays(29);
+                        endDate = today;
+                    }
+                    case "YEAR" -> {
+                        startDate = today.minusDays(364);
+                        endDate = today;
+                    }
+                    default -> {
+                        startDate = today.minusDays(6);
+                        endDate = today;
+                    }
+                }
+            }
+        } else {
+            startDate = LocalDate.parse(startDateStr);
+            endDate = LocalDate.parse(endDateStr);
+        }
         
         List<Activity> activities = activityRepository.findByPetNoAndDateRange(petNo, startDate, endDate);
         

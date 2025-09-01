@@ -15,7 +15,13 @@ public enum PeriodType {
     LAST_3_DAYS("최근 3일"),
     LAST_7_DAYS("최근 7일"),
     THIS_WEEK("이번 주"),
-    THIS_MONTH("이번 달");
+    THIS_MONTH("이번 달"),
+    
+    // 기존 차트 API 호환성을 위한 기간 타입
+    DAY("일"),
+    WEEK("주"),
+    MONTH("월"),
+    YEAR("년");
     
     private final String description;
     
@@ -37,6 +43,10 @@ public enum PeriodType {
                 LocalDate startOfMonth = today.with(TemporalAdjusters.firstDayOfMonth());
                 yield new DateRange(startOfMonth, today);
             }
+            case DAY -> new DateRange(today, today);
+            case WEEK -> new DateRange(today.minusDays(6), today);
+            case MONTH -> new DateRange(today.minusDays(29), today);
+            case YEAR -> new DateRange(today.minusDays(364), today);
             case CUSTOM -> throw new IllegalArgumentException("CUSTOM 타입은 시작일과 종료일을 직접 지정해야 합니다.");
         };
     }
