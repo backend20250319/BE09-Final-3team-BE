@@ -38,7 +38,7 @@ public class PetAdminService {
     @Transactional
     public void approvePetStar(Long petNo) {
 
-        Pet pet = petRepository.findById(petNo)
+        Pet  pet = petRepository.findById(petNo)
                 .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
 
         if (pet.getPetStarStatus() != PetStarStatus.PENDING) {

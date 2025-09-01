@@ -118,6 +118,24 @@ public class HistoryService {
         history.setTitle(request.getTitle() != null ? request.getTitle() : "활동 이력");
         history.setContent(request.getContent());
 
+        // 이미지 처리
+        if (request.getImage_urls() != null) {
+            // 현재 저장된 이미지들 조회
+            List<HistoryImageFile> currentImages = historyImageFileRepository.findByHistoryNoAndIsDeletedFalse(historyNo);
+            
+            // 요청에 포함되지 않은 이미지들은 삭제
+            for (HistoryImageFile currentImage : currentImages) {
+                boolean shouldKeep = request.getImage_urls().stream()
+                        .anyMatch(url -> url.equals(currentImage.getFilePath()));
+                
+                if (!shouldKeep) {
+                    // 이미지 파일 논리적 삭제
+                    currentImage.setIsDeleted(true);
+                    historyImageFileRepository.save(currentImage);
+                }
+            }
+        }
+
         History updatedHistory = historyRepository.save(history);
         return toHistoryResponse(updatedHistory);
     }
@@ -208,7 +226,7 @@ public class HistoryService {
 
     // 활동이력 이미지 삭제 (단일)
     @Transactional
-    public void deleteHistoryImage(Long petNo, Long historyNo, Long imageId, Long userNo) {
+    public void deleteHistoryImage(Long petNo, Long historyNo, String imageId, Long userNo) {
         // 활동이력 존재 여부 및 소유권 확인
         History history = historyRepository.findById(historyNo)
                 .orElseThrow(() -> new IllegalArgumentException("활동이력을 찾을 수 없습니다: " + historyNo));
@@ -224,13 +242,9 @@ public class HistoryService {
             throw new IllegalArgumentException("해당 활동이력의 이미지를 삭제할 권한이 없습니다.");
         }
 
-        // 이미지 파일 존재 여부 확인
-        HistoryImageFile imageFile = historyImageFileRepository.findById(imageId)
+        // 파일명으로 이미지 파일 찾기
+        HistoryImageFile imageFile = historyImageFileRepository.findByHistoryNoAndSavedNameAndIsDeletedFalse(historyNo, imageId)
                 .orElseThrow(() -> new IllegalArgumentException("이미지 파일을 찾을 수 없습니다: " + imageId));
-
-        if (!imageFile.getHistoryNo().equals(historyNo)) {
-            throw new IllegalArgumentException("잘못된 활동이력 번호입니다.");
-        }
 
         // 이미지 파일 논리적 삭제
         imageFile.setIsDeleted(true);
