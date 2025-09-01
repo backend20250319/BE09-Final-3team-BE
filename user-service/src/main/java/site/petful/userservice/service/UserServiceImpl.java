@@ -108,6 +108,12 @@ public class UserServiceImpl implements UserService {
     }
     
     @Override
+    public User findByUserNo(Long userNo) {
+        return userRepository.findById(userNo)
+                .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_FOUND.getDefaultMessage()));
+    }
+    
+    @Override
     @Transactional(readOnly = true)
     public ProfileResponse getProfile(Long userNo) {
         User user = userRepository.findById(userNo)

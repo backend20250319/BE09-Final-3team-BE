@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import site.petful.petservice.entity.HistoryImageFile;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface HistoryImageFileRepository extends JpaRepository<HistoryImageFile, Long> {
@@ -20,6 +21,9 @@ public interface HistoryImageFileRepository extends JpaRepository<HistoryImageFi
     
     // 특정 활동이력의 이미지 파일 개수 조회
     long countByHistoryNoAndIsDeletedFalse(Long historyNo);
+    
+    // 파일명으로 특정 이미지 파일 조회 (삭제되지 않은 것만)
+    Optional<HistoryImageFile> findByHistoryNoAndSavedNameAndIsDeletedFalse(Long historyNo, String savedName);
     
     // 특정 활동이력의 이미지 파일들을 논리적 삭제
     @Modifying(clearAutomatically = true, flushAutomatically = true)

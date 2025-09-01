@@ -59,6 +59,16 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+
+
+
+
+
+
+
+
+
+
     // 활동이력 이미지 업로드
     @PostMapping("/{petNo}/histories/{historyNo}/images")
     public ResponseEntity<ApiResponse<MultipleFileUploadResponse>> uploadHistoryImages(
@@ -66,9 +76,9 @@ public class HistoryController {
             @PathVariable Long historyNo,
             @RequestAttribute("X-User-No") Long userNo,
             @RequestParam("files") List<MultipartFile> files) {
-        
+
         MultipleFileUploadResponse response = historyService.uploadHistoryImages(files, petNo, historyNo, userNo);
-        
+
         if (response.isSuccess()) {
             return ResponseEntity.ok(ApiResponse.success(response));
         } else {
@@ -91,22 +101,12 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<Void>> deleteHistoryImage(
             @PathVariable Long petNo,
             @PathVariable Long historyNo,
-            @PathVariable Long imageId,
+            @PathVariable String imageId,
             @RequestAttribute("X-User-No") Long userNo) {
         historyService.deleteHistoryImage(petNo, historyNo, imageId, userNo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // 활동이력 이미지 선택 삭제 (다중)
-    @DeleteMapping("/{petNo}/histories/{historyNo}/images")
-    public ResponseEntity<ApiResponse<Void>> deleteHistoryImages(
-            @PathVariable Long petNo,
-            @PathVariable Long historyNo,
-            @RequestAttribute("X-User-No") Long userNo,
-            @RequestParam("imageIds") List<Long> imageIds) {
-        historyService.deleteHistoryImages(petNo, historyNo, imageIds, userNo);
-        return ResponseEntity.ok(ApiResponse.success(null))
-    }
+
 
 }
-

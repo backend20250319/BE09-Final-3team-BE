@@ -22,6 +22,7 @@ public interface UserService {
     SignupResponse signup(SignupRequest request);   // ✅ AuthResponse → SignupResponse
     void markEmailVerified(String email);
     User findByEmail(String email);
+    User findByUserNo(Long userNo);
     
     // 프로필 관련 메서드들
     ProfileResponse getProfile(Long userNo);
