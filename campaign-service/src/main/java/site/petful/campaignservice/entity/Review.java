@@ -19,7 +19,7 @@ public class Review {
     @Id
     private Long applicantNo;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "applicant_no")
     private Applicant applicant;

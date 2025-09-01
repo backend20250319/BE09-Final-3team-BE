@@ -9,12 +9,18 @@ import site.petful.healthservice.activity.entity.Activity;
 import site.petful.healthservice.activity.entity.ActivityMeal;
 import site.petful.healthservice.activity.enums.ActivityLevel;
 import site.petful.healthservice.activity.repository.ActivityRepository;
+import site.petful.healthservice.common.exception.BusinessException;
+import site.petful.healthservice.common.response.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.petful.healthservice.common.client.PetServiceClient;
+import site.petful.healthservice.common.dto.PetResponse;
+import site.petful.healthservice.common.response.ApiResponse;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -23,15 +29,20 @@ import java.util.stream.Collectors;
 public class ActivityService {
     
     private final ActivityRepository activityRepository;
+    private final PetServiceClient petServiceClient;
     
     @Transactional
     public Long createActivity(Long userNo, ActivityRequest request) {
-        log.info("활동 데이터 등록 요청: userNo={}, petNo={}, date={}", 
-                userNo, request.getPetNo(), request.getActivityDate());
+
+        
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(request.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
         
         // 같은 날짜에 이미 활동 데이터가 있는지 확인
         if (activityRepository.existsByPetNoAndActivityDate(request.getPetNo(), request.getActivityDate())) {
-            throw new IllegalArgumentException("해당 날짜에 이미 활동 데이터가 존재합니다. 하루에 하나의 활동 기록만 가능합니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "해당 날짜에 이미 활동 데이터가 존재합니다. 하루에 하나의 활동 기록만 가능합니다.");
         }
         
         // 칼로리 자동 계산
@@ -57,24 +68,23 @@ public class ActivityService {
         // 식사 정보 추가
         request.getMeals().forEach(mealRequest -> {
             // 섭취 칼로리 자동 계산
-            int consumedCalories = calculateConsumedCalories(mealRequest.getTotalCalories(), mealRequest.getTotalWeightG(), mealRequest.getConsumedWeightG());
+            int consumedCalories = calculateConsumedCalories(
+                mealRequest.getTotalCalories(),
+                mealRequest.getTotalWeightG(),
+                mealRequest.getConsumedWeightG()
+            );
             
-            ActivityMeal meal = ActivityMeal.builder()
-                    .totalWeightG(mealRequest.getTotalWeightG())
-                    .totalCalories(mealRequest.getTotalCalories())
-                    .consumedWeightG(mealRequest.getConsumedWeightG())
-                    .consumedCalories(consumedCalories)
-                    .mealType(mealRequest.getMealType())
-                    .memo(mealRequest.getMemo())
-                    .build();
-            
-            activity.addMeal(meal);
+            activity.addMeal(ActivityMeal.builder()
+                .totalWeightG(mealRequest.getTotalWeightG())
+                .totalCalories(mealRequest.getTotalCalories())
+                .consumedWeightG(mealRequest.getConsumedWeightG())
+                .consumedCalories(consumedCalories)
+                .mealType(mealRequest.getMealType())
+                .memo(mealRequest.getMemo())
+                .build());
         });
         
-        // 저장
         Activity savedActivity = activityRepository.save(activity);
-        
-        log.info("활동 데이터 등록 완료: activityNo={}", savedActivity.getActivityNo());
         
         return savedActivity.getActivityNo();
     }
@@ -104,14 +114,21 @@ public class ActivityService {
      * 특정 날짜의 활동 데이터 조회
      */
     public ActivityResponse getActivity(Long userNo, Long petNo, String activityDateStr) {
+
+        
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(petNo, userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+        
         LocalDate activityDate = LocalDate.parse(activityDateStr);
         
         Activity activity = activityRepository.findByPetNoAndActivityDate(petNo, activityDate)
-                .orElseThrow(() -> new IllegalArgumentException("해당 날짜의 활동 데이터가 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "해당 날짜의 활동 데이터가 존재하지 않습니다."));
         
         // 사용자 권한 확인
         if (!activity.getUserNo().equals(userNo)) {
-            throw new IllegalArgumentException("해당 활동 데이터에 대한 접근 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 활동 데이터에 대한 접근 권한이 없습니다.");
         }
         
         return convertToResponse(activity);
@@ -121,6 +138,12 @@ public class ActivityService {
      * 스케줄에서 기록이 있는 날짜 목록 조회
      */
     public List<String> getActivitySchedule(Long userNo, Long petNo, int year, int month) {
+
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(petNo, userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+        
         // 해당 월의 시작일과 마지막일 계산
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.plusMonths(1).minusDays(1);
@@ -139,6 +162,12 @@ public class ActivityService {
      * 차트 데이터 조회 (일/주/월/년 단위)
      */
     public ActivityChartResponse getActivityChartData(Long userNo, Long petNo, String periodType, String startDateStr, String endDateStr) {
+
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(petNo, userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+        
         LocalDate startDate = LocalDate.parse(startDateStr);
         LocalDate endDate = LocalDate.parse(endDateStr);
         
@@ -183,18 +212,13 @@ public class ActivityService {
      * 표시용 날짜 문자열 생성
      */
     private String getDisplayDate(LocalDate date, String periodType) {
-        switch (periodType.toUpperCase()) {
-            case "DAY":
-                return getDayOfWeekKorean(date);
-            case "WEEK":
-                return getWeekDisplay(date);
-            case "MONTH":
-                return getMonthDisplay(date);
-            case "YEAR":
-                return getYearDisplay(date);
-            default:
-                return date.toString();
-        }
+        return switch (periodType.toUpperCase()) {
+            case "DAY" -> getDayOfWeekKorean(date);
+            case "WEEK" -> getWeekDisplay(date);
+            case "MONTH" -> getMonthDisplay(date);
+            case "YEAR" -> getYearDisplay(date);
+            default -> date.toString();
+        };
     }
     
     private String getDayOfWeekKorean(LocalDate date) {
@@ -256,5 +280,44 @@ public class ActivityService {
                 .createdAt(activity.getCreatedAt())
                 .updatedAt(activity.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * 사용자별 펫 프로필 목록 조회
+     */
+    public List<PetResponse> getUserPets(Long userNo) {
+
+        try {
+            ApiResponse<List<PetResponse>> petsResponse = petServiceClient.getPets(userNo);
+            
+            if (petsResponse != null && petsResponse.getData() != null) {
+                return petsResponse.getData();
+            }
+            
+            return new ArrayList<>();
+            
+        } catch (Exception e) {
+            log.error("사용자 펫 목록 조회 중 예외 발생: userNo={}", userNo, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "펫 목록 조회 중 오류가 발생했습니다.");
+        }
+    }
+
+    // 펫 소유권 검증 메서드
+    private boolean isPetOwnedByUser(Long petNo, Long userNo) {
+        try {
+            ApiResponse<PetResponse> petResponse = petServiceClient.getPet(petNo);
+            
+            if (petResponse != null && petResponse.getData() != null) {
+                PetResponse pet = petResponse.getData();
+                if (pet.getUserNo() != null) {
+                    return pet.getUserNo().equals(userNo);
+                }
+            }
+            return false;
+            
+        } catch (Exception e) {
+            log.error("펫 소유권 검증 중 예외 발생: petNo={}, userNo={}", petNo, userNo, e);
+            return false;
+        }
     }
 }

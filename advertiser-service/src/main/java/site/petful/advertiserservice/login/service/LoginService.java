@@ -3,7 +3,7 @@ package site.petful.advertiserservice.login.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import site.petful.advertiserservice.login.dto.LoginRequest;
 import site.petful.advertiserservice.login.dto.LoginResponse;
 import site.petful.advertiserservice.repository.AdvertiserRepository;

@@ -1,6 +1,8 @@
 package site.petful.healthservice.medical.care.service;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import site.petful.healthservice.medical.schedule.entity.Schedule;
 import site.petful.healthservice.medical.schedule.enums.ScheduleMainType;
@@ -16,22 +18,34 @@ import site.petful.healthservice.medical.schedule.service.AbstractScheduleServic
 import site.petful.healthservice.medical.schedule.dto.ScheduleRequestDTO;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
+import site.petful.healthservice.common.response.ApiResponse;
+import site.petful.healthservice.common.client.PetServiceClient;
+import site.petful.healthservice.common.dto.PetResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+@Slf4j
 @Service
 public class CareScheduleService extends AbstractScheduleService {
 
-    public CareScheduleService(ScheduleRepository scheduleRepository) {
+    private final PetServiceClient petServiceClient;
+
+    public CareScheduleService(ScheduleRepository scheduleRepository, PetServiceClient petServiceClient) {
         super(scheduleRepository);
+        this.petServiceClient = petServiceClient;
     }
 
     // ==================== 돌봄 일정 생성 ====================
     
     public Long createCareSchedule(Long userNo, @Valid CareRequestDTO request) {
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(request.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+
         ScheduleSubType subType = request.getSubType();
         
         ScheduleMainType mainType;
@@ -41,38 +55,37 @@ public class CareScheduleService extends AbstractScheduleService {
             mainType = ScheduleMainType.CARE;
         }
 
-        // CareFrequency를 사용하여 recurrenceType과 interval 설정
-        CareFrequency careFreq = request.getCareFrequency() != null ? request.getCareFrequency() : CareFrequency.DAILY;
-        RecurrenceType recurrenceType = careFreq.getRecurrenceType();
-        int interval = careFreq.getInterval();
-        
         // 공통 DTO로 변환
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
+                .petNo(request.getPetNo())
                 .title(request.getTitle())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .subType(request.getSubType())
                 .times(request.getTimes())
-                .frequency(recurrenceType)
-                .recurrenceInterval(interval)
+                .frequency(RecurrenceType.DAILY)
+                .recurrenceInterval(1)
                 .recurrenceEndDate(request.getEndDate())
-                .reminderDaysBefore(request.getReminderDaysBefore() != null ? request.getReminderDaysBefore() : 0)
-                .frequencyText(careFreq.getLabel()) // 한글 라벨 사용
+                .reminderDaysBefore(request.getReminderDaysBefore())
+                .frequencyText("매일")
                 .build();
 
         // 공통 서비스 사용
         Schedule entity = createScheduleEntity(userNo, commonRequest, mainType);
         return saveSchedule(entity);
     }
-    
-
 
     // ==================== 돌봄 일정 조회 ====================
     
     /**
      * 돌봄 일정 목록 조회
      */
-    public List<CareResponseDTO> listCareSchedules(Long userNo, String from, String to, String subType) {
+    public List<CareResponseDTO> listCareSchedules(Long userNo, Long petNo, String from, String to, String subType) {
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(petNo, userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+
         List<Schedule> items;
         
         // 날짜 범위가 지정된 경우에만 날짜 필터링 적용
@@ -83,10 +96,10 @@ public class CareScheduleService extends AbstractScheduleService {
                 start = LocalDate.parse(from).atStartOfDay();
                 end = LocalDate.parse(to).atTime(23, 59, 59);
             } catch (java.time.format.DateTimeParseException e) {
-                throw new BusinessException(ErrorCode.INVALID_DATE_FORMAT, "유효하지 않은 날짜 형식입니다.");
+                throw new BusinessException(ErrorCode.MEDICAL_DATE_FORMAT_ERROR, "건강관리 일정의 날짜 형식이 올바르지 않습니다.");
             }
             if (start.isAfter(end)) {
-                throw new BusinessException(ErrorCode.INVALID_DATE_RANGE, "from이 to보다 늦을 수 없습니다.");
+                throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, "건강관리 일정의 날짜 범위가 올바르지 않습니다.");
             }
             items = scheduleRepository.findByUserNoAndDateRange(userNo, start, end);
         } else {
@@ -95,7 +108,8 @@ public class CareScheduleService extends AbstractScheduleService {
         }
 
         var stream = items.stream()
-                .filter(c -> c.getMainType() == ScheduleMainType.CARE || c.getMainType() == ScheduleMainType.VACCINATION);
+                .filter(c -> c.getMainType() == ScheduleMainType.CARE || c.getMainType() == ScheduleMainType.VACCINATION)
+                .filter(c -> c.getPetNo().equals(petNo)); // 특정 펫의 일정만 필터링
         
         if (subType != null && !subType.isBlank()) {
             try {
@@ -139,6 +153,11 @@ public class CareScheduleService extends AbstractScheduleService {
     public CareDetailDTO getCareDetail(Long calNo, Long userNo) {
         Schedule c = findScheduleById(calNo);
         
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(c.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+        
         if (!c.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
         }
@@ -171,6 +190,11 @@ public class CareScheduleService extends AbstractScheduleService {
     public Long updateCareSchedule(Long calNo, CareUpdateRequestDTO request, Long userNo) {
         // 조회 및 소유자 검증
         Schedule entity = findScheduleById(calNo);
+        
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
         
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -260,6 +284,11 @@ public class CareScheduleService extends AbstractScheduleService {
     public Long deleteCareSchedule(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
 
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
         }
@@ -279,6 +308,11 @@ public class CareScheduleService extends AbstractScheduleService {
      */
     public Boolean toggleAlarm(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
+
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
 
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -324,6 +358,24 @@ public class CareScheduleService extends AbstractScheduleService {
         data.put("subTypes", subTypes);
         data.put("frequencies", frequencies);
         return data;
+    }
+
+    private boolean isPetOwnedByUser(Long petNo, Long userNo) {
+        try {
+            ApiResponse<PetResponse> response = petServiceClient.getPet(petNo);
+            
+            if (response != null && response.getData() != null) {
+                PetResponse pet = response.getData();
+                if (pet.getUserNo() != null) {
+                    return pet.getUserNo().equals(userNo);
+                }
+            }
+            return false;
+            
+        } catch (Exception e) {
+            log.error("펫 소유권 검증 중 예외 발생: petNo={}, userNo={}", petNo, userNo, e);
+            return false;
+        }
     }
 }
 

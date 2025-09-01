@@ -32,32 +32,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
+
         log.debug("JWT Filter - Request URI: {}", request.getRequestURI());
-        
+
         String token = extractTokenFromRequest(request);
         log.debug("JWT Filter - Extracted token: {}", token != null ? "present" : "null");
-        
+
         if (StringUtils.hasText(token) && validateToken(token)) {
             log.debug("JWT Filter - Token is valid");
             Claims claims = extractClaims(token);
             Long userNo = claims.get("userNo", Long.class);
             String userType = claims.get("userType", String.class);
             log.debug("JWT Filter - Extracted userNo: {}, userType: {}", userNo, userType);
-            
+
             request.setAttribute("X-User-No", userNo);
-            
+
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 userNo, null, List.of(new SimpleGrantedAuthority("ROLE_" + userType))
             );
-            
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            
+
             log.debug("JWT Filter - Setting X-User-No attribute: {}", userNo);
             filterChain.doFilter(request, response);
             return;
         }
-        
+
         log.debug("JWT Filter - No valid token found, proceeding without authentication");
         filterChain.doFilter(request, response);
     }

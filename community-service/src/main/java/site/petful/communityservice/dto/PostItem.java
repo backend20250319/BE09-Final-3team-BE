@@ -1,6 +1,7 @@
 package site.petful.communityservice.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,41 +17,44 @@ import java.util.Optional;
 @Getter
 @Builder
 public class PostItem {
-    private Long id;
+    @JsonProperty("postId")
+    private Long postId;
+    
+    @JsonProperty("title")
     private String title;
-    private String contentPeview;
+    
+    @JsonProperty("contentPreview")
+    private String contentPreview;
+    
+    @JsonProperty("type")
     private PostType type;
+    
+    @JsonProperty("createdAt")
     private LocalDateTime createdAt;
-    private long commentCount;
-    private String authorName;
-    private String authorAvatarUrl;
+    
+    @JsonProperty("commentCount")
+    private int commentCount;
+    
+    @JsonProperty("author")
+    private AuthorDto author;
+    
     public static PostItem from(Post p , long commentCount , UserBriefDto u){
         String preview = p.getContent();
-        if(preview != null && preview.length() > 100 ) {
+        if (preview != null && preview.length() > 100) {
             preview = preview.substring(0, 100) + "... ";
         }
+        
+        // author가 null이 되지 않도록 보장
+        AuthorDto authorDto = AuthorDto.from(u);
+        
         return PostItem.builder()
-                .id(p.getId())
+                .postId(p.getId())
                 .title(p.getTitle())
-                .contentPeview(preview)
+                .contentPreview(preview)
                 .createdAt(p.getCreatedAt())
                 .type(p.getType())
-                .authorName(u != null && u.getName() != null ? u.getName() : "익명")
-                .authorAvatarUrl(u != null ? u.getPorfileUrl() : null)
-                .commentCount(commentCount)
-                .build();
-    }
-
-    public static PostItem from(Post p, long commentCount) {
-        String content = Optional.ofNullable(p.getContent()).orElse("");
-        String preview = content.substring(0, Math.min(140, content.length()));
-        return PostItem.builder()
-                .id(p.getId())
-                .title(Optional.ofNullable(p.getTitle()).orElse(""))
-                .contentPeview(preview)
-                .createdAt(p.getCreatedAt())
-                .type(p.getType())
-                .commentCount(commentCount)
+                .author(authorDto)
+                .commentCount((int) commentCount)
                 .build();
     }
 }

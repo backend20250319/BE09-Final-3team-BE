@@ -142,6 +142,13 @@ public class Schedule {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void updatePetNo(Long petNo) {
+        if (petNo != null) {
+            this.petNo = petNo;
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
     public void softDelete() {
         this.deleted = true;
         this.deletedAt = LocalDateTime.now();

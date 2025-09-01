@@ -3,6 +3,7 @@ package site.petful.healthservice.medical.medication.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import site.petful.healthservice.common.response.ApiResponse;
@@ -19,7 +20,7 @@ import site.petful.healthservice.common.response.ErrorCode;
 import site.petful.healthservice.medical.schedule.entity.Schedule;
 
 @RestController
-@RequestMapping("/medical")
+@RequestMapping("/medical/medication")
 @RequiredArgsConstructor
 public class MedicationController {
 
@@ -32,11 +33,10 @@ public class MedicationController {
      */
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<Long>> createMedication(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @Valid @RequestBody MedicationRequestDTO request
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        Long calNo = medicationScheduleService.createMedication(effectiveUserNo, request);
+        Long calNo = medicationScheduleService.createMedication(Long.valueOf(userNo), request);
         return ResponseEntity.ok(ApiResponseGenerator.success(calNo));
     }
 
@@ -46,13 +46,13 @@ public class MedicationController {
      */
     @GetMapping("/read")
     public ResponseEntity<ApiResponse<List<MedicationResponseDTO>>> listMedications(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
+            @RequestParam(value = "petNo") Long petNo,
             @RequestParam(value = "from", required = false) String from,
             @RequestParam(value = "to", required = false) String to,
             @RequestParam(value = "subtype", required = false) String subType
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        List<MedicationResponseDTO> result = medicationScheduleService.listMedications(effectiveUserNo, from, to, subType);
+        List<MedicationResponseDTO> result = medicationScheduleService.listMedications(Long.valueOf(userNo), petNo, from, to, subType);
         return ResponseEntity.ok(ApiResponseGenerator.success(result));
     }
 
@@ -61,11 +61,10 @@ public class MedicationController {
      */
     @GetMapping("/{calNo}")
     public ResponseEntity<ApiResponse<MedicationDetailDTO>> getMedicationDetail(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @PathVariable("calNo") Long calNo
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        MedicationDetailDTO dto = medicationScheduleService.getMedicationDetail(calNo, effectiveUserNo);
+        MedicationDetailDTO dto = medicationScheduleService.getMedicationDetail(calNo, Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(dto));
     }
 
@@ -75,12 +74,11 @@ public class MedicationController {
      */
     @PatchMapping("/update")
     public ResponseEntity<ApiResponse<MedicationUpdateDiffDTO>> updateMedication(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("calNo") Long calNo,
             @RequestBody MedicationUpdateRequestDTO request
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        MedicationUpdateDiffDTO response = medicationScheduleService.updateMedication(calNo, request, effectiveUserNo);
+        MedicationUpdateDiffDTO response = medicationScheduleService.updateMedication(calNo, request, Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 
@@ -89,14 +87,12 @@ public class MedicationController {
      * 알림 on/off 전용 API 
      */
     @PatchMapping("/alarm")
-    public ResponseEntity<ApiResponse<Long>> toggleAlarm(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
-            @RequestParam("calNo") Long calNo,
-            @RequestParam("enabled") boolean enabled
+    public ResponseEntity<ApiResponse<Boolean>> toggleAlarm(
+            @AuthenticationPrincipal String userNo,
+            @RequestParam("calNo") Long calNo
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        Long updatedCalNo = medicationScheduleService.toggleAlarm(calNo, effectiveUserNo, enabled);
-        return ResponseEntity.ok(ApiResponseGenerator.success(updatedCalNo));
+        Boolean alarmEnabled = medicationScheduleService.toggleAlarm(calNo, Long.valueOf(userNo));
+        return ResponseEntity.ok(ApiResponseGenerator.success(alarmEnabled));
     }
 
 
@@ -105,11 +101,10 @@ public class MedicationController {
      */
     @DeleteMapping("/delete")
     public ResponseEntity<ApiResponse<Long>> deleteMedication(
-            @RequestHeader(value = "X-User-Id", required = false) Long userNo,
+            @AuthenticationPrincipal String userNo,
             @RequestParam("calNo") Long calNo
     ) {
-        Long effectiveUserNo = (userNo != null) ? userNo : 1L;
-        Long deletedCalNo = medicationScheduleService.deleteMedication(calNo, effectiveUserNo);
+        Long deletedCalNo = medicationScheduleService.deleteMedication(calNo, Long.valueOf(userNo));
         return ResponseEntity.ok(ApiResponseGenerator.success(deletedCalNo));
     }
 
@@ -127,13 +122,13 @@ public class MedicationController {
      * 처방전 OCR 처리 및 일정 자동 등록
      */
     @PostMapping("/ocr")
-    public ResponseEntity<ApiResponse<PrescriptionParsedDTO>> extractText(@RequestParam("file") MultipartFile file) {
-        try {
-            PrescriptionParsedDTO result = medicationService.processPrescription(file);
-            List<Schedule> saved = medicationScheduleService.registerMedicationSchedules(result, 1L, LocalDate.now());
-            return ResponseEntity.ok(ApiResponseGenerator.success(result));
-        } catch (IOException e) {
-            throw new BusinessException(ErrorCode.OCR_PROCESSING_FAILED, e);
-        }
+    public ResponseEntity<ApiResponse<PrescriptionParsedDTO>> extractText(
+            @AuthenticationPrincipal String userNo,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("petNo") Long petNo
+    ) {
+        PrescriptionParsedDTO result = medicationService.processPrescription(file);
+        List<Schedule> saved = medicationScheduleService.registerMedicationSchedules(result, Long.valueOf(userNo), petNo, LocalDate.now());
+        return ResponseEntity.ok(ApiResponseGenerator.success(result));
     }
 }

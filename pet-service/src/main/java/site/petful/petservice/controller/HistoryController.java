@@ -3,9 +3,11 @@ package site.petful.petservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import site.petful.petservice.common.ApiResponse;
 import site.petful.petservice.dto.HistoryRequest;
 import site.petful.petservice.dto.HistoryResponse;
+import site.petful.petservice.dto.MultipleFileUploadResponse;
 import site.petful.petservice.service.HistoryService;
 
 import java.util.List;
@@ -57,6 +59,23 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    // 활동이력 이미지 업로드
+    @PostMapping("/{petNo}/histories/{historyNo}/images")
+    public ResponseEntity<ApiResponse<MultipleFileUploadResponse>> uploadHistoryImages(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo,
+            @RequestParam("files") List<MultipartFile> files) {
+        
+        MultipleFileUploadResponse response = historyService.uploadHistoryImages(files, petNo, historyNo, userNo);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
+        }
+    }
+
     // 활동이력 삭제
     @DeleteMapping("/{petNo}/histories/{historyNo}")
     public ResponseEntity<ApiResponse<Void>> deleteHistory(
@@ -65,6 +84,28 @@ public class HistoryController {
             @RequestHeader("X-User-No") Long userNo) {
         historyService.deleteHistory(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 활동이력 이미지 삭제
+    @DeleteMapping("/{petNo}/histories/{historyNo}/images/{imageId}")
+    public ResponseEntity<ApiResponse<Void>> deleteHistoryImage(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @PathVariable Long imageId,
+            @RequestAttribute("X-User-No") Long userNo) {
+        historyService.deleteHistoryImage(petNo, historyNo, imageId, userNo);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 활동이력 이미지 선택 삭제 (다중)
+    @DeleteMapping("/{petNo}/histories/{historyNo}/images")
+    public ResponseEntity<ApiResponse<Void>> deleteHistoryImages(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo,
+            @RequestParam("imageIds") List<Long> imageIds) {
+        historyService.deleteHistoryImages(petNo, historyNo, imageIds, userNo);
+        return ResponseEntity.ok(ApiResponse.success(null))
     }
 
 }
