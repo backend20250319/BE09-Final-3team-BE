@@ -10,6 +10,7 @@ import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertisement.ImageUploadResponse;
 import site.petful.advertiserservice.dto.advertiser.FileMetaUpdateRequest;
 import site.petful.advertiserservice.dto.advertiser.FileUploadResponse;
+import site.petful.advertiserservice.security.SecurityUtil;
 import site.petful.advertiserservice.service.FileService;
 
 import java.util.List;
@@ -18,9 +19,11 @@ import java.util.List;
 @RequestMapping("/file")
 public class FileController {
 
+    private final SecurityUtil securityUtil;
     private final FileService fileService;
 
-    public FileController(FileService fileService) {
+    public FileController(SecurityUtil securityUtil, FileService fileService) {
+        this.securityUtil = securityUtil;
         this.fileService = fileService;
     }
 
@@ -40,13 +43,13 @@ public class FileController {
     }
 
     // 1-2. 광고주 파일 업로드
-    @PostMapping("/advertiser/{advertiserNo}")
+    @PostMapping("/advertiser")
     public ResponseEntity<ApiResponse<?>> uploadFile(
             @RequestPart(value = "file") MultipartFile file,
-            @RequestPart(value = "image", required = false) MultipartFile image,
-            @PathVariable Long advertiserNo) {
+            @RequestPart(value = "image", required = false) MultipartFile image) {
 
         try {
+            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
             List<FileUploadResponse> response = fileService.uploadFile(file, image, advertiserNo);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
@@ -68,9 +71,10 @@ public class FileController {
     }
 
     // 2-2. 광고주 파일 조회
-    @GetMapping("/advertiser/{advertiserNo}")
-    public ResponseEntity<ApiResponse<?>> getFileByAdvertiserNo(@PathVariable Long advertiserNo) {
+    @GetMapping("/advertiser")
+    public ResponseEntity<ApiResponse<?>> getFileByAdvertiserNo() {
         try {
+            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
             List<FileUploadResponse> response = fileService.getFileByAdvertiserNo(advertiserNo);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
@@ -83,7 +87,7 @@ public class FileController {
     @PutMapping("/ad/{adNo}")
     public ResponseEntity<ApiResponse<?>> updateImage(
             @PathVariable Long adNo,
-            @RequestPart(value = "file", required = false) MultipartFile newFile,
+            @RequestPart(value = "image", required = false) MultipartFile newFile,
             @RequestParam(required = false) Boolean isDeleted) {
 
         try {
@@ -96,14 +100,14 @@ public class FileController {
     }
 
     // 3-2. 광고주 파일 수정 (파일 삭제 및 새 파일 업로드로 처리)
-    @PutMapping("/advertiser/{advertiserNo}")
+    @PutMapping("/advertiser")
     public ResponseEntity<ApiResponse<?>> updateFile(
-            @PathVariable Long advertiserNo,
             @RequestPart(value = "file", required = false) MultipartFile newFile,
             @RequestPart(value = "image", required = false) MultipartFile newImage,
             @RequestPart(value = "fileMeta", required = false) FileMetaUpdateRequest request) {
 
         try {
+            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
             List<FileUploadResponse> response = fileService.updateFile(advertiserNo, newFile, newImage, request);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {

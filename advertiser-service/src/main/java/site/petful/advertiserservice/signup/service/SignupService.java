@@ -43,9 +43,7 @@ public class SignupService {
         advertiser.setPassword(passwordEncoder.encode(request.getPassword()));
         advertiser.setName(request.getName());
         advertiser.setPhone(request.getPhone());
-        advertiser.setWebsite(request.getWebsite());
-        advertiser.setEmail(request.getEmail());
-        advertiser.setDescription(request.getDescription());
+        advertiser.setBusinessNumber(request.getBusinessNumber());
         advertiser.setIsActive(true);
         advertiser.setIsApproved(false);
 

@@ -34,7 +34,7 @@ public class AdvertiserService {
         if(updateRequest.getName() != null) advertiser.setName(updateRequest.getName());
         if(updateRequest.getPhone() != null) advertiser.setPhone(updateRequest.getPhone());
         if(updateRequest.getWebsite() != null) advertiser.setWebsite(updateRequest.getWebsite());
-        if(updateRequest.getEmail() != null) advertiser.setUserId(updateRequest.getEmail());
+        if(updateRequest.getEmail() != null) advertiser.setEmail(updateRequest.getEmail());
         if(updateRequest.getDescription() != null) advertiser.setDescription(updateRequest.getDescription());
 
         Advertiser saved = advertiserRepository.save(advertiser);
