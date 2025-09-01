@@ -54,11 +54,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             log.debug("JWT Filter - Setting X-User-No attribute: {}", userNo);
-            filterChain.doFilter(request, response);
-            return;
+        } else {
+            log.debug("JWT Filter - No valid token found, setting null authentication");
+            // 토큰이 없거나 유효하지 않을 때 null 인증 설정
+            SecurityContextHolder.getContext().setAuthentication(null);
         }
 
-        log.debug("JWT Filter - No valid token found, proceeding without authentication");
         filterChain.doFilter(request, response);
     }
 

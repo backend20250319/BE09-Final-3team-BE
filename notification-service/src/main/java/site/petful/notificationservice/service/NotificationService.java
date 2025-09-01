@@ -27,7 +27,17 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public Page<Notification> getUserNotifications(Long userId, Pageable pageable) {
         log.info("📋 [NotificationService] 사용자 알림 조회: userId={}", userId);
-        return notificationRepository.findByUserIdAndHiddenFalse(userId, pageable);
+        
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID가 null입니다.");
+        }
+        
+        try {
+            return notificationRepository.findByUserIdAndHiddenFalse(userId, pageable);
+        } catch (Exception e) {
+            log.error("❌ [NotificationService] 사용자 알림 조회 실패: userId={}, error={}", userId, e.getMessage(), e);
+            throw new RuntimeException("알림 조회 중 오류가 발생했습니다.", e);
+        }
     }
 
     /**

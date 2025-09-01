@@ -1,8 +1,8 @@
 package site.petful.communityservice.service;
 
-import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -13,6 +13,7 @@ import site.petful.communityservice.client.UserClient;
 import site.petful.communityservice.dto.*;
 import site.petful.communityservice.entity.Comment;
 import site.petful.communityservice.entity.CommentStatus;
+import site.petful.communityservice.entity.Post;
 import site.petful.communityservice.repository.CommentRepository;
 import site.petful.communityservice.repository.PostRepository;
 
@@ -27,6 +28,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CommentService {
 
+    @Autowired
+    private CommentEventPublisher eventPublisher;
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserClient userClient;
@@ -80,6 +83,7 @@ public class CommentService {
                         .build()
         );
 
+        eventPublisher.publishCommentCreatedEvent(saved, postRepository.findById(request.getPostId()).get());
         // 작성자 정보 (없어도 저장은 되게, 표시용만 안전 처리)
         SimpleProfileResponse u = null;
         try {  var resp = userClient.getUserBrief(userNo); // ApiResponse<SimpleProfileResponse>
@@ -241,6 +245,7 @@ public class CommentService {
             log.warn("fetchUsers failed: {}", e.getMessage());
             return Map.of(); // 실패 시 빈 맵 리턴
         }
-
     }
+
+
 }
