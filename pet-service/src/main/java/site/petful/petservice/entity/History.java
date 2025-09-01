@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "history")
@@ -32,6 +33,9 @@ public class History {
     @Column(name = "history_end")
     private LocalDate historyEnd;
 
+    @Column(name = "title")
+    private String title;
+
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
@@ -45,9 +49,13 @@ public class History {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
+    
     // Pet과의 관계 (N:1)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pet_no", insertable = false, updatable = false)
     private Pet pet;
+
+    // HistoryImageFile과의 관계 (1:N)
+    @OneToMany(mappedBy = "history", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<HistoryImageFile> imageFiles;
 }
