@@ -1,16 +1,45 @@
 package site.petful.notificationservice.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.Instant;
 import java.util.Map;
 
-public record EventMessage (
-    String eventId,
-    String type,
-    Instant occuerdAt,
-    Actor actor,
-    Target target,
-    Map<String, Object> attributes
-    ){
-    public record Actor (Long id, String name) {}
-    public record Target (String userId, Long resourceId,String resourceType) {}
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class EventMessage {
+
+    private String eventId;
+    private String type;            // ex) notification.comment.created
+    private Instant occurredAt;
+    private Actor actor;
+    private Target target;
+    private Map<String, Object> attributes;
+    private Integer schemaVersion;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Actor {
+        private Long id;
+        private String name;
+    }
+
+    public enum ResourceType { POST, COMMENT, CAMPAIGN, USER, ETC }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Target {
+        private String userId;
+        private Long resourceId;
+        private String resourceType;
+    }
 }

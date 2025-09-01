@@ -22,4 +22,8 @@ public interface UserClient {
     // 다건 조회 (POST 방식 권장)
     @PostMapping("/simple/batch")
     ApiResponse<List<SimpleProfileResponse>> getUsersBrief(@RequestBody List<Long> userNos);
+    
+    // 헬스체크 (user-service가 정상 작동하는지 확인)
+    @GetMapping("/health")
+    String healthCheck();
 }
