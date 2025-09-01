@@ -17,7 +17,9 @@ import site.petful.healthservice.common.client.PetServiceClient;
 import site.petful.healthservice.common.dto.PetResponse;
 import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.activity.dto.ActivityUpdateRequest;
-import main.java.site.petful.healthservice.activity.dto.ActivityUpdateResponse;
+import site.petful.healthservice.activity.dto.ActivityUpdateResponse;
+import site.petful.healthservice.activity.dto.ActivitySummaryResponse;
+import site.petful.healthservice.activity.enums.PeriodType;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -541,5 +543,162 @@ public class ActivityService {
             log.error("펫 소유권 검증 중 예외 발생: petNo={}, userNo={}", petNo, userNo, e);
             return false;
         }
+    }
+    
+    /**
+     * 기간별 활동 데이터 요약 조회
+     */
+    public ActivitySummaryResponse getActivitySummary(Long userNo, Long petNo, String periodTypeStr, String startDateStr, String endDateStr) {
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(petNo, userNo)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+        
+        PeriodType periodType;
+        LocalDate startDate;
+        LocalDate endDate;
+        
+        try {
+            periodType = PeriodType.valueOf(periodTypeStr.toUpperCase());
+            
+            if (periodType == PeriodType.CUSTOM) {
+                if (startDateStr == null || endDateStr == null) {
+                    throw new BusinessException(ErrorCode.DATE_RANGE_INVALID, "CUSTOM 타입은 시작일과 종료일을 모두 입력해야 합니다.");
+                }
+                startDate = LocalDate.parse(startDateStr);
+                endDate = LocalDate.parse(endDateStr);
+            } else {
+                PeriodType.DateRange dateRange = periodType.calculateDateRange();
+                startDate = dateRange.getStartDate();
+                endDate = dateRange.getEndDate();
+            }
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.PERIOD_TYPE_INVALID, "유효하지 않은 기간 타입입니다: " + periodTypeStr);
+        }
+        
+        // 기간 내 활동 데이터 조회
+        List<Activity> activities = activityRepository.findByPetNoAndDateRange(petNo, startDate, endDate);
+        
+        // 사용자 권한 확인
+        activities = activities.stream()
+                .filter(activity -> activity.getUserNo().equals(userNo))
+                .collect(Collectors.toList());
+        
+        // 요약 통계 계산
+        ActivitySummaryResponse.SummaryStats summaryStats = calculateSummaryStats(activities);
+        
+        // 상세 데이터 변환
+        List<ActivityResponse> activityResponses = activities.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        
+        return ActivitySummaryResponse.builder()
+                .petNo(petNo)
+                .startDate(startDate)
+                .endDate(endDate)
+                .periodType(periodTypeStr)
+                .summaryStats(summaryStats)
+                .activities(activityResponses)
+                .build();
+    }
+    
+    /**
+     * 활동 데이터 요약 통계 계산
+     */
+    private ActivitySummaryResponse.SummaryStats calculateSummaryStats(List<Activity> activities) {
+        if (activities.isEmpty()) {
+            return ActivitySummaryResponse.SummaryStats.builder()
+                    .totalActivities(0)
+                    .totalWalkingDistance(0.0)
+                    .totalCaloriesBurned(0)
+                    .totalCaloriesIntake(0)
+                    .averageWeight(0.0)
+                    .averageSleepHours(0.0)
+                    .totalPoopCount(0)
+                    .totalPeeCount(0)
+                    .averageWalkingDistance(0.0)
+                    .averageCaloriesBurned(0.0)
+                    .averageCaloriesIntake(0.0)
+                    .averagePoopCount(0.0)
+                    .averagePeeCount(0.0)
+                    .caloriesBurnedAchievementRate(0.0)
+                    .caloriesIntakeAchievementRate(0.0)
+                    .build();
+        }
+        
+        int totalActivities = activities.size();
+        
+        // 총합 계산
+        double totalWalkingDistance = activities.stream()
+                .mapToDouble(Activity::getWalkingDistanceKm)
+                .sum();
+        
+        int totalCaloriesBurned = activities.stream()
+                .mapToInt(Activity::getCaloriesBurned)
+                .sum();
+        
+        int totalCaloriesIntake = activities.stream()
+                .mapToInt(this::calculateTotalConsumedCalories)
+                .sum();
+        
+        double totalWeight = activities.stream()
+                .mapToDouble(Activity::getWeightKg)
+                .sum();
+        
+        double totalSleepHours = activities.stream()
+                .mapToDouble(Activity::getSleepHours)
+                .sum();
+        
+        int totalPoopCount = activities.stream()
+                .mapToInt(Activity::getPoopCount)
+                .sum();
+        
+        int totalPeeCount = activities.stream()
+                .mapToInt(Activity::getPeeCount)
+                .sum();
+        
+        // 평균 계산
+        double averageWeight = totalWeight / totalActivities;
+        double averageSleepHours = totalSleepHours / totalActivities;
+        double averageWalkingDistance = totalWalkingDistance / totalActivities;
+        double averageCaloriesBurned = (double) totalCaloriesBurned / totalActivities;
+        double averageCaloriesIntake = (double) totalCaloriesIntake / totalActivities;
+        double averagePoopCount = (double) totalPoopCount / totalActivities;
+        double averagePeeCount = (double) totalPeeCount / totalActivities;
+        
+        // 권장값 대비 달성률 계산
+        double totalRecommendedCaloriesBurned = activities.stream()
+                .mapToDouble(activity -> activity.getRecommendedCaloriesBurned())
+                .sum();
+        
+        double totalRecommendedCaloriesIntake = activities.stream()
+                .mapToDouble(activity -> calculateRecommendedCaloriesIntake(activity.getWeightKg(), activity.getActivityLevel()))
+                .sum();
+        
+        double caloriesBurnedAchievementRate = totalRecommendedCaloriesBurned > 0 
+                ? (totalCaloriesBurned / totalRecommendedCaloriesBurned) * 100 
+                : 0.0;
+        
+        double caloriesIntakeAchievementRate = totalRecommendedCaloriesIntake > 0 
+                ? (totalCaloriesIntake / totalRecommendedCaloriesIntake) * 100 
+                : 0.0;
+        
+        return ActivitySummaryResponse.SummaryStats.builder()
+                .totalActivities(totalActivities)
+                .totalWalkingDistance(totalWalkingDistance)
+                .totalCaloriesBurned(totalCaloriesBurned)
+                .totalCaloriesIntake(totalCaloriesIntake)
+                .averageWeight(averageWeight)
+                .averageSleepHours(averageSleepHours)
+                .totalPoopCount(totalPoopCount)
+                .totalPeeCount(totalPeeCount)
+                .averageWalkingDistance(averageWalkingDistance)
+                .averageCaloriesBurned(averageCaloriesBurned)
+                .averageCaloriesIntake(averageCaloriesIntake)
+                .averagePoopCount(averagePoopCount)
+                .averagePeeCount(averagePeeCount)
+                .caloriesBurnedAchievementRate(Math.round(caloriesBurnedAchievementRate * 100.0) / 100.0)
+                .caloriesIntakeAchievementRate(Math.round(caloriesIntakeAchievementRate * 100.0) / 100.0)
+                .build();
     }
 }

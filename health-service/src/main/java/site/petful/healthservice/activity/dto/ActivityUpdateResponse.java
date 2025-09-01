@@ -1,4 +1,4 @@
-package main.java.site.petful.healthservice.activity.dto;
+package site.petful.healthservice.activity.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

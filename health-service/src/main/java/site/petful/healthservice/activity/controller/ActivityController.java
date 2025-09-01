@@ -19,7 +19,8 @@ import site.petful.healthservice.common.dto.PetResponse;
 import site.petful.healthservice.activity.dto.ActivityLevelResponse;
 import site.petful.healthservice.activity.enums.ActivityLevel;
 import site.petful.healthservice.activity.dto.ActivityUpdateRequest;
-import main.java.site.petful.healthservice.activity.dto.ActivityUpdateResponse;
+import site.petful.healthservice.activity.dto.ActivityUpdateResponse;
+import site.petful.healthservice.activity.dto.ActivitySummaryResponse;
 
 @Slf4j
 @RestController
@@ -126,16 +127,34 @@ public class ActivityController {
     /**
      * 활동 데이터 차트 시각화 조회
      * periodType: DAY(일), WEEK(주), MONTH(월), YEAR(년)
+     * startDate, endDate가 없으면 periodType에 따른 기본 기간 사용
      */
     @GetMapping("/chart")
     public ResponseEntity<ApiResponse<ActivityChartResponse>> getActivityChart(
             @AuthenticationPrincipal String userNo,
             @RequestParam("petNo") Long petNo,
             @RequestParam("periodType") String periodType,
-            @RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate
     ) {
         ActivityChartResponse response = activityService.getActivityChartData(Long.valueOf(userNo), petNo, periodType, startDate, endDate);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+
+    /**
+     * 기간별 활동 데이터 요약 조회
+     * periodType: TODAY, LAST_3_DAYS, LAST_7_DAYS, THIS_WEEK, THIS_MONTH, CUSTOM
+     * CUSTOM 타입일 때만 startDate, endDate 파라미터 필요
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<ActivitySummaryResponse>> getActivitySummary(
+            @AuthenticationPrincipal String userNo,
+            @RequestParam("petNo") Long petNo,
+            @RequestParam("periodType") String periodType,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate
+    ) {
+        ActivitySummaryResponse response = activityService.getActivitySummary(Long.valueOf(userNo), petNo, periodType, startDate, endDate);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 
