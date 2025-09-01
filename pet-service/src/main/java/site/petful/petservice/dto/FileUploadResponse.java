@@ -15,3 +15,4 @@ public class FileUploadResponse {
     private String filename;
     private String fileUrl;
 }
+

@@ -17,3 +17,4 @@ public class MultipleFileUploadResponse {
     private List<String> fileUrls;
     private int uploadedCount;
 }
+

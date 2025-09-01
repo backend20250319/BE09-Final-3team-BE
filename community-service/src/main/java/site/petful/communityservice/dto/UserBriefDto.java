@@ -1,5 +1,6 @@
 package site.petful.communityservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Getter
@@ -9,8 +10,12 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class UserBriefDto {
+    @JsonProperty("id")
     private Long id;
-    private String name;
-    private String porfileUrl;
-
+    
+    @JsonProperty("nickname")
+    private String nickname;
+    
+    @JsonProperty("profileImageUrl")
+    private String profileImageUrl;
 }

@@ -43,9 +43,12 @@ public class SecurityConfig {
                 auth
                     .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v3/api-docs/**",
                         "/swagger-resources/**").permitAll()
+
                     .requestMatchers("/batch/instagram/**", "/clova/**")
                     .hasAuthority("Admin")
-                    .requestMatchers("/instagram/auth/**", "/instagram/comments/**",
+
+                    .requestMatchers("/instagram/auth/**", "/instagram/profiles/**",
+                        "/instagram/comments/**",
                         "/instagram/insights/**", "/instagram/media/**")
                     .hasAnyAuthority("User", "Admin")
                     .anyRequest().authenticated()

@@ -16,6 +16,8 @@ import site.petful.userservice.dto.SignupResponse;
 import site.petful.userservice.dto.WithdrawRequest;
 import site.petful.userservice.dto.WithdrawResponse;
 
+import java.util.List;
+
 public interface UserService {
     SignupResponse signup(SignupRequest request);   // ✅ AuthResponse → SignupResponse
     void markEmailVerified(String email);
@@ -25,7 +27,8 @@ public interface UserService {
     ProfileResponse getProfile(Long userNo);
     ProfileResponse updateProfile(Long userNo, ProfileUpdateRequest request);
     SimpleProfileResponse getSimpleProfile(Long userNo);
-    
+    List<SimpleProfileResponse> getSimpleProfilesBatch(List<Long> userNos);
+
     // 비밀번호 재설정 관련 메서드들
     PasswordResetResponse requestPasswordReset(PasswordResetRequest request);
     VerificationConfirmResponse verifyPasswordResetCode(VerificationConfirmRequest request);
@@ -36,4 +39,7 @@ public interface UserService {
     
     // 파일 업로드 관련 메서드들
     FileUploadResponse uploadProfileImage(MultipartFile file, Long userNo);
+
+    //
+
 }

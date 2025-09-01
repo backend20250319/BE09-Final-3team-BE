@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserRequest;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserResponse;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import site.petful.advertiserservice.repository.AdvertiserRepository;
 
 @Service

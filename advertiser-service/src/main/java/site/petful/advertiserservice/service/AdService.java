@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertisement.*;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import site.petful.advertiserservice.entity.advertisement.*;
 import site.petful.advertiserservice.repository.AdRepository;
 import site.petful.advertiserservice.repository.AdvertiserRepository;

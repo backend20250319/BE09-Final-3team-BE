@@ -1,5 +1,6 @@
 package site.petful.petservice.service;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -167,7 +168,7 @@ public class HistoryService {
 
             // 파일 업로드
             List<String> uploadedUrls = ftpService.uploadMultiple(files);
-
+          
             // 이미지 파일 정보를 데이터베이스에 저장
             List<HistoryImageFile> imageFiles = new ArrayList<>();
             for (int i = 0; i < files.size(); i++) {
@@ -282,6 +283,7 @@ public class HistoryService {
                 .stream()
                 .map(HistoryImageFile::getFilePath)
                 .collect(Collectors.toList());
+
 
         return HistoryResponse.builder()
                 .historyNo(history.getHistoryNo())

@@ -105,7 +105,7 @@ public class HistoryController {
             @RequestAttribute("X-User-No") Long userNo,
             @RequestParam("imageIds") List<Long> imageIds) {
         historyService.deleteHistoryImages(petNo, historyNo, imageIds, userNo);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(null))
     }
 
 }

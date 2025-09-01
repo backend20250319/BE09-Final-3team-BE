@@ -39,6 +39,9 @@ public class History {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "image_urls", columnDefinition = "TEXT")
+    private String imageUrls;
+
     @Column(name = "pet_no")
     private Long petNo;
 

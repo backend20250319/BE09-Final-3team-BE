@@ -25,6 +25,7 @@ public class HistoryResponse {
     
     private String title;              // 활동 제목
     private String content;            // 활동 내용
+    private List<String> imageUrls;    // 이미지 URL 목록
     private Long petNo;                // 반려동물 번호
     private List<String> imageUrls;    // 이미지 URL 목록
     private LocalDateTime createdAt;   // 생성일

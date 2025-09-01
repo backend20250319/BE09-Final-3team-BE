@@ -3,7 +3,7 @@ package site.petful.advertiserservice.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 
 import java.util.Optional;
 
