@@ -146,7 +146,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
         
         // 공통 DTO로 변환
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
-                .petNo(1L) // OCR의 경우 기본값으로 1L 사용 (사용자가 나중에 수정할 수 있음)
+                .petNo(petNo) // 파라미터로 받은 petNo 사용
                 .title(buildTitle(drugName, dosage))
                 .startDate(startDay)
                 .endDate(endDay)
