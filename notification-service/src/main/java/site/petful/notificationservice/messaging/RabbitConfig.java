@@ -33,7 +33,9 @@ public class RabbitConfig {
     @Bean
     Queue notiQueue() {
         return QueueBuilder.durable(props.getQueue())
-                .build(); // durable=true, autoDelete=false, exclusive=false
+                .withArgument("x-dead-letter-exchange", props.getExchange() + ".dlx")
+                .withArgument("x-dead-letter-routing-key", props.getQueue() + ".dlq")
+                .build();
     }
 
     @Bean

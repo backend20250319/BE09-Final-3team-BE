@@ -74,34 +74,58 @@ public class PostService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        Map<Long, UserBriefDto> userMap = Collections.emptyMap();
+        Map<Long, UserBriefDto> userMap = new HashMap<>();
         if (!userIds.isEmpty()) {
             try {
                 // ★ 배치 호출: ApiResponse<List<SimpleProfileResponse>>
                 var resp = userClient.getUsersBrief(new ArrayList<>(userIds));
+                log.info("UserClient batch response: {}", resp);
                 List<SimpleProfileResponse> list =
                         (resp != null && resp.getData() != null) ? resp.getData() : List.of();
+                log.info("UserClient batch list size: {}", list.size());
+                
+                // 각 응답 항목 로깅
+                for (SimpleProfileResponse profile : list) {
+                    log.info("Batch profile: id={}, nickname={}, profileImageUrl={}", 
+                            profile.getId(), profile.getNickname(), profile.getProfileImageUrl());
+                }
 
                 userMap = list.stream()
                         .map(this::toBrief)
                         .filter(Objects::nonNull)
                         .collect(Collectors.toMap(UserBriefDto::getId, u -> u, (a, b) -> a));
 
+                log.info("Successfully fetched {} user profiles via batch call", userMap.size());
+
             } catch (Exception batchFail) {
                 log.warn("getUsersBrief batch failed: {}", batchFail.getMessage());
-                Map<Long, UserBriefDto> tmp = new HashMap<>();
+                // 배치 호출 실패 시 단건 호출로 fallback
                 for (Long id : userIds) {
                     try {
                         // ★ 단건 호출: ApiResponse<SimpleProfileResponse>
                         var single = userClient.getUserBrief(id);
                         SimpleProfileResponse p = (single != null) ? single.getData() : null;
-                        tmp.put(id, toBrief(p));  // null이면 그대로 null 저장(익명 폴백 용)
+                        UserBriefDto userBrief = toBrief(p);
+                        if (userBrief != null) {
+                            userMap.put(id, userBrief);
+                        } else {
+                            // 사용자 정보를 가져올 수 없는 경우 기본값 설정
+                            userMap.put(id, UserBriefDto.builder()
+                                    .id(id)
+                                    .nickname("익명")
+                                    .profileImageUrl(null)
+                                    .build());
+                        }
                     } catch (Exception e) {
                         log.warn("getUserBrief({}) failed: {}", id, e.getMessage());
-                        tmp.put(id, null);
+                        // 예외 발생 시에도 기본값 설정
+                        userMap.put(id, UserBriefDto.builder()
+                                .id(id)
+                                .nickname("익명")
+                                .profileImageUrl(null)
+                                .build());
                     }
                 }
-                userMap = tmp;
             }
         }
 
@@ -109,6 +133,14 @@ public class PostService {
 
         return page.map(p -> {
             UserBriefDto u = finalUserMap.get(p.getUserId());
+            // userMap에 없는 경우 기본값 생성
+            if (u == null) {
+                u = UserBriefDto.builder()
+                        .id(p.getUserId())
+                        .nickname("익명")
+                        .profileImageUrl(null)
+                        .build();
+            }
             int cnt = commentRepository.countByPostId(p.getId());
             return PostItem.from(p, cnt, u);
         });
@@ -116,12 +148,31 @@ public class PostService {
 
 
     private  UserBriefDto toBrief(SimpleProfileResponse p) {
-        if (p == null || p.getId() == null) return null;
-        return new UserBriefDto(
+        if (p == null || p.getId() == null) {
+            log.warn("SimpleProfileResponse is null or has null id");
+            return null;
+        }
+        
+        log.info("Converting SimpleProfileResponse: id={}, nickname={}, profileImageUrl={}", 
+                p.getId(), p.getNickname(), p.getProfileImageUrl());
+        
+        // nickname이 null이거나 빈 문자열인 경우 기본값 설정
+        String nickname = p.getNickname();
+        if (nickname == null || nickname.trim().isEmpty()) {
+            nickname = "익명";
+            log.warn("Nickname is null or empty for user {}, using default: {}", p.getId(), nickname);
+        }
+        
+        UserBriefDto result = new UserBriefDto(
                 p.getId(),
-                p.getNickname(),
+                nickname,
                 p.getProfileImageUrl()
         );
+        
+        log.info("Converted to UserBriefDto: id={}, nickname={}, profileImageUrl={}", 
+                 result.getId(), result.getNickname(), result.getProfileImageUrl());
+        
+        return result;
     }
 
     public Page<PostItem> getMyPosts(Long userNo, Pageable pageable, PostType type) {
@@ -152,7 +203,7 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostDetailDto getPostDetail(Long userId, Long postId) {
+    public PostDetailDto getPostDetail(Long currentUserId, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
@@ -163,9 +214,12 @@ public class PostService {
         UserBriefDto author = null;
         try {
             var resp = userClient.getUserBrief(post.getUserId()); // ApiResponse<SimpleProfileResponse>
+            log.info("UserClient response for user {}: {}", post.getUserId(), resp);
             SimpleProfileResponse payload = (resp != null ? resp.getData() : null);
+            log.info("UserClient payload for user {}: {}", post.getUserId(), payload);
             author = toBrief(payload);
         } catch (Exception e) {
+            log.warn("Failed to get user brief for post {}: {}", postId, e.getMessage());
             author = UserBriefDto.builder()
                     .id(post.getUserId())
                     .nickname("익명")
@@ -173,9 +227,24 @@ public class PostService {
                     .build();
         }
 
+        // author가 null인 경우 기본값 설정
+        if (author == null) {
+            author = UserBriefDto.builder()
+                    .id(post.getUserId())
+                    .nickname("익명")
+                    .profileImageUrl(null)
+                    .build();
+        }
+
+        // 현재 로그인한 사용자와 게시글 작성자 비교
+        boolean isMine = currentUserId != null && post.getUserId() != null 
+                        && currentUserId.equals(post.getUserId());
+        log.info("isMine calculation - currentUserId: {}, post.userId: {}, isMine: {}", 
+                currentUserId, post.getUserId(), isMine);
+
         int commentCount = commentRepository.countByPostId(postId);
 
-        return PostDetailDto.from(post, commentCount, author);
+        return PostDetailDto.from(post, commentCount, author, isMine);
     }
 
     private List<CommentNode> buildTree(List<Comment> comments) {

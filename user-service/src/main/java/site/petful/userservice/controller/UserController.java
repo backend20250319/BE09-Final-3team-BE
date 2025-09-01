@@ -33,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -236,6 +237,15 @@ public class UserController {
         
         return ResponseEntity.ok(ApiResponseGenerator.success(simpleProfile));
     }
+
+
+    @PostMapping("/profile/simple/batch")
+    public ResponseEntity<ApiResponse<List<SimpleProfileResponse>>> getSimpleProfilesBatch(@RequestBody List<Long> userNos) {
+        List<SimpleProfileResponse> profiles = userService.getSimpleProfilesBatch(userNos);
+        return ResponseEntity.ok(ApiResponseGenerator.success(profiles));
+    }
+
+
     
     /**
      * 비밀번호 재설정 요청
