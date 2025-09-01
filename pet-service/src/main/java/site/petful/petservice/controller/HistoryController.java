@@ -59,16 +59,6 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // 활동이력 삭제
-    @DeleteMapping("/{petNo}/histories/{historyNo}")
-    public ResponseEntity<ApiResponse<Void>> deleteHistory(
-            @PathVariable Long petNo,
-            @PathVariable Long historyNo,
-            @RequestAttribute("X-User-No") Long userNo) {
-        historyService.deleteHistory(petNo, historyNo, userNo);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
     // 활동이력 이미지 업로드
     @PostMapping("/{petNo}/histories/{historyNo}/images")
     public ResponseEntity<ApiResponse<MultipleFileUploadResponse>> uploadHistoryImages(
@@ -84,6 +74,38 @@ public class HistoryController {
         } else {
             return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
         }
+    }
+
+    // 활동이력 삭제
+    @DeleteMapping("/{petNo}/histories/{historyNo}")
+    public ResponseEntity<ApiResponse<Void>> deleteHistory(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo) {
+        historyService.deleteHistory(petNo, historyNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 활동이력 이미지 삭제
+    @DeleteMapping("/{petNo}/histories/{historyNo}/images/{imageId}")
+    public ResponseEntity<ApiResponse<Void>> deleteHistoryImage(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @PathVariable Long imageId,
+            @RequestAttribute("X-User-No") Long userNo) {
+        historyService.deleteHistoryImage(petNo, historyNo, imageId, userNo);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 활동이력 이미지 선택 삭제 (다중)
+    @DeleteMapping("/{petNo}/histories/{historyNo}/images")
+    public ResponseEntity<ApiResponse<Void>> deleteHistoryImages(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo,
+            @RequestParam("imageIds") List<Long> imageIds) {
+        historyService.deleteHistoryImages(petNo, historyNo, imageIds, userNo);
+        return ResponseEntity.ok(ApiResponse.success(null))
     }
 
 }
