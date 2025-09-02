@@ -1,5 +1,6 @@
 package site.petful.snsservice.instagram.profile.controller;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -10,12 +11,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
+import site.petful.snsservice.instagram.profile.dto.AutoDeleteRequestDto;
 import site.petful.snsservice.instagram.profile.dto.InstagramProfileDto;
 import site.petful.snsservice.instagram.profile.service.InstagramProfileService;
 
@@ -66,14 +70,13 @@ public class InstagramProfileController {
 
 
     @PreAuthorize("hasAuthority('User')")
-    @PostMapping("/auto-delete")
+    @PutMapping("/auto-delete")
     public ResponseEntity<ApiResponse<Void>> autoDeleteComments(
         @AuthenticationPrincipal String userNo,
-        @RequestParam(name = "instagram_id") Long instagramId, @RequestParam Boolean isAutoDelete) {
+        @Valid @RequestBody AutoDeleteRequestDto request) {
 
-        System.out.println("userNo = " + userNo);
-
-        instagramProfileService.setAutoDelete(Long.parseLong(userNo), instagramId, isAutoDelete);
+        instagramProfileService.setAutoDelete(Long.parseLong(userNo), request.instagramId(),
+            request.isAutoDelete());
 
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }

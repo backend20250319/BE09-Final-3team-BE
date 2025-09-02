@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
             .body(ApiResponseGenerator.fail(
-                ErrorCode.SNS_EXTERNAL_API_ERROR, "외부 서비스 호출에 실패했습니다. " + e.getMessage()
+                ErrorCode.SNS_EXTERNAL_API_ERROR, "외부 서비스 호출에 실패했습니다. "
             ));
     }
 

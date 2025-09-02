@@ -29,6 +29,8 @@ import site.petful.userservice.common.ftp.FtpService;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -102,6 +104,12 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_FOUND.getDefaultMessage()));
+    }
+    
+    @Override
+    public User findByUserNo(Long userNo) {
+        return userRepository.findById(userNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_FOUND.getDefaultMessage()));
     }
     
@@ -260,11 +268,34 @@ public class UserServiceImpl implements UserService {
                 .orElse(null);
         
         return SimpleProfileResponse.builder()
+                .id(user.getUserNo())
                 .nickname(user.getNickname())
                 .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
                 .build();
     }
-    
+
+    @Override
+    public List<SimpleProfileResponse> getSimpleProfilesBatch(List<Long> userNos) {
+        if (userNos == null || userNos.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<SimpleProfileResponse> profiles = new ArrayList<>();
+
+        for (Long userNo : userNos) {
+            try {
+                SimpleProfileResponse profile = getSimpleProfile(userNo);
+                if (profile != null) {
+                    profiles.add(profile);
+                }
+            } catch (Exception e) {
+                // 개별 사용자 조회 실패 시 로그만 남기고 계속 진행
+                log.warn("Failed to get profile for user {}: {}", userNo, e.getMessage());
+            }
+        }
+        return profiles;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public VerificationConfirmResponse verifyPasswordResetCode(VerificationConfirmRequest request) {

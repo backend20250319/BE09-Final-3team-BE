@@ -5,7 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.advertiserservice.common.ErrorCode;
-import site.petful.advertiserservice.entity.Advertiser;
+import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import site.petful.advertiserservice.repository.AdvertiserRepository;
 import site.petful.advertiserservice.signup.dto.EmailVerificationConfirmRequest;
 import site.petful.advertiserservice.signup.dto.SignupRequest;
@@ -43,9 +43,7 @@ public class SignupService {
         advertiser.setPassword(passwordEncoder.encode(request.getPassword()));
         advertiser.setName(request.getName());
         advertiser.setPhone(request.getPhone());
-        advertiser.setWebsite(request.getWebsite());
-        advertiser.setEmail(request.getEmail());
-        advertiser.setDescription(request.getDescription());
+        advertiser.setBusinessNumber(request.getBusinessNumber());
         advertiser.setIsActive(true);
         advertiser.setIsApproved(false);
 

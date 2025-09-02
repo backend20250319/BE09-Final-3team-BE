@@ -1,0 +1,68 @@
+### SNS Service API Tests - 배치 작업 (간단 예시)
+
+### 공통 변수
+@authToken = admin_token.eyJzdWIiOiJkYXJhdG82ODY4QG5hdmVyLmNvbSIsInR5cCI6ImFjY2VzcyIsInVzZXJObyI6MjAsInVzZXJUeXBlIjoiVXNlciIsImlhdCI6MTc1NjQ1MDYyMywiZXhwIjoxNzU2NDU0MjIzfQ.CdJw2FWyDXQwLABUbSzJydP6ou6QsAIqjb6BDvigD5g
+@baseUrl = http://localhost:8000/api/v1/sns-service
+@testUserId = 20
+
+### 토큰 정리 배치 실행 (예시 요청)
+# 권한: User, Admin
+# 설명: 만료된 Instagram 토큰을 정리하는 배치 작업을 실행합니다.
+POST {{baseUrl}}/batch/instagram/cleanup-tokens
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": { "status": "success", "message": "Instagram 토큰 삭제 배치 작업이 시작되었습니다" }
+# }
+
+### Instagram 동기화 배치 실행 (예시 요청)
+# 권한: User, Admin
+# 설명: 모든 사용자의 Instagram 데이터를 동기화하는 배치 작업을 실행합니다.
+POST {{baseUrl}}/batch/instagram/sync
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": { "status": "success", "executionType": "manual_async", "monthsToSync": 6 }
+# }
+
+### 특정 사용자 Instagram 동기화 배치 실행 (예시 요청)
+# 권한: User, Admin
+# 설명: 특정 사용자의 Instagram 데이터를 동기화하는 배치 작업을 실행합니다.
+POST {{baseUrl}}/batch/instagram/sync/user/{{testUserId}}
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": { "status": "success", "targetUserNo": 20, "monthsToSync": 6 }
+# }
+
+### 배치 상태 조회 (예시 요청)
+# 권한: User, Admin
+# 설명: Instagram 동기화 배치 작업의 현재 상태를 조회합니다.
+GET {{baseUrl}}/batch/instagram/status
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": { "batchName": "Instagram 동기화 배치", "status": "active" }
+# }
+
+
