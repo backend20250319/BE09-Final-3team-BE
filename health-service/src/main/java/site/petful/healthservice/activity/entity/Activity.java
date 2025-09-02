@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import site.petful.healthservice.activity.enums.ActivityLevel;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -18,6 +19,7 @@ import java.util.List;
 @Entity
 @Table(name = "activity")
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
