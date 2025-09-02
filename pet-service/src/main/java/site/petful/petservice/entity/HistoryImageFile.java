@@ -45,6 +45,8 @@ public class HistoryImageFile {
 
     // History와의 관계 (N:1)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "history_no", insertable = false, updatable = false)
+    @JoinColumn(name = "history_no", insertable = false, updatable = false,
+                foreignKey = @ForeignKey(name = "FK_history_image_files_history_no",
+                foreignKeyDefinition = "FOREIGN KEY (history_no) REFERENCES history (history_no) ON DELETE CASCADE"))
     private History history;
 }

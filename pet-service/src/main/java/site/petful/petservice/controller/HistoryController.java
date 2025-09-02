@@ -127,7 +127,4 @@ public class HistoryController {
         // TODO: cleanup 로직 구현 필요
         return ResponseEntity.ok(ApiResponse.success(null));
     }
-
-
-
 }

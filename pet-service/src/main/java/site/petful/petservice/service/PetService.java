@@ -214,14 +214,13 @@ public class PetService {
 
     // Pet 엔티티를 PetResponse로 변환
     private PetResponse toPetResponse(Pet pet) {
-        log.debug("Pet 엔티티 변환 - petNo: {}, imageUrl: {}, snsUrl: {}", pet.getPetNo(), pet.getImageUrl(), pet.getSnsUrl());
+        log.debug("Pet 엔티티 변환 - petNo: {}, imageUrl: {}", pet.getPetNo(), pet.getImageUrl());
         return PetResponse.builder()
                 .petNo(pet.getPetNo())
                 .userNo(pet.getUserNo())
                 .name(pet.getName())
                 .type(pet.getType())
                 .imageUrl(pet.getImageUrl())
-                .snsUrl(pet.getSnsUrl())
                 .age(pet.getAge())
                 .gender(pet.getGender())
                 .weight(pet.getWeight())
