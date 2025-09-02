@@ -27,12 +27,6 @@ public class MedicationRequestDTO {
     @NotBlank(message = "약 이름은 필수입니다.")
     private String name;
     
-    @NotBlank(message = "용량은 필수입니다.")
-    private String amount;
-    
-    @NotBlank(message = "복용법은 필수입니다.")
-    private String instruction;
-    
     @NotNull(message = "시작일은 필수입니다.")
     private LocalDate startDate;
     

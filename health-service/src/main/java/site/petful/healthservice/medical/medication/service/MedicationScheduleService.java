@@ -92,8 +92,8 @@ public class MedicationScheduleService extends AbstractScheduleService {
         ScheduleMedDetail detail = ScheduleMedDetail.builder()
                 .scheduleNo(scheduleNo)
                 .medicationName(request.getName())
-                .dosage(request.getAmount())
-                .instructions(request.getInstruction())
+                .dosage("") 
+                .instructions("")
                 .durationDays(request.getDurationDays())
                 .build();
 
