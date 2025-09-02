@@ -42,10 +42,11 @@ public class DomainEventConsumer {
                 Integer reminderDaysBefore = (Integer) attributes.get("reminderDaysBefore");
                 Integer durationDays = (Integer) attributes.get("durationDays");
                 String scheduleTitle = (String) attributes.get("title");
+                String subType = (String) attributes.get("subType");
                 List<String> times = (List<String>) attributes.get("times");
                 
-                log.info("🔍 [NotificationConsumer] 스케줄 정보 파싱: startDate={}, reminderDaysBefore={}, durationDays={}, title={}, times={}", 
-                        startDateStr, reminderDaysBefore, durationDays, scheduleTitle, times);
+                log.info("🔍 [NotificationConsumer] 스케줄 정보 파싱: startDate={}, reminderDaysBefore={}, durationDays={}, title={}, subType={}, times={}", 
+                        startDateStr, reminderDaysBefore, durationDays, scheduleTitle, subType, times);
                 
                 // times 리스트 상세 로그
                 if (times != null) {
@@ -71,78 +72,31 @@ public class DomainEventConsumer {
                 
                 log.info("🔍 [NotificationConsumer] 최종 파싱된 시작 날짜: startDate={}, 현재 시간={}", startDate, LocalDateTime.now());
                 
-                // 4. durationDays 동안 매일 times에 맞춰 예약 알림 생성
+                // 4. remindDaysBefore에 따른 알림 생성 로직
                 if (durationDays == null || durationDays == 0) {
                     log.warn("⚠️ [NotificationConsumer] durationDays가 0입니다. 예약 알림을 생성하지 않습니다.");
                     return;
                 }
                 
-                // durationDays 동안 알림 생성 (reminderDaysBefore는 사전 알림 시간을 결정하는 용도)
-                int actualDurationDays = durationDays;
+                if (times == null || times.isEmpty()) {
+                    log.warn("⚠️ [NotificationConsumer] times가 null이거나 비어있습니다.");
+                    return;
+                }
                 
-                log.info("🔍 [NotificationConsumer] 알림 생성 기간 계산: durationDays={}, reminderDaysBefore={}, actualDurationDays={}", 
-                        durationDays, reminderDaysBefore, actualDurationDays);
+                // remindDaysBefore 기본값 설정
+                if (reminderDaysBefore == null) {
+                    reminderDaysBefore = 0;
+                }
                 
-                for (int day = 0; day < actualDurationDays; day++) {
-                    LocalDateTime currentDate = startDate.plusDays(day);
-                    log.info("🔍 [NotificationConsumer] {}일차 currentDate 계산: startDate={}, day={}, currentDate={}", 
-                            day, startDate, day, currentDate);
-                    
-                    if (times == null || times.isEmpty()) {
-                        log.warn("⚠️ [NotificationConsumer] times가 null이거나 비어있습니다. day={}", day);
-                        continue;
-                    }
-                    
-                    log.info("🔍 [NotificationConsumer] {}일차 처리 중: currentDate={}", day, currentDate);
-                    
-                    for (String timeStr : times) {
-                        // 시간 파싱 (예: "09:00" 또는 "09:00:00")
-                        log.info("🔍 [NotificationConsumer] timeStr 파싱 시작: timeStr={}", timeStr);
-                        String[] timeParts = timeStr.split(":");
-                        int hour = Integer.parseInt(timeParts[0]);
-                        int minute = Integer.parseInt(timeParts[1]);
-                        log.info("🔍 [NotificationConsumer] timeStr 파싱 결과: hour={}, minute={}", hour, minute);
-                        
-                        // 더 명확하게 scheduledTime 생성
-                        log.info("🔍 [NotificationConsumer] scheduledTime 생성 시작: currentDate={}, hour={}, minute={}", 
-                                currentDate, hour, minute);
-                        log.info("🔍 [NotificationConsumer] currentDate 상세: year={}, month={}, day={}, hour={}, minute={}, second={}", 
-                                currentDate.getYear(), currentDate.getMonth(), currentDate.getDayOfMonth(), 
-                                currentDate.getHour(), currentDate.getMinute(), currentDate.getSecond());
-                        
-                        LocalDateTime scheduledTime = LocalDateTime.of(
-                                currentDate.getYear(), 
-                                currentDate.getMonth(), 
-                                currentDate.getDayOfMonth(), 
-                                hour, 
-                                minute, 
-                                0
-                        );
-                        
-                        log.info("🔍 [NotificationConsumer] scheduledTime 생성 완료: scheduledTime={}", scheduledTime);
-                        
-                        log.info("🔍 [NotificationConsumer] 스케줄 시간 계산: timeStr={}, hour={}, minute={}, currentDate={}, scheduledTime={}", 
-                                timeStr, hour, minute, currentDate, scheduledTime);
-                        log.info("🔍 [NotificationConsumer] scheduledTime 상세: year={}, month={}, day={}, hour={}, minute={}, second={}", 
-                                scheduledTime.getYear(), scheduledTime.getMonth(), scheduledTime.getDayOfMonth(), 
-                                scheduledTime.getHour(), scheduledTime.getMinute(), scheduledTime.getSecond());
-                        
-                        // 1. 예약 알림 생성 (health.schedule.reserve)
-                        long delayMinutes = java.time.Duration.between(LocalDateTime.now(), scheduledTime).toMinutes();
-                        log.info("🔍 [NotificationConsumer] 예약 알림 delayMinutes 계산: {}분", delayMinutes);
-                        
-                        if (delayMinutes > 0) {
-                            // scheduledTime을 직접 전달 (timeStr 대신)
-                            EventMessage reserveMessage = createReserveMessage(message, scheduleTitle, scheduledTime);
-                            Notification reserveNotification = notificationService.createScheduledNotification(reserveMessage, scheduledTime);
-                            
-                            log.info("✅ [NotificationConsumer] 예약 알림 생성: notificationId={}, scheduledTime={}, scheduledAt={}", 
-                                    reserveNotification.getId(), scheduledTime, reserveNotification.getScheduledAt());
-                        } else {
-                            log.warn("⚠️ [NotificationConsumer] 예약 알림 delayMinutes가 0 이하입니다. 생성하지 않습니다. delayMinutes={}, scheduledTime={}, now={}", 
-                                    delayMinutes, scheduledTime, LocalDateTime.now());
-                        }
-                    }
+                log.info("🔍 [NotificationConsumer] 알림 생성 로직: durationDays={}, reminderDaysBefore={}", 
+                        durationDays, reminderDaysBefore);
+                
+                if (reminderDaysBefore == 0) {
+                    // 당일 알림
+                    createSameDayNotifications(message, scheduleTitle, subType, startDate, durationDays, times);
+                } else {
+                    // 사전 알림
+                    createAdvanceNotifications(message, scheduleTitle, subType, startDate, durationDays, times, reminderDaysBefore);
                 }
             } else {
                 // 기타 메시지는 즉시 알림 생성
@@ -156,12 +110,12 @@ public class DomainEventConsumer {
     }
     
     /**
-     * 등록 알림 메시지 생성 (health.schedule.enroll)
+     * 등록 알림 메시지 생성 (health.schedule)
      */
     private EventMessage createEnrollMessage(EventMessage originalMessage) {
         EventMessage enrollMessage = new EventMessage();
         enrollMessage.setEventId(java.util.UUID.randomUUID().toString());
-        enrollMessage.setType("health.schedule.enroll");
+        enrollMessage.setType("health.schedule");
         enrollMessage.setOccurredAt(java.time.Instant.now());
         enrollMessage.setActor(originalMessage.getActor());
         enrollMessage.setTarget(originalMessage.getTarget());
@@ -176,12 +130,126 @@ public class DomainEventConsumer {
     }
     
     /**
-     * 예약 알림 메시지 생성 (health.schedule.reserve)
+     * 당일 알림 생성 (remindDaysBefore = 0)
      */
-    private EventMessage createReserveMessage(EventMessage originalMessage, String scheduleTitle, LocalDateTime scheduledTime) {
+    private void createSameDayNotifications(EventMessage originalMessage, String scheduleTitle, String subType,
+                                          LocalDateTime startDate, Integer durationDays, List<String> times) {
+        log.info("🔍 [NotificationConsumer] 당일 알림 생성 시작: startDate={}, durationDays={}, subType={}", startDate, durationDays, subType);
+        
+        for (int day = 0; day < durationDays; day++) {
+            LocalDateTime currentDate = startDate.plusDays(day);
+            
+            for (String timeStr : times) {
+                LocalDateTime scheduledTime = parseTimeToDateTime(currentDate, timeStr);
+                
+                // subType에 따른 메시지 생성
+                String message = createSameDayMessage(timeStr, scheduleTitle, subType);
+                
+                EventMessage reserveMessage = createReserveMessage(originalMessage, scheduleTitle, scheduledTime, message);
+                Notification reserveNotification = notificationService.createScheduledNotification(reserveMessage, scheduledTime);
+                
+                log.info("✅ [NotificationConsumer] 당일 알림 생성: notificationId={}, scheduledTime={}, message={}", 
+                        reserveNotification.getId(), scheduledTime, message);
+            }
+        }
+    }
+    
+    /**
+     * 사전 알림 생성 (remindDaysBefore > 0)
+     */
+    private void createAdvanceNotifications(EventMessage originalMessage, String scheduleTitle, String subType,
+                                          LocalDateTime startDate, Integer durationDays, List<String> times, Integer reminderDaysBefore) {
+        log.info("🔍 [NotificationConsumer] 사전 알림 생성 시작: startDate={}, durationDays={}, reminderDaysBefore={}, subType={}", 
+                startDate, durationDays, reminderDaysBefore, subType);
+        
+        // 시작일 + remindDaysBefore부터 duration 기간까지
+        LocalDateTime notificationStartDate = startDate.plusDays(reminderDaysBefore);
+        LocalDateTime notificationEndDate = startDate.plusDays(durationDays);
+        
+        log.info("🔍 [NotificationConsumer] 알림 기간: {} ~ {}", notificationStartDate, notificationEndDate);
+        
+        for (int day = 0; day < durationDays; day++) {
+            LocalDateTime currentDate = startDate.plusDays(day);
+            LocalDateTime notificationDate = currentDate.plusDays(reminderDaysBefore);
+            
+            // 알림 기간 내에 있는지 확인
+            if (notificationDate.isBefore(notificationStartDate) || notificationDate.isAfter(notificationEndDate)) {
+                continue;
+            }
+            
+            for (String timeStr : times) {
+                LocalDateTime scheduledTime = parseTimeToDateTime(notificationDate, timeStr);
+                
+                // subType에 따른 사전 알림 메시지 생성
+                String message = createAdvanceMessage(reminderDaysBefore, timeStr, scheduleTitle, subType);
+                
+                EventMessage reserveMessage = createReserveMessage(originalMessage, scheduleTitle, scheduledTime, message);
+                Notification reserveNotification = notificationService.createScheduledNotification(reserveMessage, scheduledTime);
+                
+                log.info("✅ [NotificationConsumer] 사전 알림 생성: notificationId={}, scheduledTime={}, message={}", 
+                        reserveNotification.getId(), scheduledTime, message);
+            }
+        }
+    }
+    
+    /**
+     * 당일 알림 메시지 생성
+     */
+    private String createSameDayMessage(String timeStr, String scheduleTitle, String subType) {
+        log.info("🔍 [createSameDayMessage] 파라미터: timeStr={}, scheduleTitle={}, subType={}", timeStr, scheduleTitle, subType);
+        
+        if ("PILL".equals(subType)) {
+            // 복용약/영양제: "지금 08:00, 약이름 복용 시간입니다"
+            String message = String.format("지금 %s, %s 복용 시간입니다", timeStr, scheduleTitle);
+            log.info("🔍 [createSameDayMessage] PILL 메시지 생성: {}", message);
+            return message;
+        } else {
+            // 돌봄/산책 등: "지금 08:00 아침 산책 시간입니다"
+            String message = String.format("지금 %s %s 시간입니다", timeStr, scheduleTitle);
+            log.info("🔍 [createSameDayMessage] 기타 메시지 생성: {}", message);
+            return message;
+        }
+    }
+    
+    /**
+     * 사전 알림 메시지 생성
+     */
+    private String createAdvanceMessage(Integer reminderDaysBefore, String timeStr, String scheduleTitle, String subType) {
+        if ("PILL".equals(subType)) {
+            // 복용약/영양제: "1일후 08:00에 약이름 복용 예정입니다"
+            return String.format("%d일후 %s에 %s 복용 예정입니다", reminderDaysBefore, timeStr, scheduleTitle);
+        } else {
+            // 돌봄/산책 등: "1일후 08:00에 아침 산책 예정입니다"
+            return String.format("%d일후 %s에 %s 예정입니다", reminderDaysBefore, timeStr, scheduleTitle);
+        }
+    }
+    
+    /**
+     * 시간 문자열을 LocalDateTime으로 변환
+     */
+    private LocalDateTime parseTimeToDateTime(LocalDateTime date, String timeStr) {
+        String[] timeParts = timeStr.split(":");
+        int hour = Integer.parseInt(timeParts[0]);
+        int minute = Integer.parseInt(timeParts[1]);
+        
+        return LocalDateTime.of(
+                date.getYear(), 
+                date.getMonth(), 
+                date.getDayOfMonth(), 
+                hour, 
+                minute, 
+                0
+        );
+    }
+    
+    /**
+     * 예약 알림 메시지 생성 (health.schedule)
+     */
+    private EventMessage createReserveMessage(EventMessage originalMessage, String scheduleTitle, 
+                                            LocalDateTime scheduledTime, String customMessage) {
         EventMessage reserveMessage = new EventMessage();
         reserveMessage.setEventId(java.util.UUID.randomUUID().toString());
-        reserveMessage.setType("health.schedule.reserve");
+        reserveMessage.setType("health.schedule");
         reserveMessage.setOccurredAt(java.time.Instant.now());
         reserveMessage.setActor(originalMessage.getActor());
         reserveMessage.setTarget(originalMessage.getTarget());
@@ -189,7 +257,7 @@ public class DomainEventConsumer {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("title", scheduleTitle);
         attributes.put("scheduledTime", scheduledTime.toString());
-        attributes.put("message", scheduleTitle + " 시간입니다.");
+        attributes.put("message", customMessage);
         reserveMessage.setAttributes(attributes);
         reserveMessage.setSchemaVersion(1);
         
