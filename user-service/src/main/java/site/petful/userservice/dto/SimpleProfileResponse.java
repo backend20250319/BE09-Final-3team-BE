@@ -13,5 +13,7 @@ public class SimpleProfileResponse {
     private Long id;
     private String nickname;
     private String profileImageUrl;
+    private String emil;
+    private String phone;
     
 }
