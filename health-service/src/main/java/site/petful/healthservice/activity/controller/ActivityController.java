@@ -16,6 +16,7 @@ import site.petful.healthservice.common.response.ErrorCode;
 import jakarta.validation.Valid;
 import java.util.List;
 import site.petful.healthservice.common.dto.PetResponse;
+
 import site.petful.healthservice.activity.dto.ActivityLevelResponse;
 import site.petful.healthservice.activity.enums.ActivityLevel;
 import site.petful.healthservice.activity.dto.ActivityUpdateRequest;
