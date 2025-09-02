@@ -83,8 +83,8 @@ public class MedicationScheduleService extends AbstractScheduleService {
         ScheduleMedDetail detail = ScheduleMedDetail.builder()
                 .scheduleNo(scheduleNo)
                 .medicationName(request.getName())
-                .dosage(request.getAmount())
-                .instructions(request.getInstruction())
+                .dosage("")                    // 빈 문자열로 설정
+                .instructions("")              // 빈 문자열로 설정
                 .durationDays(request.getDurationDays())
                 .build();
 
