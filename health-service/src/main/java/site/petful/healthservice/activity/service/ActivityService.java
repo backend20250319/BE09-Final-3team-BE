@@ -17,6 +17,7 @@ import site.petful.healthservice.common.client.PetServiceClient;
 import site.petful.healthservice.common.dto.PetResponse;
 import site.petful.healthservice.common.response.ApiResponse;
 
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,10 +36,7 @@ public class ActivityService {
     public Long createActivity(Long userNo, ActivityRequest request) {
 
         
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(request.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
         
         // 같은 날짜에 이미 활동 데이터가 있는지 확인
         if (activityRepository.existsByPetNoAndActivityDate(request.getPetNo(), request.getActivityDate())) {
@@ -116,10 +114,7 @@ public class ActivityService {
     public ActivityResponse getActivity(Long userNo, Long petNo, String activityDateStr) {
 
         
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(petNo, userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
         
         LocalDate activityDate = LocalDate.parse(activityDateStr);
         
@@ -139,10 +134,7 @@ public class ActivityService {
      */
     public List<String> getActivitySchedule(Long userNo, Long petNo, int year, int month) {
 
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(petNo, userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
         
         // 해당 월의 시작일과 마지막일 계산
         LocalDate startDate = LocalDate.of(year, month, 1);
@@ -163,10 +155,7 @@ public class ActivityService {
      */
     public ActivityChartResponse getActivityChartData(Long userNo, Long petNo, String periodType, String startDateStr, String endDateStr) {
 
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(petNo, userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
         
         LocalDate startDate = LocalDate.parse(startDateStr);
         LocalDate endDate = LocalDate.parse(endDateStr);
@@ -302,22 +291,5 @@ public class ActivityService {
         }
     }
 
-    // 펫 소유권 검증 메서드
-    private boolean isPetOwnedByUser(Long petNo, Long userNo) {
-        try {
-            ApiResponse<PetResponse> petResponse = petServiceClient.getPet(petNo);
-            
-            if (petResponse != null && petResponse.getData() != null) {
-                PetResponse pet = petResponse.getData();
-                if (pet.getUserNo() != null) {
-                    return pet.getUserNo().equals(userNo);
-                }
-            }
-            return false;
-            
-        } catch (Exception e) {
-            log.error("펫 소유권 검증 중 예외 발생: petNo={}, userNo={}", petNo, userNo, e);
-            return false;
-        }
-    }
+
 }

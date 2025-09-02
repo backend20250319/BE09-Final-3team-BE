@@ -54,10 +54,7 @@ public class CareScheduleService extends AbstractScheduleService {
     // ==================== 돌봄 일정 생성 ====================
     
     public Long createCareSchedule(Long userNo, @Valid CareRequestDTO request) {
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(request.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         ScheduleSubType subType = request.getSubType();
         
@@ -99,10 +96,7 @@ public class CareScheduleService extends AbstractScheduleService {
      * 돌봄 일정 목록 조회
      */
     public List<CareResponseDTO> listCareSchedules(Long userNo, Long petNo, String from, String to, String subType) {
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(petNo, userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         List<Schedule> items;
         
@@ -171,10 +165,7 @@ public class CareScheduleService extends AbstractScheduleService {
     public CareDetailDTO getCareDetail(Long calNo, Long userNo) {
         Schedule c = findScheduleById(calNo);
         
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(c.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
         
         if (!c.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -209,10 +200,7 @@ public class CareScheduleService extends AbstractScheduleService {
         // 조회 및 소유자 검증
         Schedule entity = findScheduleById(calNo);
         
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
         
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -302,10 +290,7 @@ public class CareScheduleService extends AbstractScheduleService {
     public Long deleteCareSchedule(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
 
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -327,10 +312,7 @@ public class CareScheduleService extends AbstractScheduleService {
     public Boolean toggleAlarm(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
 
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -378,23 +360,7 @@ public class CareScheduleService extends AbstractScheduleService {
         return data;
     }
 
-    private boolean isPetOwnedByUser(Long petNo, Long userNo) {
-        try {
-            ApiResponse<PetResponse> response = petServiceClient.getPet(petNo);
-            
-            if (response != null && response.getData() != null) {
-                PetResponse pet = response.getData();
-                if (pet.getUserNo() != null) {
-                    return pet.getUserNo().equals(userNo);
-                }
-            }
-            return false;
-            
-        } catch (Exception e) {
-            log.error("펫 소유권 검증 중 예외 발생: petNo={}, userNo={}", petNo, userNo, e);
-            return false;
-        }
-    }
+
 
     // ==================== 이벤트 발행 ====================
     

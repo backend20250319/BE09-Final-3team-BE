@@ -26,6 +26,7 @@ import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.client.PetServiceClient;
 import site.petful.healthservice.common.dto.PetResponse;
 
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -64,10 +65,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
      * 복용약/영양제 일정 생성 (캘린더 기반)
      */
     public Long createMedication(Long userNo, @Valid MedicationRequestDTO request) {
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(request.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         // 공통 DTO로 변환하여 상속된 공통 로직 활용
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
@@ -118,10 +116,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
      * 서브타입을 지정하여 일정을 생성/저장합니다.
      */
     public List<Schedule> registerMedicationSchedules(PrescriptionParsedDTO parsed, Long userNo, Long petNo, LocalDate baseDate, ScheduleSubType subType) {
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(petNo, userNo)) {
-            throw new BusinessException(ErrorCode.PET_OWNERSHIP_VERIFICATION_FAILED, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
         List<Schedule> created = new ArrayList<>();
         if (parsed == null || parsed.getMedications() == null || parsed.getMedications().isEmpty()) {
             return created;
@@ -227,10 +222,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
      * 투약 일정 목록 조회
      */
     public List<MedicationResponseDTO> listMedications(Long userNo, Long petNo, String from, String to, String subType) {
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(petNo, userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         LocalDateTime start;
         LocalDateTime end;
@@ -295,10 +287,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
     public MedicationDetailDTO getMedicationDetail(Long calNo, Long userNo) {
         Schedule c = findScheduleById(calNo);
 
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(c.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         if (!c.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
@@ -346,10 +335,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
         // 조회 및 소유자 검증
         Schedule entity = findScheduleById(calNo);
         
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
         
         if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
@@ -468,10 +454,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
     public Boolean toggleAlarm(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
 
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
@@ -500,10 +483,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
     public Long deleteMedication(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
 
-        // 펫 소유권 검증
-        if (!isPetOwnedByUser(entity.getPetNo(), userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 펫에 대한 접근 권한이 없습니다.");
-        }
+
 
         if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
@@ -645,23 +625,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
         public int getTimesPerDay() { return timesPerDay; }
     }
 
-    private boolean isPetOwnedByUser(Long petNo, Long userNo) {
-        try {
-            ApiResponse<PetResponse> response = petServiceClient.getPet(petNo);
-            
-            if (response != null && response.getData() != null) {
-                PetResponse pet = response.getData();
-                if (pet.getUserNo() != null) {
-                    return pet.getUserNo().equals(userNo);
-                }
-            }
-            return false;
-            
-        } catch (Exception e) {
-            log.error("펫 소유권 검증 중 예외 발생: petNo={}, userNo={}", petNo, userNo, e);
-            return false;
-        }
-    }
+
 
     // ==================== 이벤트 발행 ====================
     

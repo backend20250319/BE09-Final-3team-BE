@@ -62,7 +62,7 @@ public enum ErrorCode {
     SCHEDULE_NOT_FOUND("7030", "스케줄 일정이 존재하지 않습니다."),
     SCHEDULE_SAVE_FAILED("7031", "스케줄 저장에 실패했습니다."),
     MEDICATION_DETAIL_SAVE_FAILED("7032", "투약 상세 정보 저장에 실패했습니다."),
-    PET_OWNERSHIP_VERIFICATION_FAILED("7033", "펫 소유권 검증에 실패했습니다."),
+
     INVALID_PET_NO("7034", "유효하지 않은 펫 번호입니다."),
     PET_NOT_FOUND("7035", "펫을 찾을 수 없습니다."),
     MEDICAL_DATE_FORMAT_ERROR("7036", "건강관리 일정의 날짜 형식이 올바르지 않습니다."),
