@@ -23,7 +23,7 @@ public class ScheduledNotificationService {
     /**
      * 1분마다 예약된 알림을 체크하고 처리합니다.
      */
-    @Scheduled(fixedRate = 60000) // 1분마다 실행
+    @Scheduled(fixedRate = 300000) // 1분마다 실행
     public void processScheduledNotifications() {
         log.info("⏰ [ScheduledNotificationService] 예약된 알림 처리 시작");
         
