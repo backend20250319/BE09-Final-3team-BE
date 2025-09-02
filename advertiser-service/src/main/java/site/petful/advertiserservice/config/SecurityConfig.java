@@ -33,7 +33,10 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/actuator/**",
-            "/internal/**"
+            "/internal/**",
+            "/advertiser/password/reset/request",
+            "/advertiser/password/reset/verify",
+            "/advertiser/password/reset"
     };
 
     @Bean
