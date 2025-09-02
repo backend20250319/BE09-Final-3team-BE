@@ -26,7 +26,6 @@ import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.client.PetServiceClient;
 import site.petful.healthservice.common.dto.PetResponse;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;

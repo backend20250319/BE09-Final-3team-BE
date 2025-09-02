@@ -15,31 +15,42 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActivityResponse {
+public class ActivityUpdateResponse {
     
     private Long activityNo;
     private Long userNo;
     private Long petNo;
-    private LocalDate activityDate;
-    private Double walkingDistanceKm;
-    private ActivityLevel activityLevel;
-    private Integer caloriesBurned;
-    private Integer recommendedCaloriesBurned;
-    private Integer recommendedCaloriesIntake;
-    private Double weightKg;
-    private Double sleepHours;
-    private Integer poopCount;
-    private Integer peeCount;
-    private String memo;
-    private List<MealResponse> meals;
-    private LocalDateTime createdAt;
+    
+    private ActivityData before;
+
+    private ActivityData after;
+    
     private LocalDateTime updatedAt;
     
     @Getter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MealResponse {
+    public static class ActivityData {
+        private LocalDate activityDate;
+        private Double walkingDistanceKm;
+        private ActivityLevel activityLevel;
+        private Integer caloriesBurned;
+        private Integer recommendedCaloriesBurned;
+        private Integer recommendedCaloriesIntake;
+        private Double weightKg;
+        private Double sleepHours;
+        private Integer poopCount;
+        private Integer peeCount;
+        private String memo;
+        private List<MealData> meals;
+    }
+    
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MealData {
         private Long mealNo;
         private Double totalWeightG;
         private Integer totalCalories;

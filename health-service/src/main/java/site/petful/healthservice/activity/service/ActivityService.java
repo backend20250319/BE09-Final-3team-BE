@@ -16,12 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 import site.petful.healthservice.common.client.PetServiceClient;
 import site.petful.healthservice.common.dto.PetResponse;
 import site.petful.healthservice.common.response.ApiResponse;
+import site.petful.healthservice.activity.dto.ActivityUpdateRequest;
+import site.petful.healthservice.activity.dto.ActivityUpdateResponse;
+import site.petful.healthservice.activity.dto.ActivitySummaryResponse;
+import site.petful.healthservice.activity.enums.PeriodType;
 
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -78,7 +83,6 @@ public class ActivityService {
                 .consumedWeightG(mealRequest.getConsumedWeightG())
                 .consumedCalories(consumedCalories)
                 .mealType(mealRequest.getMealType())
-                .memo(mealRequest.getMemo())
                 .build());
         });
         
@@ -119,16 +123,208 @@ public class ActivityService {
         LocalDate activityDate = LocalDate.parse(activityDateStr);
         
         Activity activity = activityRepository.findByPetNoAndActivityDate(petNo, activityDate)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "해당 날짜의 활동 데이터가 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACTIVITY_NOT_FOUND, "해당 날짜의 활동 데이터가 존재하지 않습니다."));
         
         // 사용자 권한 확인
         if (!activity.getUserNo().equals(userNo)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "해당 활동 데이터에 대한 접근 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACTIVITY_FORBIDDEN, "해당 활동 데이터에 대한 접근 권한이 없습니다.");
         }
         
         return convertToResponse(activity);
     }
     
+    /**
+     * 활동 데이터 부분 수정
+     */
+    @Transactional
+    public ActivityUpdateResponse updateActivity(Long userNo, Long activityNo, ActivityUpdateRequest request) {
+        log.info("활동 데이터 부분 수정 시작: userNo={}, activityNo={}", userNo, activityNo);
+
+        // 활동 데이터 조회
+        Activity activity = activityRepository.findById(activityNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACTIVITY_NOT_FOUND, "해당 활동 데이터가 존재하지 않습니다."));
+
+        // 사용자 권한 확인
+        if (!activity.getUserNo().equals(userNo)) {
+            throw new BusinessException(ErrorCode.ACTIVITY_FORBIDDEN, "해당 활동 데이터에 대한 접근 권한이 없습니다.");
+        }
+
+        // 펫 소유권 검증
+        if (!isPetOwnedByUser(activity.getPetNo(), userNo)) {
+            throw new BusinessException(ErrorCode.PET_NOT_OWNED, "해당 펫에 대한 접근 권한이 없습니다.");
+        }
+
+        // 수정 전 데이터 저장
+        ActivityUpdateResponse.ActivityData beforeData = convertToActivityData(activity);
+
+        // 기본 필드 부분 수정
+        if (request.getActivityDate() != null) {
+            activity.setActivityDate(request.getActivityDate());
+            log.info("활동 날짜 수정: {}", request.getActivityDate());
+        }
+
+        if (request.getWalkingDistanceKm() != null) {
+            activity.setWalkingDistanceKm(request.getWalkingDistanceKm());
+            log.info("산책 거리 수정: {}", request.getWalkingDistanceKm());
+        }
+
+        if (request.getActivityLevel() != null) {
+            activity.setActivityLevel(request.getActivityLevel());
+            log.info("활동 계수 수정: {}", request.getActivityLevel());
+        }
+
+        if (request.getWeightKg() != null) {
+            activity.setWeightKg(request.getWeightKg());
+            log.info("무게 수정: {}", request.getWeightKg());
+        }
+
+        if (request.getSleepHours() != null) {
+            activity.setSleepHours(request.getSleepHours());
+            log.info("수면 시간 수정: {}", request.getSleepHours());
+        }
+
+        if (request.getPoopCount() != null) {
+            activity.setPoopCount(request.getPoopCount());
+            log.info("대변 횟수 수정: {}", request.getPoopCount());
+        }
+
+        if (request.getPeeCount() != null) {
+            activity.setPeeCount(request.getPeeCount());
+            log.info("소변 횟수 수정: {}", request.getPeeCount());
+        }
+
+        if (request.getMemo() != null) {
+            activity.setMemo(request.getMemo());
+            log.info("메모 수정: {}", request.getMemo());
+        }
+
+        // 식사 정보 부분 수정
+        if (request.getMeals() != null) {
+            updateMeals(activity, request.getMeals());
+        }
+
+        // 칼로리 재계산
+        recalculateCalories(activity);
+
+        // 활동 데이터 저장
+        Activity updatedActivity = activityRepository.save(activity);
+        log.info("활동 데이터 부분 수정 완료: activityNo={}", activityNo);
+
+        // 수정 후 데이터 생성
+        ActivityUpdateResponse.ActivityData afterData = convertToActivityData(updatedActivity);
+
+        return ActivityUpdateResponse.builder()
+                .activityNo(activityNo)
+                .userNo(userNo)
+                .petNo(activity.getPetNo())
+                .before(beforeData)
+                .after(afterData)
+                .updatedAt(updatedActivity.getUpdatedAt())
+                .build();
+    }
+
+    /**
+     * 식사 정보 부분 수정
+     */
+    private void updateMeals(Activity activity, List<ActivityUpdateRequest.MealUpdateRequest> mealRequests) {
+        log.info("식사 정보 부분 수정 시작: 기존 식사 개수={}, 요청 식사 개수={}",
+                activity.getMeals().size(), mealRequests.size());
+
+        // 기존 식사 정보를 Map으로 변환 (mealNo를 키로 사용)
+        Map<Long, ActivityMeal> existingMealsMap = activity.getMeals().stream()
+                .collect(Collectors.toMap(ActivityMeal::getMealNo, meal -> meal));
+
+        // 새로운 식사 정보 리스트
+        List<ActivityMeal> newMeals = new ArrayList<>();
+
+        for (ActivityUpdateRequest.MealUpdateRequest mealRequest : mealRequests) {
+            if (mealRequest.getIsDeleted() != null && mealRequest.getIsDeleted()) {
+                // 삭제 요청인 경우
+                if (mealRequest.getMealNo() != null) {
+                    existingMealsMap.remove(mealRequest.getMealNo());
+                    log.info("식사 정보 삭제: mealNo={}", mealRequest.getMealNo());
+                }
+            } else if (mealRequest.getMealNo() != null && existingMealsMap.containsKey(mealRequest.getMealNo())) {
+                // 기존 식사 정보 수정
+                ActivityMeal existingMeal = existingMealsMap.get(mealRequest.getMealNo());
+                updateExistingMeal(existingMeal, mealRequest);
+                newMeals.add(existingMeal);
+                existingMealsMap.remove(mealRequest.getMealNo());
+                log.info("기존 식사 정보 수정: mealNo={}", mealRequest.getMealNo());
+            } else {
+                // 새로운 식사 정보 추가
+                ActivityMeal newMeal = createNewMeal(mealRequest);
+                newMeals.add(newMeal);
+                log.info("새로운 식사 정보 추가: mealType={}", mealRequest.getMealType());
+            }
+        }
+
+        // 기존 식사 정보 중 수정되지 않은 것들 추가
+        newMeals.addAll(existingMealsMap.values());
+
+        // 활동의 식사 정보 업데이트
+        activity.getMeals().clear();
+        newMeals.forEach(activity::addMeal);
+
+        log.info("식사 정보 부분 수정 완료: 최종 식사 개수={}", newMeals.size());
+    }
+
+    /**
+     * 기존 식사 정보 업데이트
+     */
+    private void updateExistingMeal(ActivityMeal existingMeal, ActivityUpdateRequest.MealUpdateRequest mealRequest) {
+        if (mealRequest.getTotalWeightG() != null) {
+            existingMeal.setTotalWeightG(mealRequest.getTotalWeightG());
+        }
+        if (mealRequest.getTotalCalories() != null) {
+            existingMeal.setTotalCalories(mealRequest.getTotalCalories());
+        }
+        if (mealRequest.getConsumedWeightG() != null) {
+            existingMeal.setConsumedWeightG(mealRequest.getConsumedWeightG());
+        }
+        if (mealRequest.getConsumedCalories() != null) {
+            existingMeal.setConsumedCalories(mealRequest.getConsumedCalories());
+        }
+        if (mealRequest.getMealType() != null) {
+            existingMeal.setMealType(mealRequest.getMealType());
+        }
+    }
+
+    /**
+     * 새로운 식사 정보 생성
+     */
+    private ActivityMeal createNewMeal(ActivityUpdateRequest.MealUpdateRequest mealRequest) {
+        // 섭취 칼로리 자동 계산
+        int consumedCalories = calculateConsumedCalories(
+            mealRequest.getTotalCalories(),
+            mealRequest.getTotalWeightG(),
+            mealRequest.getConsumedWeightG()
+        );
+
+        return ActivityMeal.builder()
+                .totalWeightG(mealRequest.getTotalWeightG())
+                .totalCalories(mealRequest.getTotalCalories())
+                .consumedWeightG(mealRequest.getConsumedWeightG())
+                .consumedCalories(consumedCalories)
+                .mealType(mealRequest.getMealType())
+                .build();
+    }
+
+    /**
+     * 칼로리 재계산
+     */
+    private void recalculateCalories(Activity activity) {
+        // 권장 소모 칼로리 재계산
+        int recommendedCaloriesBurned = calculateRecommendedCaloriesBurned(activity.getWeightKg(), activity.getActivityLevel());
+        activity.setRecommendedCaloriesBurned(recommendedCaloriesBurned);
+
+        // 실제 소모 칼로리 재계산
+        int caloriesBurned = calculateCaloriesBurned(activity.getWalkingDistanceKm(), activity.getActivityLevel());
+        activity.setCaloriesBurned(caloriesBurned);
+
+        log.info("칼로리 재계산 완료: 권장={}, 실제={}", recommendedCaloriesBurned, caloriesBurned);
+    }
+
     /**
      * 스케줄에서 기록이 있는 날짜 목록 조회
      */
@@ -157,8 +353,46 @@ public class ActivityService {
 
 
         
-        LocalDate startDate = LocalDate.parse(startDateStr);
-        LocalDate endDate = LocalDate.parse(endDateStr);
+        LocalDate startDate;
+        LocalDate endDate;
+
+        // startDate, endDate가 제공되지 않은 경우 periodType에 따른 기본 기간 사용
+        if (startDateStr == null || endDateStr == null) {
+            try {
+                PeriodType periodTypeEnum = PeriodType.valueOf(periodType.toUpperCase());
+                PeriodType.DateRange dateRange = periodTypeEnum.calculateDateRange();
+                startDate = dateRange.getStartDate();
+                endDate = dateRange.getEndDate();
+            } catch (IllegalArgumentException e) {
+                // 기존 periodType (DAY, WEEK, MONTH, YEAR) 처리
+                LocalDate today = LocalDate.now();
+                switch (periodType.toUpperCase()) {
+                    case "DAY" -> {
+                        startDate = today;
+                        endDate = today;
+                    }
+                    case "WEEK" -> {
+                        startDate = today.minusDays(6);
+                        endDate = today;
+                    }
+                    case "MONTH" -> {
+                        startDate = today.minusDays(29);
+                        endDate = today;
+                    }
+                    case "YEAR" -> {
+                        startDate = today.minusDays(364);
+                        endDate = today;
+                    }
+                    default -> {
+                        startDate = today.minusDays(6);
+                        endDate = today;
+                    }
+                }
+            }
+        } else {
+            startDate = LocalDate.parse(startDateStr);
+            endDate = LocalDate.parse(endDateStr);
+        }
         
         List<Activity> activities = activityRepository.findByPetNoAndDateRange(petNo, startDate, endDate);
         
@@ -237,6 +471,35 @@ public class ActivityService {
     }
     
     /**
+     * Activity 엔티티를 ActivityData DTO로 변환 (수정 전후 비교용)
+     */
+    private ActivityUpdateResponse.ActivityData convertToActivityData(Activity activity) {
+        return ActivityUpdateResponse.ActivityData.builder()
+                .activityDate(activity.getActivityDate())
+                .walkingDistanceKm(activity.getWalkingDistanceKm())
+                .activityLevel(activity.getActivityLevel())
+                .caloriesBurned(activity.getCaloriesBurned())
+                .recommendedCaloriesBurned(activity.getRecommendedCaloriesBurned())
+                .recommendedCaloriesIntake(calculateRecommendedCaloriesIntake(activity.getWeightKg(), activity.getActivityLevel()))
+                .weightKg(activity.getWeightKg())
+                .sleepHours(activity.getSleepHours())
+                .poopCount(activity.getPoopCount())
+                .peeCount(activity.getPeeCount())
+                .memo(activity.getMemo())
+                .meals(activity.getMeals().stream()
+                        .map(meal -> ActivityUpdateResponse.MealData.builder()
+                                .mealNo(meal.getMealNo())
+                                .totalWeightG(meal.getTotalWeightG())
+                                .totalCalories(meal.getTotalCalories())
+                                .consumedWeightG(meal.getConsumedWeightG())
+                                .consumedCalories(meal.getConsumedCalories())
+                                .mealType(meal.getMealType())
+                                .build())
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
+    /**
      * Activity 엔티티를 Response DTO로 변환
      */
     private ActivityResponse convertToResponse(Activity activity) {
@@ -263,7 +526,6 @@ public class ActivityService {
                                 .consumedWeightG(meal.getConsumedWeightG())
                                 .consumedCalories(meal.getConsumedCalories())
                                 .mealType(meal.getMealType())
-                                .memo(meal.getMemo())
                                 .build())
                         .collect(Collectors.toList()))
                 .createdAt(activity.getCreatedAt())

@@ -76,6 +76,14 @@ public enum ErrorCode {
     MEDICAL_SCHEDULE_DELETE_FAILED("7044", "건강관리 일정 삭제에 실패했습니다."),
     MEDICAL_ALARM_TOGGLE_FAILED("7045", "건강관리 일정 알림 토글에 실패했습니다."),
 
+    // 7100번대 : 활동 관리
+    ACTIVITY_NOT_FOUND("7100", "활동 데이터를 찾을 수 없습니다."),
+    ACTIVITY_FORBIDDEN("7101", "활동 데이터에 대한 접근 권한이 없습니다."),
+    PET_NOT_OWNED("7102", "해당 펫에 대한 접근 권한이 없습니다."),
+    PET_OWNERSHIP_VERIFICATION_FAILED("7103", "펫 소유권 검증에 실패했습니다."),
+    DATE_RANGE_INVALID("7104", "날짜 범위가 올바르지 않습니다."),
+    PERIOD_TYPE_INVALID("7105", "유효하지 않은 기간 타입입니다."),
+
     // 8000번대 : SNS 관리
 
     // 9000번대 : 시스템 오류
