@@ -16,7 +16,6 @@ public class PetService {
 
     // 1. 펫스타 전체 목록 조회
     public List<PetResponse> geAllPetstars() {
-
         ApiResponse<List<PetResponse>> response = petFeignClient.getAllPetStars();
         return response.getData();
     }
