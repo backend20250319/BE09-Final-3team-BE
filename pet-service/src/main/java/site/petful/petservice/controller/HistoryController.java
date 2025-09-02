@@ -8,6 +8,7 @@ import site.petful.petservice.common.ApiResponse;
 import site.petful.petservice.dto.HistoryRequest;
 import site.petful.petservice.dto.HistoryResponse;
 import site.petful.petservice.dto.MultipleFileUploadResponse;
+import site.petful.petservice.dto.HistoryImageInfo;
 import site.petful.petservice.service.HistoryService;
 
 import java.util.List;
@@ -86,6 +87,17 @@ public class HistoryController {
         }
     }
 
+    // 활동이력 이미지 정보 조회 (더 구체적인 패턴을 먼저 정의)
+    @GetMapping("/{petNo}/histories/{historyNo}/images")
+    public ResponseEntity<ApiResponse<List<HistoryImageInfo>>> getHistoryImages(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo) {
+        
+        List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(images));
+    }
+
     // 활동이력 삭제
     @DeleteMapping("/{petNo}/histories/{historyNo}")
     public ResponseEntity<ApiResponse<Void>> deleteHistory(
@@ -101,9 +113,18 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<Void>> deleteHistoryImage(
             @PathVariable Long petNo,
             @PathVariable Long historyNo,
-            @PathVariable String imageId,
+            @PathVariable Long imageId,
             @RequestAttribute("X-User-No") Long userNo) {
         historyService.deleteHistoryImage(petNo, historyNo, imageId, userNo);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 중복 활동이력 정리 (관리자용)
+    @PostMapping("/{petNo}/histories/cleanup")
+    public ResponseEntity<ApiResponse<Void>> cleanupDuplicateHistories(
+            @PathVariable Long petNo,
+            @RequestAttribute("X-User-No") Long userNo) {
+        // TODO: cleanup 로직 구현 필요
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

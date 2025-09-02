@@ -25,4 +25,6 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
     List<History> findByPetNoAndDateRange(@Param("petNo") Long petNo, 
                                          @Param("startDate") String startDate, 
                                          @Param("endDate") String endDate);
+    
+
 }
