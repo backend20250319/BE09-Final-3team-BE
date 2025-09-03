@@ -39,14 +39,14 @@ public class DomainEventConsumer {
                 // 2. 스케줄 정보 파싱
                 Map<String, Object> attributes = message.getAttributes();
                 String startDateStr = (String) attributes.get("startDate");
-                Integer reminderDaysBefore = (Integer) attributes.get("reminderDaysBefore");
+                Integer lastReminderDaysBefore = (Integer) attributes.get("lastReminderDaysBefore");
                 Integer durationDays = (Integer) attributes.get("durationDays");
                 String scheduleTitle = (String) attributes.get("title");
                 String subType = (String) attributes.get("subType");
                 List<String> times = (List<String>) attributes.get("times");
                 
-                log.info("🔍 [NotificationConsumer] 스케줄 정보 파싱: startDate={}, reminderDaysBefore={}, durationDays={}, title={}, subType={}, times={}", 
-                        startDateStr, reminderDaysBefore, durationDays, scheduleTitle, subType, times);
+                log.info("🔍 [NotificationConsumer] 스케줄 정보 파싱: startDate={}, lastReminderDaysBefore={}, durationDays={}, title={}, subType={}, times={}", 
+                        startDateStr, lastReminderDaysBefore, durationDays, scheduleTitle, subType, times);
                 
                 // times 리스트 상세 로그
                 if (times != null) {
@@ -83,20 +83,20 @@ public class DomainEventConsumer {
                     return;
                 }
                 
-                // remindDaysBefore 기본값 설정
-                if (reminderDaysBefore == null) {
-                    reminderDaysBefore = 0;
+                // lastReminderDaysBefore 기본값 설정
+                if (lastReminderDaysBefore == null) {
+                    lastReminderDaysBefore = 0;
                 }
                 
-                log.info("🔍 [NotificationConsumer] 알림 생성 로직: durationDays={}, reminderDaysBefore={}", 
-                        durationDays, reminderDaysBefore);
+                log.info("🔍 [NotificationConsumer] 알림 생성 로직: durationDays={}, lastReminderDaysBefore={}", 
+                        durationDays, lastReminderDaysBefore);
                 
-                if (reminderDaysBefore == 0) {
+                if (lastReminderDaysBefore == 0) {
                     // 당일 알림
                     createSameDayNotifications(message, scheduleTitle, subType, startDate, durationDays, times);
                 } else {
-                    // 사전 알림
-                    createAdvanceNotifications(message, scheduleTitle, subType, startDate, durationDays, times, reminderDaysBefore);
+                    // 사전 알림 (자정으로 설정)
+                    createAdvanceNotifications(message, scheduleTitle, subType, startDate, durationDays, times, lastReminderDaysBefore);
                 }
             } else {
                 // 기타 메시지는 즉시 알림 생성
@@ -155,40 +155,39 @@ public class DomainEventConsumer {
     }
     
     /**
-     * 사전 알림 생성 (remindDaysBefore > 0)
+     * 사전 알림 생성 (lastReminderDaysBefore > 0) - 자정으로 설정
      */
     private void createAdvanceNotifications(EventMessage originalMessage, String scheduleTitle, String subType,
-                                          LocalDateTime startDate, Integer durationDays, List<String> times, Integer reminderDaysBefore) {
-        log.info("🔍 [NotificationConsumer] 사전 알림 생성 시작: startDate={}, durationDays={}, reminderDaysBefore={}, subType={}", 
-                startDate, durationDays, reminderDaysBefore, subType);
+                                          LocalDateTime startDate, Integer durationDays, List<String> times, Integer lastReminderDaysBefore) {
+        log.info("🔍 [NotificationConsumer] 사전 알림 생성 시작: startDate={}, durationDays={}, lastReminderDaysBefore={}, subType={}", 
+                startDate, durationDays, lastReminderDaysBefore, subType);
         
-        // 시작일 + remindDaysBefore부터 duration 기간까지
-        LocalDateTime notificationStartDate = startDate.plusDays(reminderDaysBefore);
+        // 시작일 + lastReminderDaysBefore부터 duration 기간까지
+        LocalDateTime notificationStartDate = startDate.plusDays(lastReminderDaysBefore);
         LocalDateTime notificationEndDate = startDate.plusDays(durationDays);
         
         log.info("🔍 [NotificationConsumer] 알림 기간: {} ~ {}", notificationStartDate, notificationEndDate);
         
         for (int day = 0; day < durationDays; day++) {
             LocalDateTime currentDate = startDate.plusDays(day);
-            LocalDateTime notificationDate = currentDate.plusDays(reminderDaysBefore);
+            LocalDateTime notificationDate = currentDate.plusDays(lastReminderDaysBefore);
             
             // 알림 기간 내에 있는지 확인
             if (notificationDate.isBefore(notificationStartDate) || notificationDate.isAfter(notificationEndDate)) {
                 continue;
             }
             
-            for (String timeStr : times) {
-                LocalDateTime scheduledTime = parseTimeToDateTime(notificationDate, timeStr);
-                
-                // subType에 따른 사전 알림 메시지 생성
-                String message = createAdvanceMessage(reminderDaysBefore, timeStr, scheduleTitle, subType);
-                
-                EventMessage reserveMessage = createReserveMessage(originalMessage, scheduleTitle, scheduledTime, message);
-                Notification reserveNotification = notificationService.createScheduledNotification(reserveMessage, scheduledTime);
-                
-                log.info("✅ [NotificationConsumer] 사전 알림 생성: notificationId={}, scheduledTime={}, message={}", 
-                        reserveNotification.getId(), scheduledTime, message);
-            }
+            // 사전 알림은 자정(00:00)으로 설정
+            LocalDateTime scheduledTime = notificationDate.withHour(0).withMinute(0).withSecond(0);
+            
+            // subType에 따른 사전 알림 메시지 생성 (실제 times 사용)
+            String message = createAdvanceMessage(lastReminderDaysBefore, times, scheduleTitle, subType);
+            
+            EventMessage reserveMessage = createReserveMessage(originalMessage, scheduleTitle, scheduledTime, message);
+            Notification reserveNotification = notificationService.createScheduledNotification(reserveMessage, scheduledTime);
+            
+            log.info("✅ [NotificationConsumer] 사전 알림 생성 (자정): notificationId={}, scheduledTime={}, message={}", 
+                    reserveNotification.getId(), scheduledTime, message);
         }
     }
     
@@ -214,13 +213,16 @@ public class DomainEventConsumer {
     /**
      * 사전 알림 메시지 생성
      */
-    private String createAdvanceMessage(Integer reminderDaysBefore, String timeStr, String scheduleTitle, String subType) {
+    private String createAdvanceMessage(Integer lastReminderDaysBefore, List<String> times, String scheduleTitle, String subType) {
+        // times를 문자열로 변환 (예: "08:00, 12:00, 20:00")
+        String timesStr = String.join(", ", times);
+        
         if ("PILL".equals(subType)) {
             // 복용약/영양제: "1일후 08:00에 약이름 복용 예정입니다"
-            return String.format("%d일후 %s에 %s 복용 예정입니다", reminderDaysBefore, timeStr, scheduleTitle);
+            return String.format("%d일후 %s에 %s 복용 예정입니다.", lastReminderDaysBefore, timesStr, scheduleTitle);
         } else {
             // 돌봄/산책 등: "1일후 08:00에 아침 산책 예정입니다"
-            return String.format("%d일후 %s에 %s 예정입니다", reminderDaysBefore, timeStr, scheduleTitle);
+            return String.format("%d일후 %s에 %s 예정입니다.", lastReminderDaysBefore, timesStr, scheduleTitle);
         }
     }
     
