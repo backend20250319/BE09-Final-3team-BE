@@ -16,3 +16,4 @@ public class HistoryImageInfo {
     private String savedName;     // 저장된 파일명
     private Long historyNo;       // 활동 이력 번호
 }
+
