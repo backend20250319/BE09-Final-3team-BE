@@ -11,6 +11,7 @@ import site.petful.petservice.common.ftp.FtpService;
 import site.petful.petservice.dto.HistoryRequest;
 import site.petful.petservice.dto.HistoryResponse;
 import site.petful.petservice.dto.MultipleFileUploadResponse;
+import site.petful.petservice.dto.HistoryImageInfo;
 import site.petful.petservice.entity.History;
 import site.petful.petservice.entity.HistoryImageFile;
 import site.petful.petservice.entity.Pet;
@@ -118,24 +119,6 @@ public class HistoryService {
         history.setTitle(request.getTitle() != null ? request.getTitle() : "활동 이력");
         history.setContent(request.getContent());
 
-        // 이미지 처리
-        if (request.getImage_urls() != null) {
-            // 현재 저장된 이미지들 조회
-            List<HistoryImageFile> currentImages = historyImageFileRepository.findByHistoryNoAndIsDeletedFalse(historyNo);
-            
-            // 요청에 포함되지 않은 이미지들은 삭제
-            for (HistoryImageFile currentImage : currentImages) {
-                boolean shouldKeep = request.getImage_urls().stream()
-                        .anyMatch(url -> url.equals(currentImage.getFilePath()));
-                
-                if (!shouldKeep) {
-                    // 이미지 파일 논리적 삭제
-                    currentImage.setIsDeleted(true);
-                    historyImageFileRepository.save(currentImage);
-                }
-            }
-        }
-
         History updatedHistory = historyRepository.save(history);
         return toHistoryResponse(updatedHistory);
     }
@@ -226,7 +209,7 @@ public class HistoryService {
 
     // 활동이력 이미지 삭제 (단일)
     @Transactional
-    public void deleteHistoryImage(Long petNo, Long historyNo, String imageId, Long userNo) {
+    public void deleteHistoryImage(Long petNo, Long historyNo, Long imageId, Long userNo) {
         // 활동이력 존재 여부 및 소유권 확인
         History history = historyRepository.findById(historyNo)
                 .orElseThrow(() -> new IllegalArgumentException("활동이력을 찾을 수 없습니다: " + historyNo));
@@ -242,9 +225,13 @@ public class HistoryService {
             throw new IllegalArgumentException("해당 활동이력의 이미지를 삭제할 권한이 없습니다.");
         }
 
-        // 파일명으로 이미지 파일 찾기
-        HistoryImageFile imageFile = historyImageFileRepository.findByHistoryNoAndSavedNameAndIsDeletedFalse(historyNo, imageId)
+        // 이미지 파일 존재 여부 확인
+        HistoryImageFile imageFile = historyImageFileRepository.findById(imageId)
                 .orElseThrow(() -> new IllegalArgumentException("이미지 파일을 찾을 수 없습니다: " + imageId));
+
+        if (!imageFile.getHistoryNo().equals(historyNo)) {
+            throw new IllegalArgumentException("잘못된 활동이력 번호입니다.");
+        }
 
         // 이미지 파일 논리적 삭제
         imageFile.setIsDeleted(true);
@@ -290,14 +277,57 @@ public class HistoryService {
         historyImageFileRepository.saveAll(imageFiles);
     }
 
+    // 활동이력 이미지 정보 조회
+    public List<HistoryImageInfo> getHistoryImages(Long petNo, Long historyNo, Long userNo) {
+        // 활동이력 존재 여부 및 소유권 확인
+        History history = historyRepository.findById(historyNo)
+                .orElseThrow(() -> new IllegalArgumentException("활동이력을 찾을 수 없습니다: " + historyNo));
+
+        if (!history.getPetNo().equals(petNo)) {
+            throw new IllegalArgumentException("잘못된 반려동물 번호입니다.");
+        }
+
+        Pet pet = petRepository.findById(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
+
+        if (!pet.getUserNo().equals(userNo)) {
+            throw new IllegalArgumentException("해당 활동이력의 이미지를 조회할 권한이 없습니다.");
+        }
+
+        // 이미지 파일 정보 조회
+        List<HistoryImageFile> imageFiles = historyImageFileRepository
+                .findByHistoryNoAndIsDeletedFalse(historyNo);
+
+        return imageFiles.stream()
+                .map(imageFile -> HistoryImageInfo.builder()
+                        .id(imageFile.getId())
+                        .url(imageFile.getFilePath())
+                        .originalName(imageFile.getOriginalName())
+                        .savedName(imageFile.getSavedName())
+                        .historyNo(imageFile.getHistoryNo())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     // DTO 변환 메서드
     private HistoryResponse toHistoryResponse(History history) {
-        // 이미지 파일에서 URL 목록 가져오기
-        List<String> imageUrls = historyImageFileRepository.findByHistoryNoAndIsDeletedFalse(history.getHistoryNo())
+        // 이미지 파일에서 상세 정보 가져오기
+        List<HistoryImageInfo> images = historyImageFileRepository
+                .findByHistoryNoAndIsDeletedFalse(history.getHistoryNo())
                 .stream()
-                .map(HistoryImageFile::getFilePath)
+                .map(imageFile -> HistoryImageInfo.builder()
+                        .id(imageFile.getId())
+                        .url(imageFile.getFilePath())
+                        .originalName(imageFile.getOriginalName())
+                        .savedName(imageFile.getSavedName())
+                        .historyNo(imageFile.getHistoryNo())
+                        .build())
                 .collect(Collectors.toList());
 
+        // 기존 호환성을 위한 imageUrls도 유지
+        List<String> imageUrls = images.stream()
+                .map(HistoryImageInfo::getUrl)
+                .collect(Collectors.toList());
 
         return HistoryResponse.builder()
                 .historyNo(history.getHistoryNo())
@@ -305,7 +335,8 @@ public class HistoryService {
                 .historyEnd(history.getHistoryEnd())
                 .title(history.getTitle())
                 .content(history.getContent())
-                .imageUrls(imageUrls)
+                .imageUrls(imageUrls)  // 기존 호환성
+                .images(images)        // 새로운 상세 정보
                 .petNo(history.getPetNo())
                 .createdAt(history.getCreatedAt())
                 .updatedAt(history.getUpdatedAt())

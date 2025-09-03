@@ -1,11 +1,10 @@
 package site.petful.campaignservice.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import site.petful.campaignservice.common.ApiResponse;
-import site.petful.campaignservice.dto.advertisement.AdResponse;
-import site.petful.campaignservice.dto.advertisement.AdsGroupedResponse;
-import site.petful.campaignservice.dto.advertisement.AdsResponse;
+import site.petful.campaignservice.dto.advertisement.*;
 
 import java.util.List;
 
@@ -27,4 +26,13 @@ public interface AdvertiserFeignClient {
     // 4. 광고(캠페인 수정) : applicants 수정
     @PutMapping("/campaign/{adNo}")
     ApiResponse<Void> updateAdByCampaign(@PathVariable Long adNo, @RequestParam Integer incrementBy);
+
+    // 5. 광고 이미지 조회
+    @GetMapping("/ad/{adNo}")
+    ApiResponse<ImageUploadResponse> getImageByAdNo(@PathVariable Long adNo);
+
+    // 6. 광고주 파일 조회
+    @GetMapping("/advertiser/{advertiserNo}")
+    ApiResponse<List<FileUploadResponse>> getFileByAdvertiserNo(@PathVariable Long advertiserNo);
+
 }

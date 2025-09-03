@@ -54,7 +54,9 @@ public class Portfolio {
 
     // Pet과의 관계 (1:1)
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_no", insertable = false, updatable = false)
+    @JoinColumn(name = "pet_no", insertable = false, updatable = false,
+                foreignKey = @ForeignKey(name = "FK_Portfolio_pet_no",
+                foreignKeyDefinition = "FOREIGN KEY (pet_no) REFERENCES pet (pet_no) ON DELETE CASCADE"))
     private Pet pet;
 
     // History와의 관계 (1:N) - 분리된 API이므로 제거

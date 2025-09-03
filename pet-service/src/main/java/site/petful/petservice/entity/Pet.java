@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "Pet")
 @Data
-@Builder
+@Builder        
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
@@ -34,6 +34,9 @@ public class Pet {
     @Column(name = "image_url", length = 255, nullable = true)
     private String imageUrl;
 
+    @Column(name = "sns_url", length = 500, nullable = true)
+    private String snsUrl;
+
     @Column(name = "age", nullable = false)
     private Long age;
 
@@ -51,7 +54,7 @@ public class Pet {
 
     @Column(name = "sns_profile_no", nullable = true)
     private Long snsProfileNo;
-
+         
     @Column(name = "petstar_status")
     @Enumerated(EnumType.STRING)
     private PetStarStatus petStarStatus = PetStarStatus.NONE;
@@ -66,7 +69,4 @@ public class Pet {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @Column(name = "image_no")
-    private Long imageNo;
 }

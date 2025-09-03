@@ -21,7 +21,7 @@ public class ScheduledNotificationService {
     private final NotificationDeliveryService notificationDeliveryService;
 
     /**
-     * 1분마다 예약된 알림을 체크하고 처리합니다.
+     * 5분마다 예약된 알림을 체크하고 처리합니다.
      */
     @Scheduled(fixedRate = 300000) // 1분마다 실행
     public void processScheduledNotifications() {

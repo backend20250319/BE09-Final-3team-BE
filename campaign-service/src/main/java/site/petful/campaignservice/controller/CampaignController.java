@@ -2,23 +2,29 @@ package site.petful.campaignservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ApiResponseGenerator;
 import site.petful.campaignservice.common.ErrorCode;
 import site.petful.campaignservice.dto.campaign.ApplicantResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantRequest;
+import site.petful.campaignservice.dto.campaign.ApplicantsResponse;
 import site.petful.campaignservice.security.SecurityUtil;
 import site.petful.campaignservice.service.CampaignService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/campaign")
 public class CampaignController {
 
     private final CampaignService campaignService;
+    private final SecurityUtil securityUtil;
 
     public CampaignController(CampaignService campaignService, SecurityUtil securityUtil) {
         this.campaignService = campaignService;
+        this.securityUtil = securityUtil;
     }
 
     // 1. 체험단 신청
@@ -36,13 +42,37 @@ public class CampaignController {
         }
     }
 
+    // 2-2. petNo로 체험단 신청 내역 조회
+    @GetMapping("/{petNo}")
+    public ResponseEntity<ApiResponse<?>> getApplicantsByPetNo(@PathVariable Long petNo) {
+        try {
+            ApplicantsResponse response = campaignService.getApplicantsByPetNo(petNo);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
+
+    // 2-3. 광고 + 사용자별 신청자 조회
+    @GetMapping("/users/{adNo}")
+    public ResponseEntity<ApiResponse<?>> getApplicantsByAd(@PathVariable Long adNo) {
+        try {
+            Long userNo = securityUtil.getCurrentUserNo();
+            List<ApplicantResponse> response = campaignService.getApplicantsByAd(userNo, adNo);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
+
     // 3-1. 체험단 추가 내용 수정 - 체험단
     @PutMapping("/applicant/{applicantNo}")
     public ResponseEntity<ApiResponse<?>> updateApplicant(
             @PathVariable Long applicantNo,
             @RequestBody ApplicantRequest request) {
-        try {
-            ApplicantResponse response = campaignService.updateApplicant(applicantNo, request);
+        try {   ApplicantResponse response = campaignService.updateApplicant(applicantNo, request);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

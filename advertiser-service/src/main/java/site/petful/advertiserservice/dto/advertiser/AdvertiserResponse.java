@@ -7,6 +7,7 @@ import site.petful.advertiserservice.entity.advertiser.Advertiser;
 @Setter
 public class AdvertiserResponse {
 
+    private Long advertiserNo;
     private String name;
     private String phone;
     private String website;
@@ -16,6 +17,7 @@ public class AdvertiserResponse {
 
     public static AdvertiserResponse from(Advertiser advertiser) {
         AdvertiserResponse res = new AdvertiserResponse();
+        res.setAdvertiserNo(advertiser.getAdvertiserNo());
         res.setName(advertiser.getName());
         res.setPhone(advertiser.getPhone());
         res.setWebsite(advertiser.getWebsite());

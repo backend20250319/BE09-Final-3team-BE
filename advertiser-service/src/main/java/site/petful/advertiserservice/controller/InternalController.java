@@ -9,7 +9,11 @@ import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertisement.AdResponse;
 import site.petful.advertiserservice.dto.advertisement.AdsGroupedResponse;
 import site.petful.advertiserservice.dto.advertisement.AdsResponse;
+import site.petful.advertiserservice.dto.advertisement.ImageUploadResponse;
+import site.petful.advertiserservice.dto.advertiser.FileUploadResponse;
+import site.petful.advertiserservice.security.SecurityUtil;
 import site.petful.advertiserservice.service.AdService;
+import site.petful.advertiserservice.service.FileService;
 
 import java.util.List;
 
@@ -18,9 +22,13 @@ import java.util.List;
 public class InternalController {
 
     private final AdService adService;
+    private final FileService fileService;
+    private final SecurityUtil securityUtil;
 
-    public InternalController(AdService adService) {
+    public InternalController(AdService adService, FileService fileService, SecurityUtil securityUtil) {
         this.adService = adService;
+        this.fileService = fileService;
+        this.securityUtil = securityUtil;
     }
 
     // 2-1. 광고(캠페인) 단일 조회
@@ -66,6 +74,31 @@ public class InternalController {
             @RequestParam Integer incrementBy){
         try {
             AdResponse response = adService.updateAdByCampaign(adNo, incrementBy);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
+
+    /* 파일/이미지 API */
+    // 2-1. 광고 이미지 조회
+    @GetMapping("/ad/{adNo}")
+    public ResponseEntity<ApiResponse<?>> getImageByAdNo(@PathVariable Long adNo) {
+        try {
+            ImageUploadResponse response = fileService.getImageByAdNo(adNo);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
+
+    // 2-2. 광고주 파일 조회
+    @GetMapping("/advertiser/{advertiserNo}")
+    public ResponseEntity<ApiResponse<?>> getFileByAdvertiserNo(@PathVariable Long advertiserNo) {
+        try {
+            List<FileUploadResponse> response = fileService.getFileByAdvertiserNo(advertiserNo);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

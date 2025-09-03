@@ -7,16 +7,20 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.admin.service.AdvertiserAdminService;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
+import site.petful.advertiserservice.dto.advertisement.AdAdminResponse;
 import site.petful.advertiserservice.dto.advertisement.AdResponse;
+import site.petful.advertiserservice.dto.advertiser.AdvertiserAdminResponse;
+import site.petful.advertiserservice.dto.advertiser.AdvertiserResponse;
 import site.petful.advertiserservice.entity.advertiser.Advertiser;
 
 @RestController
 @RequestMapping("/admin")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADVERTISER', 'ADMIN')")
 @RequiredArgsConstructor
 public class AdvertiserAdminController {
     private final AdvertiserAdminService advertiserAdminService;
@@ -24,15 +28,17 @@ public class AdvertiserAdminController {
     @PostMapping("/advertiser/{id}/restrict")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> restrict(
-            @PathVariable("id") Long id
+            @AuthenticationPrincipal Long userNo,
+            @PathVariable Long id
     ){
         advertiserAdminService.restrictAdvertiser(id);
         return ApiResponseGenerator.success();
     }
 
     @GetMapping("/advertiser/all")
-    public ApiResponse<Page<Advertiser>> getAll(
-            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)
+    public ApiResponse<Page<AdvertiserAdminResponse>> getAll(
+            @AuthenticationPrincipal Long userNo,
+            @PageableDefault(size = 4, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ){
         return ApiResponseGenerator.success(advertiserAdminService.getAllAdvertiser(pageable));
@@ -41,7 +47,8 @@ public class AdvertiserAdminController {
 
     @PatchMapping("/advertiser/{id}/reject")
     public ApiResponse<Void> reject(
-            @PathVariable("id") Long advertiserId,
+            @AuthenticationPrincipal Long userNo,
+            @PathVariable Long advertiserId,
             @RequestBody String reason
     ) {
         advertiserAdminService.rejectAdvertiser(advertiserId, reason);
@@ -49,7 +56,8 @@ public class AdvertiserAdminController {
     }
     @PatchMapping("/advertiser/{id}/approve")
     public ApiResponse<Void> approve(
-            @PathVariable("id") Long advertiserId
+            @AuthenticationPrincipal Long userNo,
+            @PathVariable Long advertiserId
     ){
         advertiserAdminService.approveAdvertiser(advertiserId);
         return ApiResponseGenerator.success();
@@ -57,17 +65,17 @@ public class AdvertiserAdminController {
 
 
     @GetMapping("/ad/trial")
-    public ApiResponse<Page<AdResponse>> getAllCampaigns(
-            @PageableDefault(size = 5, sort = "campaignStart", direction = Sort.Direction.DESC)
+    public ApiResponse<Page<AdAdminResponse>> getAllCampaigns(
+            @AuthenticationPrincipal Long userNo,
+            @PageableDefault(size = 4, sort = "campaignStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ){
-        Page<AdResponse> dtoPage = advertiserAdminService.getAllCampaign(pageable)
-                .map(AdResponse::from);
-        return ApiResponseGenerator.success(dtoPage);
+        return ApiResponseGenerator.success(advertiserAdminService.getAllCampaign(pageable));
     }
 
-    @PatchMapping("/ad/{id}/delete")
-    public ApiResponse deleteCampaign(
+    @PatchMapping("/ad/{adId}/delete")
+    public ApiResponse<Void> deleteCampaign(
+            @AuthenticationPrincipal Long userNo,
             @PathVariable Long adId
     ){
         advertiserAdminService.deleteCampaign(adId);
@@ -75,25 +83,27 @@ public class AdvertiserAdminController {
     }
 
     @GetMapping("/ad/pending")
-    public ApiResponse<Page<AdResponse>> getPendingCampaigns(
-            @PageableDefault(size = 5, sort = "campaignStart", direction = Sort.Direction.DESC)
+    public ApiResponse<Page<AdAdminResponse>> getPendingCampaigns(
+            @AuthenticationPrincipal Long userNo,
+            @PageableDefault(size = 4, sort = "campaignStart", direction = Sort.Direction.DESC)
             Pageable pageable
     ){
-        Page<AdResponse> dtoPage = advertiserAdminService.getAllCampaign(pageable)
-                .map(AdResponse::from);
-        return ApiResponseGenerator.success(dtoPage);
+
+        return ApiResponseGenerator.success(advertiserAdminService.getPendingAds(pageable));
     }
 
-    @PatchMapping("/ad{id}/approve")
+    @PatchMapping("/ad/{adId}/approve")
     public ApiResponse<Void> approveCampaign(
+            @AuthenticationPrincipal Long userNo,
             @PathVariable Long adId
     ){
         advertiserAdminService.approve(adId);
         return ApiResponseGenerator.success();
     }
 
-    @PatchMapping("/ad/{id}/reject")
+    @PatchMapping("/ad/{adId}/reject")
     public ApiResponse<Void> rejectCampaign(
+            @AuthenticationPrincipal Long userNo,
             @PathVariable Long adId,
             @RequestParam String reason
     ){

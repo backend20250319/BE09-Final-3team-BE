@@ -16,6 +16,6 @@ public class PetRequest {
     private String gender;
     private Float weight;
     private String imageUrl;
+    private String snsUrl;
     private Long snsProfileNo;
-    private Long imageNo;
 }
