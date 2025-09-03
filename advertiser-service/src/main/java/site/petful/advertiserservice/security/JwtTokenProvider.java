@@ -3,12 +3,14 @@ package site.petful.advertiserservice.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 
+@Slf4j
 @Component
 public class JwtTokenProvider {
 
@@ -61,39 +63,55 @@ public class JwtTokenProvider {
     }
 
     public Claims getAccessTokenClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getAccessSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getAccessSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            
+            return claims;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw e;
+        }
     }
 
     public Claims getRefreshTokenClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getRefreshSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getRefreshSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            
+            return claims;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw e;
+        }
     }
 
     public Long getAdvertiserNoFromAccessToken(String token) {
         Claims claims = getAccessTokenClaims(token);
-        return claims.get("advertiserNo", Long.class);
+        Long advertiserNo = claims.get("advertiserNo", Long.class);
+        return advertiserNo;
     }
 
     public Long getAdvertiserNoFromRefreshToken(String token) {
         Claims claims = getRefreshTokenClaims(token);
-        return claims.get("advertiserNo", Long.class);
+        Long advertiserNo = claims.get("advertiserNo", Long.class);
+        return advertiserNo;
     }
 
     public String getUserTypeFromAccessToken(String token) {
         Claims claims = getAccessTokenClaims(token);
-        return claims.get("userType", String.class);
+        String userType = claims.get("userType", String.class);
+        return userType;
     }
 
     public String getUserTypeFromRefreshToken(String token) {
         Claims claims = getRefreshTokenClaims(token);
-        return claims.get("userType", String.class);
+        String userType = claims.get("userType", String.class);
+        return userType;
     }
 
     // userNo 또는 advertiserNo를 반환하는 통합 메서드
@@ -101,7 +119,11 @@ public class JwtTokenProvider {
         Claims claims = getAccessTokenClaims(token);
         Long userNo = claims.get("userNo", Long.class);
         Long advertiserNo = claims.get("advertiserNo", Long.class);
-        return userNo != null ? userNo : advertiserNo;
+        
+        log.info("토큰에서 userNo: {}, advertiserNo: {}", userNo, advertiserNo);
+        
+        Long result = userNo != null ? userNo : advertiserNo;
+        return result;
     }
 
     public boolean validateAccessToken(String token) {

@@ -16,3 +16,4 @@ public class PasswordResetVerifyResponse {
     private String message;
     private long remainingTime; // 남은 시간 (초)
 }
+
