@@ -90,7 +90,6 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .scheduleNo(scheduleNo)
                 .medicationName(request.getName())
                 .dosage("")                    // 빈 문자열로 설정
-                .instructions("")              // 빈 문자열로 설정
                 .durationDays(request.getDurationDays())
                 .build();
 
@@ -185,7 +184,6 @@ public class MedicationScheduleService extends AbstractScheduleService {
             detail.setMedicationName(drugName);
             detail.setDosage(dosage);
             detail.setDurationDays(durationDays);
-            detail.setInstructions(cleanInstructions(administration));
             detail.setOcrRawData(parsed.getOriginalText());
             
             // saveAndFlush로 즉시 DB에 반영
@@ -254,7 +252,6 @@ public class MedicationScheduleService extends AbstractScheduleService {
                     String medName = detailOpt.map(ScheduleMedDetail::getMedicationName).orElse(null);
                     String dosage = detailOpt.map(ScheduleMedDetail::getDosage).orElse(null);
                     Integer durationDays = detailOpt.map(ScheduleMedDetail::getDurationDays).orElse(null);
-                    String instructions = detailOpt.map(ScheduleMedDetail::getInstructions).orElse(null);
 
                     var freqInfo = parseFrequency(c.getFrequency());
                     List<LocalTime> slots = c.getTimesAsList() != null && !c.getTimesAsList().isEmpty() 
@@ -272,9 +269,9 @@ public class MedicationScheduleService extends AbstractScheduleService {
                             .dosage(dosage)
                             .frequency(c.getFrequency())
                             .durationDays(durationDays)
-                            .instructions(instructions)
                             .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
                             .times(slots)
+                            .reminderDaysBefore(c.getReminderDaysBefore())
                             .build();
                 })
                 .toList();
@@ -302,7 +299,6 @@ public class MedicationScheduleService extends AbstractScheduleService {
         String medName = detailOpt.map(ScheduleMedDetail::getMedicationName).orElse(null);
         String dosage = detailOpt.map(ScheduleMedDetail::getDosage).orElse(null);
         Integer duration = detailOpt.map(ScheduleMedDetail::getDurationDays).orElse(null);
-        String instructions = detailOpt.map(ScheduleMedDetail::getInstructions).orElse(null);
 
         // 기본 시간 슬롯 사용 (상세 조회 시에는 기본 시간으로 표시)
         var freqInfo = parseFrequency(c.getFrequency());
@@ -323,13 +319,13 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .medicationName(medName)
                 .dosage(dosage)
                 .durationDays(duration)
-                .instructions(instructions)
                 .build();
     }
     
     /**
      * 투약 일정 수정 (부분 업데이트)
      */
+    
     public MedicationUpdateDiffDTO updateMedication(Long calNo, MedicationUpdateRequestDTO request, Long userNo) {
         // 조회 및 소유자 검증
         Schedule entity = findScheduleById(calNo);
@@ -377,7 +373,6 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .dosage(detail != null ? detail.getDosage() : null)
                 .frequency(entity.getFrequency())
                 .durationDays(detail != null ? detail.getDurationDays() : null)
-                .instructions(detail != null ? detail.getInstructions() : null)
                 .subType(entity.getSubType().name())
                 .reminderDaysBefore(reminder)
                 .build();
@@ -397,8 +392,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
         Integer duration = request.getDurationDays() != null ? request.getDurationDays() : 
             (entity.getStartDate() != null && entity.getEndDate() != null ? 
                 (int) java.time.temporal.ChronoUnit.DAYS.between(entity.getStartDate().toLocalDate(), entity.getEndDate().toLocalDate()) + 1 : 1);
-        String admin = request.getAdministration() != null ? request.getAdministration() : 
-            (medicationDetailRepository.findById(entity.getScheduleNo()).map(d -> d.getInstructions()).orElse(null));
+        // administration 필드는 더 이상 사용하지 않음
         String freq = request.getFrequency() != null ? request.getFrequency() : entity.getFrequency();
 
         // 빈도/시간 재계산
@@ -442,7 +436,6 @@ public class MedicationScheduleService extends AbstractScheduleService {
             if (request.getMedicationName() != null) detail.setMedicationName(request.getMedicationName());
             if (request.getDosage() != null) detail.setDosage(request.getDosage());
             if (request.getDurationDays() != null) detail.setDurationDays(request.getDurationDays());
-            if (request.getAdministration() != null) detail.setInstructions(request.getAdministration());
             medicationDetailRepository.save(detail);
         }
     }
@@ -452,8 +445,6 @@ public class MedicationScheduleService extends AbstractScheduleService {
      */
     public Boolean toggleAlarm(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
-
-
 
         if (entity.getMainType() != ScheduleMainType.MEDICATION) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "투약 일정이 아닙니다.");
@@ -466,13 +457,27 @@ public class MedicationScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "삭제된 일정입니다.");
         }
 
-        // 현재 알림 상태를 반대로 토글
+        // 현재 알림 상태 확인
         boolean currentAlarmEnabled = entity.getReminderDaysBefore() != null;
         boolean newAlarmState = !currentAlarmEnabled;
         
-        // AbstractScheduleService의 공통 메서드 사용
-        super.toggleAlarm(calNo, newAlarmState);
+        if (newAlarmState) {
+            // 알림 활성화: 마지막 알림 시기가 있으면 복원, 없으면 기본값(1일전) 설정
+            Integer lastReminderDays = entity.getLastReminderDaysBefore();
+            if (lastReminderDays != null) {
+                entity.updateReminders(lastReminderDays);
+                log.info("알림 활성화: 마지막 설정값({}일전) 복원 - scheduleNo={}", lastReminderDays, calNo);
+            } else {
+                entity.updateReminders(1); // 기본값: 1일 전 알림
+                log.info("알림 활성화: 기본값(1일전)으로 설정 - scheduleNo={}", calNo);
+            }
+        } else {
+            // 알림 비활성화: reminderDaysBefore를 null로 설정 (lastReminderDaysBefore는 유지)
+            entity.updateReminders(null);
+            log.info("알림 비활성화 - scheduleNo={}, 마지막 알림시기 유지: {}일전", calNo, entity.getLastReminderDaysBefore());
+        }
         
+        scheduleRepository.save(entity);
         return newAlarmState;
     }
     
@@ -599,20 +604,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
 
 
 
-    private String cleanInstructions(String administration) {
-        if (administration == null) return null;
-        
-        // "하루 N회" 패턴을 정확하게 제거
-        String cleaned = administration
-            .replaceAll("하루\\s*\\d+회", "")  // "하루 2회", "하루1회" 등 제거
-            .replaceAll("하루\\s*\\d+번", "")  // "하루 2번", "하루2번" 등 제거
-            .replaceAll("\\s*,\\s*", "")       // 쉼표와 공백 제거
-            .replaceAll("^\\s+|\\s+$", "")     // 앞뒤 공백 제거
-            .replaceAll("\\s+", " ");          // 연속된 공백을 하나로
-        
-        // 빈 문자열이면 null 반환
-        return cleaned.isEmpty() ? null : cleaned;
-    }
+
 
     public static class FrequencyInfo {
         private RecurrenceType recurrenceType = RecurrenceType.DAILY;

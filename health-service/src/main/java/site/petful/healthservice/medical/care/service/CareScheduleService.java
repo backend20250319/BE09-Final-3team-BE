@@ -312,8 +312,6 @@ public class CareScheduleService extends AbstractScheduleService {
     public Boolean toggleAlarm(Long calNo, Long userNo) {
         Schedule entity = findScheduleById(calNo);
 
-
-
         if (!entity.getUserNo().equals(userNo)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인 일정이 아닙니다.");
         }
@@ -326,17 +324,28 @@ public class CareScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "돌봄 또는 접종 일정이 아닙니다.");
         }
 
-        // 현재 알림 상태를 반대로 토글
+        // 현재 알림 상태 확인
         boolean currentAlarmEnabled = entity.getReminderDaysBefore() != null;
-        if (currentAlarmEnabled) {
-            // 알림 비활성화
-            super.toggleAlarm(calNo, false);
+        boolean newAlarmState = !currentAlarmEnabled;
+        
+        if (newAlarmState) {
+            // 알림 활성화: 마지막 알림 시기가 있으면 복원, 없으면 기본값(1일전) 설정
+            Integer lastReminderDays = entity.getLastReminderDaysBefore();
+            if (lastReminderDays != null) {
+                entity.updateReminders(lastReminderDays);
+                log.info("알림 활성화: 마지막 설정값({}일전) 복원 - scheduleNo={}", lastReminderDays, calNo);
+            } else {
+                entity.updateReminders(1); // 기본값: 1일 전 알림
+                log.info("알림 활성화: 기본값(1일전)으로 설정 - scheduleNo={}", calNo);
+            }
         } else {
-            // 알림 활성화 (기본값: 당일 알림)
-            super.toggleAlarm(calNo, true);
+            // 알림 비활성화: reminderDaysBefore를 null로 설정 (lastReminderDaysBefore는 유지)
+            entity.updateReminders(null);
+            log.info("알림 비활성화 - scheduleNo={}, 마지막 알림시기 유지: {}일전", calNo, entity.getLastReminderDaysBefore());
         }
-
-        return !currentAlarmEnabled; // 새로운 알림 상태 반환
+        
+        scheduleRepository.save(entity);
+        return newAlarmState;
     }
 
 

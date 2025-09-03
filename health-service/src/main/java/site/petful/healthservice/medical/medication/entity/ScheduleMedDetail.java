@@ -33,9 +33,6 @@ public class ScheduleMedDetail {
     @Column(name = "duration_days")
     private Integer durationDays;
 
-    @Column(name = "instructions", columnDefinition = "TEXT")
-    private String instructions;
-
     @Column(name = "ocr_raw_data", columnDefinition = "TEXT")
     private String ocrRawData;
 }

@@ -30,7 +30,6 @@ public class MedicationDetailDTO {
     private String medicationName;
     private String dosage;
     private Integer durationDays;
-    private String instructions;
 }
 
 
