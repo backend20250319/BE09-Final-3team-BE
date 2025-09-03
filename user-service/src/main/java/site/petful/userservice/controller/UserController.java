@@ -27,6 +27,7 @@ import site.petful.userservice.dto.WithdrawRequest;
 import site.petful.userservice.dto.WithdrawResponse;
 import site.petful.userservice.dto.LogoutRequest;
 import site.petful.userservice.dto.TokenInfoResponse;
+import site.petful.userservice.dto.ReportRequest;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
 import site.petful.userservice.security.JwtUtil;
@@ -88,6 +89,7 @@ public class UserController {
                 .refreshExpiresAt(refreshExpiresAt)
                 .email(username)
                 .name(user.getNickname() != null ? user.getNickname() : user.getName())
+                .userType(user.getUserType().name())  // userType 설정
                 .message("로그인 성공")
                 .build();
 
@@ -106,11 +108,15 @@ public class UserController {
             // 필요 시에만 롤링. 정책상 롤링을 사용하지 않으려면 아래 한 줄을 제거/주석 처리하면 된다.
             String newRefresh = authService.rotateRefresh(req.getRefreshToken());
 
+            // 새로운 액세스 토큰에서 userType 추출
+            String userType = jwtUtil.extractUserType(newAccess);
+            
             AuthResponse authResponse = AuthResponse.builder()
                     .accessToken(newAccess)
                     .refreshToken(newRefresh)
                     .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
                     .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
+                    .userType(userType)  // userType 설정
                     .message("토큰 재발급 성공")
                     .build();
 
@@ -175,6 +181,9 @@ public class UserController {
                         long accessExpiresAt = now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis();
                         long refreshExpiresAt = now + Duration.ofDays(authService.refreshTtlDays()).toMillis();
                         
+                        // 새로운 액세스 토큰에서 userType 추출
+                        String userType = jwtUtil.extractUserType(newAccess);
+                        
                         TokenInfoResponse response = TokenInfoResponse.builder()
                                 .accessToken(newAccess)
                                 .refreshToken(newRefresh)
@@ -183,6 +192,7 @@ public class UserController {
                                 .accessExpiresIn(authService.accessTtlMinutes() * 60)
                                 .refreshExpiresIn(authService.refreshTtlDays() * 24 * 60 * 60)
                                 .tokenType("refreshed")
+                                .userType(userType)  // userType 설정
                                 .message("토큰이 갱신되었습니다.")
                                 .build();
                         
@@ -368,4 +378,43 @@ public class UserController {
             return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null));
         }
     }
+
+    /**
+     * 사용자 신고
+     * POST /auth/reports
+     */
+    @PostMapping("/reports")
+    public ResponseEntity<ApiResponse<String>> reportUser(@Valid @RequestBody ReportRequest request) {
+        try {
+            // 헤더에서 사용자 번호를 먼저 시도
+            Long userNo = UserHeaderUtil.getCurrentUserNo();
+            
+            // 헤더가 없으면 기존 JWT 방식으로 fallback
+            if (userNo == null) {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null && authentication.isAuthenticated()) {
+                    String email = authentication.getName();
+                    User user = userService.findByEmail(email);
+                    userNo = user.getUserNo();
+                } else {
+                    throw new IllegalStateException("인증 정보가 없습니다.");
+                }
+            }
+            
+            // 사용자 정보 조회
+            User user = userService.findByUserNo(userNo);
+            String reporterName = user.getNickname() != null ? user.getNickname() : user.getName();
+            
+            // 신고 처리
+            userService.reportUser(userNo, reporterName, request);
+            
+            return ResponseEntity.ok(ApiResponseGenerator.success("신고가 성공적으로 접수되었습니다."));
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null)
+            );
+        }
+    }
+
 }

@@ -50,6 +50,7 @@ public class SecurityConfig {
             "/api/auth/password/reset",
             "/api/auth/password/verify",
             "/api/auth/password/change",
+            "/api/v1/admin/users/logout",  // Admin 로그아웃 엔드포인트 공개
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/actuator/**"

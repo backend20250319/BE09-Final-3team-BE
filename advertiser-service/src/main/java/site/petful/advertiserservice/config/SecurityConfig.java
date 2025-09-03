@@ -34,6 +34,8 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/actuator/**",
             "/internal/**",
+            "/admin/**",
+            "/internal/**",
             "/advertiser/password/reset/request",
             "/advertiser/password/reset/verify",
             "/advertiser/password/reset"
@@ -61,7 +63,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 프리플라이트 허용
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/error").permitAll()                  // (선택) 기본 에러 핸들러 공개
-                        .requestMatchers("/internal/**").hasAnyRole("USER", "ADVERTISER") // 인증된 사용자만 접근
+                        .requestMatchers("/internal/**").hasAnyRole("USER", "ADVERTISER","ADMIN") // 인증된 사용자만 접근
+                        .requestMatchers("/admin/**").hasAnyRole("ADVERTISER", "ADMIN") // 관리자 기능은 ADVERTISER 또는 Admin 권한 필요
+                        .requestMatchers("/ad/**").hasAnyRole("ADVERTISER")
+                        .requestMatchers("/advertiser/**").hasAnyRole("ADVERTISER")
+                        .requestMatchers("/file/**").hasAnyRole("ADVERTISER")
                         .anyRequest().authenticated()
                 )
 
