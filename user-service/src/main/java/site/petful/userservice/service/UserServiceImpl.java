@@ -383,7 +383,7 @@ public class UserServiceImpl implements UserService {
         redisService.deleteValue(redisKey);
         
         // - 프로필 이미지가 있다면 삭제 (선택사항)
-        if (user.getImageNo() != null) {
+        if (user .getImageNo() != null) {
             // FTP 서버에서 이미지 삭제 로직 추가 가능
             log.info("프로필 이미지 삭제 - imageNo: {}", user.getImageNo());
         }
