@@ -33,6 +33,10 @@ public class ScheduleMedDetail {
     @Column(name = "duration_days")
     private Integer durationDays;
 
+    @Column(name = "is_prescription", nullable = false)
+    @Builder.Default
+    private Boolean isPrescription = false; // true: 처방전으로 등록, false: 일반 등록
+
     @Column(name = "ocr_raw_data", columnDefinition = "TEXT")
     private String ocrRawData;
 }

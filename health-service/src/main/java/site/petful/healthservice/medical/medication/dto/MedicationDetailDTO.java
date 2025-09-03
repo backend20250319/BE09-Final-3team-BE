@@ -30,6 +30,7 @@ public class MedicationDetailDTO {
     private String medicationName;
     private String dosage;
     private Integer durationDays;
+    private Boolean isPrescription;  // true: 처방전으로 등록, false: 일반 등록
 }
 
 

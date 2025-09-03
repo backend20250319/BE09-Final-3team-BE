@@ -91,6 +91,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .medicationName(request.getName())
                 .dosage("")                    // 빈 문자열로 설정
                 .durationDays(request.getDurationDays())
+                .isPrescription(false)         // 수동 등록은 일반 등록
                 .build();
 
         medicationDetailRepository.save(detail);
@@ -184,6 +185,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
             detail.setMedicationName(drugName);
             detail.setDosage(dosage);
             detail.setDurationDays(durationDays);
+            detail.setIsPrescription(true);     // OCR 처방전은 처방전으로 등록
             detail.setOcrRawData(parsed.getOriginalText());
             
             // saveAndFlush로 즉시 DB에 반영
@@ -252,6 +254,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
                     String medName = detailOpt.map(ScheduleMedDetail::getMedicationName).orElse(null);
                     String dosage = detailOpt.map(ScheduleMedDetail::getDosage).orElse(null);
                     Integer durationDays = detailOpt.map(ScheduleMedDetail::getDurationDays).orElse(null);
+                    Boolean isPrescription = detailOpt.map(ScheduleMedDetail::getIsPrescription).orElse(false);
 
                     var freqInfo = parseFrequency(c.getFrequency());
                     List<LocalTime> slots = c.getTimesAsList() != null && !c.getTimesAsList().isEmpty() 
@@ -272,6 +275,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
                             .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
                             .times(slots)
                             .reminderDaysBefore(c.getReminderDaysBefore())
+                            .isPrescription(isPrescription)
                             .build();
                 })
                 .toList();
@@ -299,6 +303,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
         String medName = detailOpt.map(ScheduleMedDetail::getMedicationName).orElse(null);
         String dosage = detailOpt.map(ScheduleMedDetail::getDosage).orElse(null);
         Integer duration = detailOpt.map(ScheduleMedDetail::getDurationDays).orElse(null);
+        Boolean isPrescription = detailOpt.map(ScheduleMedDetail::getIsPrescription).orElse(false);
 
         // 기본 시간 슬롯 사용 (상세 조회 시에는 기본 시간으로 표시)
         var freqInfo = parseFrequency(c.getFrequency());
@@ -319,6 +324,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .medicationName(medName)
                 .dosage(dosage)
                 .durationDays(duration)
+                .isPrescription(isPrescription)
                 .build();
     }
     
@@ -455,6 +461,13 @@ public class MedicationScheduleService extends AbstractScheduleService {
         }
         if (Boolean.TRUE.equals(entity.getDeleted())) {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "삭제된 일정입니다.");
+        }
+
+        // 처방전인 경우 알림 시기 변경 제한
+        var detailOpt = medicationDetailRepository.findById(calNo);
+        Boolean isPrescription = detailOpt.map(ScheduleMedDetail::getIsPrescription).orElse(false);
+        if (Boolean.TRUE.equals(isPrescription)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "처방전으로 등록된 약은 알림 시기를 변경할 수 없습니다.");
         }
 
         // 현재 알림 상태 확인
