@@ -14,3 +14,4 @@ public class AdminLogoutResponse {
     private Long adminId;
     private String adminType;
 }
+

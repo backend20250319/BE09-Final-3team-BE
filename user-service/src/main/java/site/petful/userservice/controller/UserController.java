@@ -89,6 +89,7 @@ public class UserController {
                 .refreshExpiresAt(refreshExpiresAt)
                 .email(username)
                 .name(user.getNickname() != null ? user.getNickname() : user.getName())
+                .userType(user.getUserType().name())  // userType 설정
                 .message("로그인 성공")
                 .build();
 
@@ -107,11 +108,15 @@ public class UserController {
             // 필요 시에만 롤링. 정책상 롤링을 사용하지 않으려면 아래 한 줄을 제거/주석 처리하면 된다.
             String newRefresh = authService.rotateRefresh(req.getRefreshToken());
 
+            // 새로운 액세스 토큰에서 userType 추출
+            String userType = jwtUtil.extractUserType(newAccess);
+            
             AuthResponse authResponse = AuthResponse.builder()
                     .accessToken(newAccess)
                     .refreshToken(newRefresh)
                     .accessExpiresAt(now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis())
                     .refreshExpiresAt(now + Duration.ofDays(authService.refreshTtlDays()).toMillis())
+                    .userType(userType)  // userType 설정
                     .message("토큰 재발급 성공")
                     .build();
 
@@ -176,6 +181,9 @@ public class UserController {
                         long accessExpiresAt = now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis();
                         long refreshExpiresAt = now + Duration.ofDays(authService.refreshTtlDays()).toMillis();
                         
+                        // 새로운 액세스 토큰에서 userType 추출
+                        String userType = jwtUtil.extractUserType(newAccess);
+                        
                         TokenInfoResponse response = TokenInfoResponse.builder()
                                 .accessToken(newAccess)
                                 .refreshToken(newRefresh)
@@ -184,6 +192,7 @@ public class UserController {
                                 .accessExpiresIn(authService.accessTtlMinutes() * 60)
                                 .refreshExpiresIn(authService.refreshTtlDays() * 24 * 60 * 60)
                                 .tokenType("refreshed")
+                                .userType(userType)  // userType 설정
                                 .message("토큰이 갱신되었습니다.")
                                 .build();
                         
