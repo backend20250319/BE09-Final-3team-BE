@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.petful.healthservice.activity.enums.ActivityLevel;
+import site.petful.healthservice.activity.enums.MealType;
 
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
@@ -75,8 +76,7 @@ public class ActivityRequest {
         @Min(value = 0, message = "섭취한 칼로리는 0 이상이어야 합니다")
         private Integer consumedCalories;
         
-        private String mealType;
-        
-        private String memo;
+        @NotNull(message = "식사 타입은 필수입니다")
+        private MealType mealType;
     }
 }

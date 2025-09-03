@@ -55,7 +55,9 @@ public class History {
     
     // Pet과의 관계 (N:1)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pet_no", insertable = false, updatable = false)
+    @JoinColumn(name = "pet_no", insertable = false, updatable = false, 
+                foreignKey = @ForeignKey(name = "FK_history_pet_no", 
+                foreignKeyDefinition = "FOREIGN KEY (pet_no) REFERENCES pet (pet_no) ON DELETE CASCADE"))
     private Pet pet;
 
     // HistoryImageFile과의 관계 (1:N)

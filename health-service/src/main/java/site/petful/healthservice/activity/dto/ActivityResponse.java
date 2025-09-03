@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.petful.healthservice.activity.enums.ActivityLevel;
+import site.petful.healthservice.activity.enums.MealType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -44,7 +45,6 @@ public class ActivityResponse {
         private Integer totalCalories;
         private Double consumedWeightG;
         private Integer consumedCalories;
-        private String mealType;
-        private String memo;
+        private MealType mealType;
     }
 }

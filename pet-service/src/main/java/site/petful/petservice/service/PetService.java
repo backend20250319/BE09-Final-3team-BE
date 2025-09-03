@@ -90,6 +90,7 @@ public class PetService {
         pet.setGender(request.getGender());
         pet.setWeight(request.getWeight());
         pet.setImageUrl(request.getImageUrl());
+        pet.setSnsUrl(request.getSnsUrl());  // snsUrl 설정 추가
         pet.setSnsProfileNo(request.getSnsProfileNo());
 
         Pet updatedPet = petRepository.save(pet);
@@ -221,6 +222,7 @@ public class PetService {
                 .name(pet.getName())
                 .type(pet.getType())
                 .imageUrl(pet.getImageUrl())
+                .snsUrl(pet.getSnsUrl())  // snsUrl 추가
                 .age(pet.getAge())
                 .gender(pet.getGender())
                 .weight(pet.getWeight())

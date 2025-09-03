@@ -15,6 +15,7 @@ import site.petful.userservice.dto.SignupRequest;
 import site.petful.userservice.dto.SignupResponse;
 import site.petful.userservice.dto.WithdrawRequest;
 import site.petful.userservice.dto.WithdrawResponse;
+import site.petful.userservice.dto.ReportRequest;
 
 import java.util.List;
 
@@ -40,7 +41,8 @@ public interface UserService {
     
     // 파일 업로드 관련 메서드들
     FileUploadResponse uploadProfileImage(MultipartFile file, Long userNo);
-
-    //
+    
+    // 신고 관련 메서드들
+    void reportUser(Long reporterUserNo, String reporterName, ReportRequest request);
 
 }

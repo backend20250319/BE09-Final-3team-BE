@@ -21,21 +21,34 @@ import site.petful.healthservice.common.response.ErrorCode;
 import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.client.PetServiceClient;
 import site.petful.healthservice.common.dto.PetResponse;
+import site.petful.healthservice.medical.medication.entity.ScheduleMedDetail;
+import site.petful.healthservice.medical.medication.repository.ScheduleMedicationDetailRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import site.petful.healthservice.connectNotice.dto.EventMessage;
 
 @Slf4j
 @Service
 public class CareScheduleService extends AbstractScheduleService {
 
     private final PetServiceClient petServiceClient;
+    private final RabbitTemplate rabbitTemplate;
+    private final ScheduleMedicationDetailRepository medicationDetailRepository;
 
-    public CareScheduleService(ScheduleRepository scheduleRepository, PetServiceClient petServiceClient) {
+    public CareScheduleService(ScheduleRepository scheduleRepository, PetServiceClient petServiceClient, 
+                             RabbitTemplate rabbitTemplate, ScheduleMedicationDetailRepository medicationDetailRepository) {
         super(scheduleRepository);
         this.petServiceClient = petServiceClient;
+        this.rabbitTemplate = rabbitTemplate;
+        this.medicationDetailRepository = medicationDetailRepository;
     }
 
     // ==================== 돌봄 일정 생성 ====================
@@ -72,7 +85,12 @@ public class CareScheduleService extends AbstractScheduleService {
 
         // 공통 서비스 사용
         Schedule entity = createScheduleEntity(userNo, commonRequest, mainType);
-        return saveSchedule(entity);
+        Long scheduleNo = saveSchedule(entity);
+        
+        // 스케줄 생성 이벤트 발행
+        publishScheduleCreatedEvent(entity);
+        
+        return scheduleNo;
     }
 
     // ==================== 돌봄 일정 조회 ====================
@@ -375,6 +393,74 @@ public class CareScheduleService extends AbstractScheduleService {
         } catch (Exception e) {
             log.error("펫 소유권 검증 중 예외 발생: petNo={}, userNo={}", petNo, userNo, e);
             return false;
+        }
+    }
+
+    // ==================== 이벤트 발행 ====================
+    
+    /**
+     * 스케줄 생성 이벤트 발행
+     */
+    private void publishScheduleCreatedEvent(Schedule schedule) {
+        try {
+            EventMessage event = new EventMessage();
+            event.setEventId(UUID.randomUUID().toString());
+            event.setType("health.schedule");
+            event.setOccurredAt(Instant.now());
+            event.setActor(new EventMessage.Actor(schedule.getUserNo(), "User"));
+            event.setTarget(new EventMessage.Target(
+                schedule.getUserNo().toString(),
+                schedule.getScheduleNo(),
+                "SCHEDULE"));
+            
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put("scheduleId", schedule.getScheduleNo());
+            attributes.put("title", schedule.getTitle());
+            attributes.put("mainType", schedule.getMainType().name());
+            attributes.put("subType", schedule.getSubType().name());
+            attributes.put("startDate", schedule.getStartDate());
+            attributes.put("reminderDaysBefore", schedule.getReminderDaysBefore());
+            
+            // durationDays와 times 데이터 추가
+            Integer durationDays = null;
+            List<String> timesList = null;
+            
+            // MEDICATION 타입인 경우 ScheduleMedDetail에서 durationDays 가져오기
+            if (schedule.getMainType() == ScheduleMainType.MEDICATION) {
+                var detailOpt = medicationDetailRepository.findById(schedule.getScheduleNo());
+                if (detailOpt.isPresent()) {
+                    durationDays = detailOpt.get().getDurationDays();
+                }
+            } else {
+                // CARE/VACCINATION 타입인 경우 시작일과 종료일의 차이로 계산
+                if (schedule.getStartDate() != null && schedule.getEndDate() != null) {
+                    durationDays = (int) java.time.temporal.ChronoUnit.DAYS.between(
+                        schedule.getStartDate().toLocalDate(), 
+                        schedule.getEndDate().toLocalDate()
+                    ) + 1; // 시작일 포함
+                }
+            }
+            
+            // times를 List<String> 형태로 변환
+            if (schedule.getTimes() != null && !schedule.getTimes().isEmpty()) {
+                timesList = schedule.getTimesAsList().stream()
+                    .map(LocalTime::toString)
+                    .toList();
+            }
+            
+            attributes.put("durationDays", durationDays);
+            attributes.put("times", timesList);
+            event.setAttributes(attributes);
+            event.setSchemaVersion(1);
+            
+            // notif.events로 메시지 발행
+            rabbitTemplate.convertAndSend("notif.events", "health.schedule", event);
+            
+            log.info("스케줄 생성 이벤트 발행 완료: scheduleNo={}, title={}, durationDays={}, times={}", 
+                    schedule.getScheduleNo(), schedule.getTitle(), durationDays, timesList);
+        } catch (Exception e) {
+            log.error("스케줄 생성 이벤트 발행 실패: scheduleNo={}, error={}", 
+                    schedule.getScheduleNo(), e.getMessage(), e);
         }
     }
 }

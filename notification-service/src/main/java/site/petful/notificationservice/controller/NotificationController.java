@@ -85,38 +85,18 @@ public class NotificationController {
     }
 
     /**
-     * 즉시 알림 테스트
-     */
-    @PostMapping("/test/immediate")
-    public ResponseEntity<ApiResponse<NotificationResponseDto>> testImmediateNotification(@RequestBody EventMessage eventMessage) {
-        log.info("🧪 [NotificationController] 즉시 알림 테스트: eventId={}, type={}", 
-                eventMessage.getEventId(), eventMessage.getType());
-
-        try {
-            Notification notification = notificationService.createImmediateNotification(eventMessage);
-            NotificationResponseDto response = NotificationResponseDto.from(notification);
-            
-            return ResponseEntity.ok(ApiResponseGenerator.success(response));
-            
-        } catch (Exception e) {
-            log.error("❌ [NotificationController] 즉시 알림 테스트 실패: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponseGenerator.fail(ErrorCode.OPERATION_FAILED, (NotificationResponseDto) null));
-        }
-    }
-
-    /**
      * 예약 알림 테스트
      */
     @PostMapping("/test/scheduled")
     public ResponseEntity<ApiResponse<NotificationResponseDto>> testScheduledNotification(
             @RequestBody EventMessage eventMessage,
-            @RequestParam int delayMinutes) {
+            @RequestParam String timeStr) {
         
-        log.info("🧪 [NotificationController] 예약 알림 테스트: eventId={}, type={}, delayMinutes={}", 
-                eventMessage.getEventId(), eventMessage.getType(), delayMinutes);
+        log.info("🧪 [NotificationController] 예약 알림 테스트: eventId={}, type={}, timeStr={}", 
+                eventMessage.getEventId(), eventMessage.getType(), timeStr);
 
         try {
-            Notification notification = notificationService.createScheduledNotification(eventMessage, delayMinutes);
+            Notification notification = notificationService.createScheduledNotification(eventMessage, timeStr);
             NotificationResponseDto response = NotificationResponseDto.from(notification);
             
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
@@ -127,22 +107,4 @@ public class NotificationController {
         }
     }
 
-    /**
-     * 알림 상태 조회
-     */
-    @GetMapping("/test/{notificationId}/status")
-    public ResponseEntity<ApiResponse<NotificationResponseDto>> getNotificationStatus(@PathVariable Long notificationId) {
-        log.info("🧪 [NotificationController] 알림 상태 조회: notificationId={}", notificationId);
-
-        try {
-            Notification notification = notificationService.getNotificationById(notificationId);
-            NotificationResponseDto response = NotificationResponseDto.from(notification);
-            
-            return ResponseEntity.ok(ApiResponseGenerator.success(response));
-            
-        } catch (Exception e) {
-            log.error("❌ [NotificationController] 알림 상태 조회 실패: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(ApiResponseGenerator.fail(ErrorCode.OPERATION_FAILED, (NotificationResponseDto) null));
-        }
-    }
 }

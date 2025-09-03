@@ -11,6 +11,10 @@ import site.petful.notificationservice.entity.Notification;
 import site.petful.notificationservice.repository.NotificationRepository;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -122,12 +126,37 @@ public class NotificationService {
     /**
      * 예약 알림 생성
      */
-    public Notification createScheduledNotification(EventMessage eventMessage, int delayMinutes) {
-        log.info("📅 [NotificationService] 예약 알림 생성: eventId={}, type={}, delayMinutes={}", 
-                eventMessage.getEventId(), eventMessage.getType(), delayMinutes);
+    public Notification createScheduledNotification(EventMessage eventMessage, String timeStr) {
+        log.info("📅 [NotificationService] 예약 알림 생성: eventId={}, type={}, timeStr={}", 
+                eventMessage.getEventId(), eventMessage.getType(), timeStr);
 
-        // delayMinutes 후에 발송되도록 예약
-        LocalDateTime scheduledAt = LocalDateTime.now().plusMinutes(delayMinutes);
+        // timeStr이 null이거나 빈 문자열인 경우 처리
+        if (timeStr == null || timeStr.trim().isEmpty()) {
+            log.warn("⚠️ [NotificationService] timeStr이 null이거나 빈 문자열입니다. 즉시 알림으로 생성합니다. timeStr={}", timeStr);
+            return createImmediateNotification(eventMessage);
+        }
+
+        // timeStr을 파싱하여 LocalTime으로 변환
+        LocalTime targetTime;
+        try {
+            targetTime = LocalTime.parse(timeStr.trim());
+        } catch (Exception e) {
+            log.error("❌ [NotificationService] timeStr 파싱 실패: timeStr={}, error={}", timeStr, e.getMessage());
+            return createImmediateNotification(eventMessage);
+        }
+
+        // timeStr에 있는 시간을 그대로 사용하여 scheduledAt 생성 (한국 시간대 사용)
+        LocalDateTime scheduledAt = LocalDate.now(ZoneId.of("Asia/Seoul")).atTime(targetTime);
+        
+        // 디버깅을 위한 로그 추가
+        log.info("🔍 [NotificationService] 시간 파싱 결과: timeStr={}, targetTime={}, scheduledAt={}", 
+                timeStr, targetTime, scheduledAt);
+        
+        // 시간이 제대로 설정되었는지 확인
+        if (scheduledAt.getHour() != targetTime.getHour() || scheduledAt.getMinute() != targetTime.getMinute()) {
+            log.error("❌ [NotificationService] 시간 설정 오류: timeStr={}, targetTime={}, scheduledAt={}", 
+                    timeStr, targetTime, scheduledAt);
+        }
         
         // 이벤트 타입에 따른 알림 내용 생성
         NotificationContent content = createNotificationContent(eventMessage);
@@ -145,8 +174,54 @@ public class NotificationService {
         // 데이터베이스에 저장
         Notification savedNotification = notificationRepository.save(notification);
         
-        log.info("✅ [NotificationService] 예약 알림 생성 완료: notificationId={}, scheduledAt={}", 
-                savedNotification.getId(), savedNotification.getScheduledAt());
+        log.info("✅ [NotificationService] 예약 알림 생성 완료: notificationId={}, timeStr={}, scheduledAt={}", 
+                savedNotification.getId(), timeStr, savedNotification.getScheduledAt());
+
+        return savedNotification;
+    }
+
+    /**
+     * 예약 알림 생성 (LocalDateTime 기반)
+     */
+    public Notification createScheduledNotification(EventMessage eventMessage, LocalDateTime scheduledTime) {
+        log.info("📅 [NotificationService] 예약 알림 생성 (LocalDateTime): eventId={}, type={}, scheduledTime={}", 
+                eventMessage.getEventId(), eventMessage.getType(), scheduledTime);
+
+        if (scheduledTime == null) {
+            log.warn("⚠️ [NotificationService] scheduledTime이 null입니다. 즉시 알림으로 생성합니다.");
+            return createImmediateNotification(eventMessage);
+        }
+
+        // scheduledTime을 그대로 사용 (시간대 변환 없이)
+        log.info("🔍 [NotificationService] scheduledTime을 그대로 사용: {}", scheduledTime);
+        log.info("🔍 [NotificationService] scheduledTime 상세: year={}, month={}, day={}, hour={}, minute={}, second={}", 
+                scheduledTime.getYear(), scheduledTime.getMonth(), scheduledTime.getDayOfMonth(), 
+                scheduledTime.getHour(), scheduledTime.getMinute(), scheduledTime.getSecond());
+        
+        // 이벤트 타입에 따른 알림 내용 생성
+        NotificationContent content = createNotificationContent(eventMessage);
+        
+        // 예약 알림 엔티티 생성
+        log.info("🔍 [NotificationService] 엔티티 생성 전 scheduledTime: {}", scheduledTime);
+        
+        Notification notification = Notification.scheduled(
+                Long.valueOf(eventMessage.getTarget().getUserId()),
+                eventMessage.getType(),
+                content.getTitle(),
+                content.getContent(),
+                content.getLinkUrl(),
+                scheduledTime
+        );
+        
+        log.info("🔍 [NotificationService] 엔티티 생성 후 scheduledAt: {}", notification.getScheduledAt());
+
+        // 데이터베이스에 저장
+        log.info("🔍 [NotificationService] DB 저장 직전 notification.scheduledAt: {}", notification.getScheduledAt());
+        Notification savedNotification = notificationRepository.save(notification);
+        log.info("🔍 [NotificationService] DB 저장 직후 savedNotification.scheduledAt: {}", savedNotification.getScheduledAt());
+        
+        log.info("✅ [NotificationService] 예약 알림 생성 완료: notificationId={}, 원본시간={}, DB저장={}", 
+                savedNotification.getId(), scheduledTime, savedNotification.getScheduledAt());
 
         return savedNotification;
     }
@@ -186,6 +261,53 @@ public class NotificationService {
                     "새로운 팔로워",
                     actorName + "님이 회원님을 팔로우하기 시작했습니다.",
                     "/users/" + eventMessage.getActor().getId()
+                );
+                
+            case "health.schedule":
+                return new NotificationContent(
+                    "새로운 건강 일정",
+                    "새로운 건강 일정이 등록되었습니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.enroll":
+                String enrollMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "새로운 건강 일정",
+                    enrollMessage != null ? enrollMessage : "새로운 건강 일정이 등록되었습니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.reserve":
+                String reserveMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "복용 시간",
+                    reserveMessage != null ? reserveMessage : "복용 시간입니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.reminder":
+                String reminderMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "복용 알림 예정",
+                    reminderMessage != null ? reminderMessage : "복용 시간이 예정되어 있습니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.medication":
+                String medicationMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "복용 시간",
+                    medicationMessage != null ? medicationMessage : "복용 시간입니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+                
+            case "health.schedule.notification":
+                String notificationMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                    "스케줄 알림",
+                    notificationMessage != null ? notificationMessage : "스케줄 시간입니다.",
+                    "/schedules/" + eventMessage.getTarget().getResourceId()
                 );
                 
             default:

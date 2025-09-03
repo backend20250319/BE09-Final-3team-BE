@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -15,8 +16,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<String>> handleIllegalArgumentException(IllegalArgumentException e) {
         log.error("IllegalArgumentException 발생: {}", e.getMessage());
         return ResponseEntity.badRequest()
-                .body(ApiResponse                                                                                                                                                                    .error(e.getMessage()));
+                .body(ApiResponse.error(e.getMessage()));
     }
+
+
 
     // 일반적인 예외를 HTTP 500 Internal Server Error로 처리
     @ExceptionHandler(Exception.class)

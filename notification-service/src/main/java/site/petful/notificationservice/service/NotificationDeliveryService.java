@@ -20,23 +20,14 @@ public class NotificationDeliveryService {
                 notification.getId(), notification.getUserId(), notification.getType());
 
         try {
-            // 1. 푸시 알림 발송 (모바일 앱)
-            boolean pushSent = sendPushNotification(notification);
-            
             // 2. 웹 푸시 알림 발송 (웹 브라우저)
             boolean webPushSent = sendWebPushNotification(notification);
             
-            // 3. 이메일 알림 발송 (선택적)
-            boolean emailSent = sendEmailNotification(notification);
-            
-            // 4. SMS 알림 발송 (선택적)
-            boolean smsSent = sendSmsNotification(notification);
-            
-            boolean success = pushSent || webPushSent || emailSent || smsSent;
+            boolean success = webPushSent;
             
             if (success) {
                 log.info("✅ [NotificationDeliveryService] 알림 발송 성공: notificationId={}, push={}, webPush={}, email={}, sms={}", 
-                        notification.getId(), pushSent, webPushSent, emailSent, smsSent);
+                        notification.getId(),  webPushSent);
             } else {
                 log.warn("⚠️ [NotificationDeliveryService] 모든 채널에서 알림 발송 실패: notificationId={}", notification.getId());
             }
@@ -50,23 +41,6 @@ public class NotificationDeliveryService {
         }
     }
 
-    /**
-     * 푸시 알림 발송 (모바일 앱)
-     */
-    private boolean sendPushNotification(Notification notification) {
-        try {
-            // TODO: FCM, APNS 등 푸시 알림 서비스 연동
-            log.info("📱 [NotificationDeliveryService] 푸시 알림 발송: userId={}, title={}", 
-                    notification.getUserId(), notification.getTitle());
-            
-            // 임시로 성공 반환 (실제 구현 시에는 푸시 서비스 API 호출)
-            return true;
-            
-        } catch (Exception e) {
-            log.error("❌ [NotificationDeliveryService] 푸시 알림 발송 실패: {}", e.getMessage(), e);
-            return false;
-        }
-    }
 
     /**
      * 웹 푸시 알림 발송 (웹 브라우저)
@@ -86,39 +60,4 @@ public class NotificationDeliveryService {
         }
     }
 
-    /**
-     * 이메일 알림 발송
-     */
-    private boolean sendEmailNotification(Notification notification) {
-        try {
-            // TODO: 이메일 서비스 연동
-            log.info("📧 [NotificationDeliveryService] 이메일 알림 발송: userId={}, title={}", 
-                    notification.getUserId(), notification.getTitle());
-            
-            // 임시로 성공 반환 (실제 구현 시에는 이메일 서비스 API 호출)
-            return true;
-            
-        } catch (Exception e) {
-            log.error("❌ [NotificationDeliveryService] 이메일 알림 발송 실패: {}", e.getMessage(), e);
-            return false;
-        }
-    }
-
-    /**
-     * SMS 알림 발송
-     */
-    private boolean sendSmsNotification(Notification notification) {
-        try {
-            // TODO: SMS 서비스 연동
-            log.info("📱 [NotificationDeliveryService] SMS 알림 발송: userId={}, title={}", 
-                    notification.getUserId(), notification.getTitle());
-            
-            // 임시로 성공 반환 (실제 구현 시에는 SMS 서비스 API 호출)
-            return true;
-            
-        } catch (Exception e) {
-            log.error("❌ [NotificationDeliveryService] SMS 알림 발송 실패: {}", e.getMessage(), e);
-            return false;
-        }
-    }
 }
