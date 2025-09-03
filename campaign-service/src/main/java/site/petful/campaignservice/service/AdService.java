@@ -5,10 +5,7 @@ import org.springframework.stereotype.Service;
 import site.petful.campaignservice.client.AdvertiserFeignClient;
 import site.petful.campaignservice.client.PetFeignClient;
 import site.petful.campaignservice.common.ApiResponse;
-import site.petful.campaignservice.dto.advertisement.AdResponse;
-import site.petful.campaignservice.dto.advertisement.AdWithPetNosResponse;
-import site.petful.campaignservice.dto.advertisement.AdsGroupedResponse;
-import site.petful.campaignservice.dto.advertisement.AppliedAdsResponse;
+import site.petful.campaignservice.dto.advertisement.*;
 import site.petful.campaignservice.dto.PetResponse;
 import site.petful.campaignservice.entity.Applicant;
 import site.petful.campaignservice.repository.CampaignRepository;
@@ -67,5 +64,20 @@ public class AdService {
                 .collect(Collectors.toList());
 
         return AppliedAdsResponse.from(adsWithPetNos);
+    }
+
+    // 3-1. 광고 이미지 조회
+    public ImageUploadResponse getImageByAdNo(Long adNo) {
+        return advertiserFeignClient.getImageByAdNo(adNo).getData();
+    }
+
+    // 3-2. 광고주 파일 조회
+    public List<FileUploadResponse> getAdvertiserFile(Long advertiserNo) {
+        return advertiserFeignClient.getFileByAdvertiserNo(advertiserNo).getData();
+    }
+
+    // 4. 광고 단일 조회
+    public AdResponse getAd(Long adNo) {
+        return advertiserFeignClient.getAd(adNo).getData();
     }
 }
