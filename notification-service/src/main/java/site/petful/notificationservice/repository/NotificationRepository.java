@@ -21,6 +21,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Optional<Notification> findByIdAndUserId(Long notificationId, Long userId);
 
+
+    long countByUserIdAndIsReadFalseAndHiddenFalse(Long userId);
+
+
+    Page<Notification> findByUserIdAndIsReadFalseAndHiddenFalse(Long userId, Pageable pageable);
+
     // 예약된 알림 조회 (스케줄러용)
     List<Notification> findByStatusAndScheduledAtBefore(Notification.NotificationStatus status, LocalDateTime scheduledAt);
 

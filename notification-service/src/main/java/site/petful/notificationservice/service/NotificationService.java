@@ -3,7 +3,9 @@ package site.petful.notificationservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.notificationservice.dto.EventMessage;
@@ -26,7 +28,7 @@ public class NotificationService {
     private final NotificationDeliveryService notificationDeliveryService;
 
     /**
-     * 사용자별 알림 목록 조회
+     * 사용자별 알림 목록 조회 (최신순 정렬)
      */
     @Transactional(readOnly = true)
     public Page<Notification> getUserNotifications(Long userId, Pageable pageable) {
@@ -37,10 +39,36 @@ public class NotificationService {
         }
         
         try {
-            return notificationRepository.findByUserIdAndHiddenFalse(userId, pageable);
+            // createdAt 우선, id 보조 정렬
+            Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(), 
+                pageable.getPageSize(), 
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
+            );
+            
+            return notificationRepository.findByUserIdAndHiddenFalse(userId, sortedPageable);
         } catch (Exception e) {
             log.error("❌ [NotificationService] 사용자 알림 조회 실패: userId={}, error={}", userId, e.getMessage(), e);
             throw new RuntimeException("알림 조회 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * 읽지 않은 알림 개수 조회
+     */
+    @Transactional(readOnly = true)
+    public long getUnreadNotificationCount(Long userId) {
+        log.info("🔢 [NotificationService] 읽지 않은 알림 개수 조회: userId={}", userId);
+        
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID가 null입니다.");
+        }
+        
+        try {
+            return notificationRepository.countByUserIdAndIsReadFalseAndHiddenFalse(userId);
+        } catch (Exception e) {
+            log.error("❌ [NotificationService] 읽지 않은 알림 개수 조회 실패: userId={}, error={}", userId, e.getMessage(), e);
+            throw new RuntimeException("알림 개수 조회 중 오류가 발생했습니다.", e);
         }
     }
 
@@ -54,15 +82,7 @@ public class NotificationService {
                 .orElseThrow(() -> new RuntimeException("알림을 찾을 수 없습니다."));
     }
 
-    /**
-     * 알림 ID로 조회 (테스트용)
-     */
-    @Transactional(readOnly = true)
-    public Notification getNotificationById(Long notificationId) {
-        log.info("📋 [NotificationService] 알림 ID로 조회: notificationId={}", notificationId);
-        return notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("알림을 찾을 수 없습니다."));
-    }
+ 
 
     /**
      * 알림 숨김 처리
@@ -75,6 +95,43 @@ public class NotificationService {
         notificationRepository.save(notification);
         
         log.info("✅ [NotificationService] 알림 숨김 완료: notificationId={}", notificationId);
+    }
+
+    /**
+     * 알림 읽음 처리
+     */
+    public void markNotificationAsRead(Long notificationId, Long userId) {
+        log.info("👁️ [NotificationService] 알림 읽음 처리: notificationId={}, userId={}", notificationId, userId);
+        
+        Notification notification = getNotification(notificationId, userId);
+        notification.markAsRead();
+        notificationRepository.save(notification);
+        
+        log.info("✅ [NotificationService] 알림 읽음 처리 완료: notificationId={}", notificationId);
+    }
+
+    /**
+     * 모든 알림 읽음 처리
+     */
+    public void markAllNotificationsAsRead(Long userId) {
+        log.info("👁️ [NotificationService] 모든 알림 읽음 처리: userId={}", userId);
+        
+        try {
+            Pageable pageable = PageRequest.of(0, 1000); // 한 번에 처리할 최대 개수
+            Page<Notification> unreadNotifications = notificationRepository
+                    .findByUserIdAndIsReadFalseAndHiddenFalse(userId, pageable);
+            
+            for (Notification notification : unreadNotifications.getContent()) {
+                notification.markAsRead();
+            }
+            
+            notificationRepository.saveAll(unreadNotifications.getContent());
+            log.info("✅ [NotificationService] {}개의 알림을 읽음 처리 완료", unreadNotifications.getContent().size());
+            
+        } catch (Exception e) {
+            log.error("❌ [NotificationService] 모든 알림 읽음 처리 실패: userId={}, error={}", userId, e.getMessage(), e);
+            throw new RuntimeException("알림 읽음 처리 중 오류가 발생했습니다.", e);
+        }
     }
 
     /**
@@ -266,9 +323,16 @@ public class NotificationService {
             case "health.schedule":
                 String scheduleMessage = (String) eventMessage.getAttributes().get("message");
                 return new NotificationContent(
-                    "스케줄 알림",
-                    scheduleMessage != null ? scheduleMessage : "스케줄 시간입니다.",
+                    "새로운 건강 일정",
+                    scheduleMessage != null ? scheduleMessage : "새로운 건강 일정이 등록되었습니다.",
                     "/schedules/" + eventMessage.getTarget().getResourceId()
+                );
+            case "health.schedule.reserve":
+                String reserveMessage = (String) eventMessage.getAttributes().get("message");
+                return new NotificationContent(
+                        "건강 알림",
+                        reserveMessage != null ? reserveMessage : "건강 일정 알림입니다.",
+                        "/schedules/" + eventMessage.getTarget().getResourceId()
                 );
                 
             default:
