@@ -2,6 +2,7 @@ package site.petful.petservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import site.petful.petservice.common.ApiResponse;
@@ -45,6 +46,14 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<List<HistoryResponse>>> getHistories(
             @PathVariable Long petNo,
             @RequestAttribute("X-User-No") Long userNo) {
+        List<HistoryResponse> responses = historyService.getHistories(petNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @GetMapping("/{petNo}/histories/external")
+    public ResponseEntity<ApiResponse<List<HistoryResponse>>> getHistoriesExternal(
+            @PathVariable Long petNo,
+            @AuthenticationPrincipal Long userNo) {
         List<HistoryResponse> responses = historyService.getHistories(petNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
@@ -94,6 +103,16 @@ public class HistoryController {
             @PathVariable Long historyNo,
             @RequestAttribute("X-User-No") Long userNo) {
         
+        List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(images));
+    }
+
+    @GetMapping("/{petNo}/histories/{historyNo}/images/external")
+    public ResponseEntity<ApiResponse<List<HistoryImageInfo>>> getHistoryImagesExternal(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @AuthenticationPrincipal Long userNo) {
+
         List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(images));
     }

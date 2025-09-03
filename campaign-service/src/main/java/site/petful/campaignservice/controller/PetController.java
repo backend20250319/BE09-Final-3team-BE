@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ApiResponseGenerator;
+import site.petful.campaignservice.dto.HistoryImageInfo;
+import site.petful.campaignservice.dto.HistoryResponse;
 import site.petful.campaignservice.dto.PetResponse;
 import site.petful.campaignservice.dto.PortfolioResponse;
 import site.petful.campaignservice.security.SecurityUtil;
@@ -39,6 +41,20 @@ public class PetController {
     @GetMapping("/portfolio/{petNo}")
     public ResponseEntity<ApiResponse<PortfolioResponse>> getPortfolioExternal(@PathVariable Long petNo) {
         PortfolioResponse response = petService.getPortfolio(petNo);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+
+    // 3. 활동 이력 조회
+    @GetMapping("/history/{petNo}")
+    public ResponseEntity<ApiResponse<List<HistoryResponse>>> getHistoryExternal(@PathVariable Long petNo) {
+        List<HistoryResponse> response = petService.getHistory(petNo);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+
+    // 4. 활동 이력 이미지 조회
+    @GetMapping("/history/images/{petNo}")
+    public ResponseEntity<ApiResponse<List<HistoryImageInfo>>> getHistoryImagesExternal(@PathVariable Long petNo) {
+        List<HistoryImageInfo> response = petService.getImages(petNo);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 }
