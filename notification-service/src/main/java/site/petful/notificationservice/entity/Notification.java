@@ -80,6 +80,12 @@ public class Notification {
         this.hiddenAt = LocalDateTime.now();
     }
 
+    public void markAsRead() {
+        if (Boolean.TRUE.equals(this.isRead)) return;
+        this.isRead = true;
+        this.readAt = LocalDateTime.now();
+    }
+
     public void markAsSent() {
         this.status = NotificationStatus.SENT;
         this.sentAt = LocalDateTime.now();
