@@ -320,6 +320,23 @@ public class NotificationService {
     }
 
     /**
+     * 읽지 않은 알림 개수 조회
+     */
+    @Transactional(readOnly = true)
+    public long getUnreadNotificationCount(Long userId) {
+        log.info("🔢 [NotificationService] 읽지 않은 알림 개수 조회: userId={}", userId);
+        
+        try {
+            long count = notificationRepository.countByUserIdAndIsReadFalseAndHiddenFalse(userId);
+            log.info("✅ [NotificationService] 읽지 않은 알림 개수: {}", count);
+            return count;
+        } catch (Exception e) {
+            log.error("❌ [NotificationService] 읽지 않은 알림 개수 조회 실패: {}", e.getMessage(), e);
+            return 0;
+        }
+    }
+
+    /**
      * 알림 내용을 담는 내부 클래스
      */
     private static class NotificationContent {

@@ -12,6 +12,7 @@ import site.petful.notificationservice.common.ApiResponse;
 import site.petful.notificationservice.common.ApiResponseGenerator;
 import site.petful.notificationservice.common.ErrorCode;
 import site.petful.notificationservice.dto.EventMessage;
+import site.petful.notificationservice.dto.NotificationCountDto;
 import site.petful.notificationservice.dto.NotificationListResponseDto;
 import site.petful.notificationservice.dto.NotificationResponseDto;
 import site.petful.notificationservice.entity.Notification;
@@ -82,6 +83,31 @@ public class NotificationController {
         notificationService.hideNotification(notificationId, userNo);
         
         return ResponseEntity.ok(ApiResponseGenerator.success());
+    }
+
+    /**
+     * 읽지 않은 알림 개수 조회
+     */
+    @GetMapping("/count")
+    public ResponseEntity<ApiResponse<NotificationCountDto>> getUnreadNotificationCount(
+            @AuthenticationPrincipal Long userNo) {
+        
+        log.info("🔢 [NotificationController] 읽지 않은 알림 개수 조회: userId={}", userNo);
+        
+        if (userNo == null) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.UNAUTHORIZED, (NotificationCountDto) null));
+        }
+        
+        try {
+            long unreadCount = notificationService.getUnreadNotificationCount(userNo);
+            NotificationCountDto response = NotificationCountDto.of(unreadCount);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (Exception e) {
+            log.error("❌ [NotificationController] 읽지 않은 알림 개수 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponseGenerator.fail(ErrorCode.OPERATION_FAILED, (NotificationCountDto) null));
+        }
     }
 
     /**
