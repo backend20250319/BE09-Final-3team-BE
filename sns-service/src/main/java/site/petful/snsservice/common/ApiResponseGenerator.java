@@ -1,5 +1,7 @@
 package site.petful.snsservice.common;
 
+import site.petful.snsservice.exception.ErrorCode;
+
 public class ApiResponseGenerator {
 
     private static final ApiResponse<Void> RESULT_SUCCESS = new ApiResponse<>(ErrorCode.SUCCESS);

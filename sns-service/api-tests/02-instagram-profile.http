@@ -1,0 +1,77 @@
+### SNS Service API Tests - Instagram 프로필 (간단 예시)
+
+### 공통 변수
+@authToken = your_jwt_token_here
+@baseUrl = http://localhost:8000/api/v1/sns-service
+@testUserId = 20
+@testInstagramId = 17841475913854291
+
+### 프로필 목록 조회
+# 권한: User, Admin
+# 설명: Instagram 프로필 목록을 조회
+GET {{baseUrl}}/instagram/profiles
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": [
+#     {
+#       "id": "17841475913854291",
+#       "username": "petful_influencer",
+#       "name": "펫풀",
+#       "profile_picture_url": "https://example.com/profile.jpg",
+#       "followers_count": "3",
+#       "follows_count": "7",
+#       "media_count": "5",
+#       "auto_delete": false
+#     }
+#   ]
+# }
+
+
+### 특정 프로필 조회
+# 권한: User, Admin
+# 설명: Instagram 프로필 상세 조회
+GET {{baseUrl}}/instagram/profiles/{{testInstagramId}}
+Authorization: Bearer {{authToken}}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": {
+#     "id": "17841475913854291",
+#     "username": "petful_influencer",
+#     "name": "펫풀",
+#     "profile_picture_url": "https://example.com/profile.jpg",
+#     "followers_count": "3",
+#     "follows_count": "7",
+#     "media_count": "5",
+#     "auto_delete": false
+#   }
+# }
+
+### 자동 삭제 설정
+# 권한: User
+# 설명: Instagram 프로필의 자동 삭제 설정 변경
+PUT {{baseUrl}}/instagram/profiles/auto-delete
+Authorization: Bearer {{authToken}}
+{
+    "instagram_id": "{{testInstagramId}}",
+    "auto_delete": true
+}
+
+### 예상 응답
+# 200 OK
+# {
+#   "code": "2000",
+#   "message": "OK",
+#   "message_code": null,
+#   "data": null
+# }

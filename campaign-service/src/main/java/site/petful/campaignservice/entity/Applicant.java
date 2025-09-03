@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import site.petful.campaignservice.entity.advertisement.Advertisement;
 
 import java.time.LocalDateTime;
 
@@ -30,13 +29,12 @@ public class Applicant {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ad_no", nullable = false)
-    private Advertisement advertisement;
+    @Column(nullable = false)
+    private Long adNo;
 
-    // @OneToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "pet_no")
-    // private Pet pet;
-
+    @Column(nullable = false)
     private Long petNo;
+
+    @OneToOne(mappedBy = "applicant", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private Review review;
 }

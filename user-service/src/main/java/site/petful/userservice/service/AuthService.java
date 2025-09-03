@@ -2,6 +2,7 @@ package site.petful.userservice.service;
 
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import site.petful.userservice.security.JwtUtil;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final JwtUtil jwtUtil;
@@ -59,6 +61,25 @@ public class AuthService {
             throw new IllegalStateException("refresh token expired");
         }
         return jwtUtil.generateRefreshToken(claims.getSubject());
+    }
+
+    /** 로그아웃 시 리프레시 토큰 검증 */
+    public void logout(String refreshToken) {
+        try {
+            // 리프레시 토큰 유효성 검증
+            Claims claims = jwtUtil.parseRefreshClaims(refreshToken);
+            if (jwtUtil.isExpired(claims)) {
+                throw new IllegalStateException("refresh token expired");
+            }
+            
+            // 여기서는 단순히 토큰 유효성만 검증
+            // Redis를 사용한다면 여기서 토큰을 블랙리스트에 추가할 수 있음
+            String username = claims.getSubject();
+            log.info("사용자 {} 로그아웃 처리 완료", username);
+            
+        } catch (Exception e) {
+            throw new IllegalStateException("Invalid refresh token: " + e.getMessage());
+        }
     }
 
     // 컨트롤러에서 쿠키 TTL 설정할 때 사용

@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import site.petful.userservice.security.CustomUserDetailsService;
 import site.petful.userservice.security.JwtAuthenticationFilter;
+import site.petful.userservice.security.HeaderBasedAuthenticationFilter;
 
 
 
@@ -31,11 +32,25 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final HeaderBasedAuthenticationFilter headerBasedAuthFilter;
 
-    // 게이트웨이 리라이트 유무 모두 커버(둘 다 열어둠)
+    // 공개 엔드포인트 (인증 불필요)
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/auth/**",
-            "/api/auth/**",
+            "/auth/login",
+            "/auth/refresh",
+            "/auth/validate-token",
+            "/auth/signup",
+            "/auth/password/reset",
+            "/auth/password/verify",
+            "/auth/password/change",
+            "/api/auth/login",
+            "/api/auth/refresh",
+            "/api/auth/validate-token",
+            "/api/auth/signup",
+            "/api/auth/password/reset",
+            "/api/auth/password/verify",
+            "/api/auth/password/change",
+            "/api/v1/admin/users/logout",  // Admin 로그아웃 엔드포인트 공개
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/actuator/**"
@@ -66,9 +81,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // 커스텀 인증 프로바이더 + JWT 필터
+                // 커스텀 인증 프로바이더 + JWT 필터 + 헤더 기반 인증 필터
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(headerBasedAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthFilter, HeaderBasedAuthenticationFilter.class);
 
         return http.build();
     }

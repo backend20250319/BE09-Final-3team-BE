@@ -1,5 +1,6 @@
 package site.petful.snsservice.instagram.comment.controller;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -7,15 +8,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
+import site.petful.snsservice.instagram.comment.dto.BannedWordRequestDto;
 import site.petful.snsservice.instagram.comment.dto.BannedWordResponseDto;
 import site.petful.snsservice.instagram.comment.dto.CommentSentimentRatioResponseDto;
 import site.petful.snsservice.instagram.comment.dto.InstagramCommentResponseDto;
@@ -58,11 +64,12 @@ public class InstagramCommentController {
         return ResponseEntity.ok(ApiResponseGenerator.success(comments));
     }
 
+
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponse<Void>> deleteInstagramComment(
-        @RequestParam(name = "user_no") Long userNo,
-        @RequestParam(name = "comment_id") Long commentId) {
-        String accessToken = instagramTokenService.getAccessToken(userNo);
+        @AuthenticationPrincipal String userNo,
+        @PathVariable Long commentId) {
+        String accessToken = instagramTokenService.getAccessToken(Long.valueOf(userNo));
 
         instagramCommentService.deleteComment(commentId, accessToken);
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
@@ -72,10 +79,11 @@ public class InstagramCommentController {
 
     @PostMapping("/banned-words")
     public ResponseEntity<ApiResponse<Void>> addBannedWord(
-        @RequestParam(name = "instagram_id") Long instagramId,
-        @RequestParam(name = "word") String word) {
+        @AuthenticationPrincipal String userNo,
+        @Valid @RequestBody BannedWordRequestDto request) {
 
-        instagramBannedWordService.addBannedWord(instagramId, word);
+        instagramBannedWordService.addBannedWord(Long.valueOf(userNo), request.instagramId(),
+            request.word());
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
 
@@ -91,9 +99,10 @@ public class InstagramCommentController {
 
     @DeleteMapping("/banned-words")
     public ResponseEntity<ApiResponse<Void>> deleteBannedWord(
+        @AuthenticationPrincipal String userNo,
         @RequestParam(name = "instagram_id") Long id, @RequestParam String word) {
 
-        instagramBannedWordService.deleteBannedWord(id, word);
+        instagramBannedWordService.deleteBannedWord(Long.valueOf(userNo), id, word);
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }
 
@@ -114,6 +123,7 @@ public class InstagramCommentController {
         return ResponseEntity.ok(ApiResponseGenerator.success(sentimentRatio));
     }
 
+    @PreAuthorize("hasRole('Admin')")
     @PostMapping
     public ResponseEntity<ApiResponse<List<InstagramCommentResponseDto>>> syncInstagramComments(
         @RequestParam(name = "user_no") Long userNo,

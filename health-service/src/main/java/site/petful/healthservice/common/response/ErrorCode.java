@@ -59,6 +59,30 @@ public enum ErrorCode {
     ALARM_ALREADY_DISABLED("7027", "알림이 이미 비활성화되어 있습니다."),
     SCHEDULE_ALREADY_DELETED("7028", "삭제된 일정입니다."),
     SCHEDULE_TYPE_MISMATCH("7029", "요청한 일정 타입이 엔드포인트와 일치하지 않습니다."),
+    SCHEDULE_NOT_FOUND("7030", "스케줄 일정이 존재하지 않습니다."),
+    SCHEDULE_SAVE_FAILED("7031", "스케줄 저장에 실패했습니다."),
+    MEDICATION_DETAIL_SAVE_FAILED("7032", "투약 상세 정보 저장에 실패했습니다."),
+
+    INVALID_PET_NO("7034", "유효하지 않은 펫 번호입니다."),
+    PET_NOT_FOUND("7035", "펫을 찾을 수 없습니다."),
+    MEDICAL_DATE_FORMAT_ERROR("7036", "건강관리 일정의 날짜 형식이 올바르지 않습니다."),
+    MEDICAL_DATE_RANGE_ERROR("7037", "건강관리 일정의 날짜 범위가 올바르지 않습니다."),
+    MEDICAL_SCHEDULE_CONFLICT("7038", "건강관리 일정이 중복됩니다."),
+    MEDICAL_INVALID_TIME_FORMAT("7039", "건강관리 일정의 시간 형식이 올바르지 않습니다."),
+    MEDICAL_INVALID_FREQUENCY("7040", "건강관리 일정의 빈도가 올바르지 않습니다."),
+    MEDICAL_INVALID_SUBTYPE("7041", "건강관리 일정의 서브타입이 올바르지 않습니다."),
+    MEDICAL_SCHEDULE_CREATION_FAILED("7042", "건강관리 일정 생성에 실패했습니다."),
+    MEDICAL_SCHEDULE_UPDATE_FAILED("7043", "건강관리 일정 수정에 실패했습니다."),
+    MEDICAL_SCHEDULE_DELETE_FAILED("7044", "건강관리 일정 삭제에 실패했습니다."),
+    MEDICAL_ALARM_TOGGLE_FAILED("7045", "건강관리 일정 알림 토글에 실패했습니다."),
+
+    // 7100번대 : 활동 관리
+    ACTIVITY_NOT_FOUND("7100", "활동 데이터를 찾을 수 없습니다."),
+    ACTIVITY_FORBIDDEN("7101", "활동 데이터에 대한 접근 권한이 없습니다."),
+    PET_NOT_OWNED("7102", "해당 펫에 대한 접근 권한이 없습니다."),
+    PET_OWNERSHIP_VERIFICATION_FAILED("7103", "펫 소유권 검증에 실패했습니다."),
+    DATE_RANGE_INVALID("7104", "날짜 범위가 올바르지 않습니다."),
+    PERIOD_TYPE_INVALID("7105", "유효하지 않은 기간 타입입니다."),
 
     // 8000번대 : SNS 관리
 

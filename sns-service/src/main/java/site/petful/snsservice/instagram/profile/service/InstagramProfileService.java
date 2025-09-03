@@ -4,12 +4,16 @@ import com.jayway.jsonpath.JsonPath;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import site.petful.snsservice.instagram.client.InstagramApiClient;
+import site.petful.snsservice.instagram.insight.service.InstagramFollowerHistoryService;
 import site.petful.snsservice.instagram.profile.dto.InstagramProfileDto;
 import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 import site.petful.snsservice.instagram.profile.repository.InstagramProfileRepository;
+import site.petful.snsservice.util.DateTimeUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +22,8 @@ public class InstagramProfileService {
     private final String fields = "username,name,profile_picture_url,biography,followers_count,follows_count,media_count,website";
     private final InstagramProfileRepository instagramProfileRepository;
     private final InstagramApiClient instagramApiClient;
+    private final InstagramFollowerHistoryService instagramFollowerHistoryService;
+
 
     public List<InstagramProfileDto> syncAllInstagramProfiles(Long userNo,
         String accessToken) {
@@ -35,6 +41,11 @@ public class InstagramProfileService {
             profiles.add(instagramProfileDto);
         }
 
+        for (InstagramProfileDto profile : profiles) {
+            instagramFollowerHistoryService.saveFollowerHistory(profile.id(),
+                DateTimeUtils.getStartOfCurrentMonth().toLocalDate(), profile.followers_count());
+        }
+
         return profiles;
     }
 
@@ -43,6 +54,17 @@ public class InstagramProfileService {
 
         InstagramProfileDto response = instagramApiClient.fetchProfile(instagramId,
             accessToken, fields);
+
+        Optional<InstagramProfileEntity> existingProfile = instagramProfileRepository.findById(
+            response.id());
+
+        if (existingProfile.isPresent()) {
+            InstagramProfileEntity profile = existingProfile.get();
+            profile.updateFromDto(response);
+            instagramProfileRepository.save(profile);
+
+            return InstagramProfileDto.fromEntity(profile);
+        }
 
         InstagramProfileEntity profile = new InstagramProfileEntity(response, userId, false);
 
@@ -68,11 +90,16 @@ public class InstagramProfileService {
         return InstagramProfileDto.fromEntity(entity);
     }
 
-    public void setAutoDelete(Long instagramId, Boolean isAutoDelete) {
+    @Transactional
+    public void setAutoDelete(Long userNo, Long instagramId, Boolean isAutoDelete) {
         InstagramProfileEntity entity = instagramProfileRepository.findById(instagramId)
             .orElseThrow(
                 () -> new NotFoundException("해당 인스타그램의 id를 찾을 수 없습니다.")
             );
+
+        if (entity.getUserNo() != userNo) {
+            throw new NotFoundException("해당 유저의 인스타그램이 아닙니다.");
+        }
 
         entity.setAutoDelete(isAutoDelete);
         instagramProfileRepository.save(entity);

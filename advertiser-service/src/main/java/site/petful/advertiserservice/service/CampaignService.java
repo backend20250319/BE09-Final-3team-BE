@@ -2,6 +2,7 @@ package site.petful.advertiserservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import site.petful.advertiserservice.client.CampaignFeignClient;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.dto.campaign.ApplicantResponse;
@@ -21,8 +22,12 @@ public class CampaignService {
     }
 
     // 2. 체험단 선정
+    @Transactional
     public ApplicantResponse updateApplicant(Long applicantNo, ApplicantStatus status) {
         ApiResponse<ApplicantResponse> response = campaignFeignClient.updateApplicantByAdvertiser(applicantNo, status);
+        if (status == ApplicantStatus.SELECTED) {
+            campaignFeignClient.createReview(applicantNo);
+        }
         return response.getData();
     }
 }

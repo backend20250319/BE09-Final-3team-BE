@@ -1,20 +1,38 @@
 package site.petful.campaignservice.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import site.petful.campaignservice.common.ApiResponse;
-import site.petful.campaignservice.dto.advertisement.AdsGroupedResponse;
+import site.petful.campaignservice.dto.advertisement.*;
 
-@FeignClient(name = "advertiser-service", url = "http://localhost:8000/api/v1/advertiser-service/ad")
+import java.util.List;
+
+@FeignClient(name = "advertiser-service", path = "/internal")
 public interface AdvertiserFeignClient {
 
-    // 1. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회
-    @GetMapping("/adStatus/grouped")
-    ApiResponse<AdsGroupedResponse> getAdsGroupedByAdStatus();
+    // 1. 광고 단일 조회
+    @GetMapping("/{adNo}")
+    ApiResponse<AdResponse> getAd(@PathVariable Long adNo);
 
-    // 2. 광고(캠페인 수정) : applicants 1 증가 - 체험단
+    // 2. adStatus별(모집중/종료된) 광고(캠페인) 전체 조회
+    @GetMapping("/adStatus/grouped")
+    ApiResponse<AdsGroupedResponse> getAllAdsByAdStatusGrouped();
+
+    // 3. List<Long> adNo에 대한 광고(캠페인) 조회
+    @PostMapping("/adNos")
+    ApiResponse<AdsResponse> getAdsByAdNos(List<Long> adNos);
+
+    // 4. 광고(캠페인 수정) : applicants 수정
     @PutMapping("/campaign/{adNo}")
-    void updateAdByCampaign(@PathVariable("adNo") Long adNo);
+    ApiResponse<Void> updateAdByCampaign(@PathVariable Long adNo, @RequestParam Integer incrementBy);
+
+    // 5. 광고 이미지 조회
+    @GetMapping("/ad/{adNo}")
+    ApiResponse<ImageUploadResponse> getImageByAdNo(@PathVariable Long adNo);
+
+    // 6. 광고주 파일 조회
+    @GetMapping("/advertiser/{advertiserNo}")
+    ApiResponse<List<FileUploadResponse>> getFileByAdvertiserNo(@PathVariable Long advertiserNo);
+
 }

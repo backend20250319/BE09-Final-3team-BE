@@ -26,13 +26,9 @@ public class SignupRequest {
     @Pattern(regexp = "^[0-9-]{10,13}$", message = "올바른 전화번호 형식이 아닙니다.")
     private String phone;
 
-    private String website;
-
-    @NotBlank(message = "기업 이메일은 필수입니다.")
-    private String email;
-
-    @NotBlank(message = "기업 소개는 필수입니다.")
-    private String description;
+    @NotBlank(message = "사업자 등록번호는 필수입니다.")
+    private String businessNumber;
 
 }
+
 

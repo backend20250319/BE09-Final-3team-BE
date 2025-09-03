@@ -12,4 +12,6 @@ public class UserInfoResponse {
     private String nickname;
     private String phone;
     private String role;
+    private String userType;
+    private String headerUserType;
 }

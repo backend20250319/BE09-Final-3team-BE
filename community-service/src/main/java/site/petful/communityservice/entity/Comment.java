@@ -34,7 +34,12 @@ public class Comment {
     private Long parentId;
 
     @Enumerated(EnumType.STRING)
+    @Column(name="comment_status",nullable = false)
     private CommentStatus commentStatus = CommentStatus.NORMAL;
-    @PrePersist
-    protected void onCreate() {if(createdAt == null) createdAt = LocalDateTime.now();}
+
+    @PrePersist                               // ✅ insert 직전 보강
+    void prePersist() {
+        if (commentStatus == null) commentStatus = CommentStatus.NORMAL;
+        if(createdAt == null) createdAt = LocalDateTime.now();
+    }
 }

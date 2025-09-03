@@ -14,11 +14,9 @@ import site.petful.gatewayservice.util.JwtUtil;
 
 @Slf4j
 @Component
-
 public class AuthenticationFilter extends
 
     AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
-
 
 
     @Override

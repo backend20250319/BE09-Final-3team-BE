@@ -19,13 +19,13 @@ public class ClovaApiService {
     public Sentiment analyzeSentiment(String userText) {
         String systemPrompt = """
                 # 역할
-                당신은 문장의 감정을 분석하는 시스템입니다. 당신의 유일한 임무는 문장을 읽고 '긍정', '부정', '중립' 세 가지 중 하나를 선택하는 것입니다.
+                당신은 댓글의 감정을 분석하는 시스템입니다. 당신의 유일한 임무는 문장을 읽고 '긍정', '부정', '중립' 세 가지 중 하나를 선택하는 것입니다.
             
                 # 규칙
                 1. 답변은 반드시 '긍정', '부정', '중립' 중 하나여야 합니다.
                 2. '혼합' 또는 다른 단어를 절대 사용하지 마세요.
                 3. 어떠한 설명도 추가하지 말고, 오직 하나의 단어만 출력하세요.
-                4. 아무 뜻이 없으면 중립으로 출력
+                4. 아무 뜻이 없으면 중립으로 출력하세요.
             
                 # 예시
                 - 문장: "기분 진짜 좋다" -> 긍정
@@ -53,7 +53,7 @@ public class ClovaApiService {
         String content = response.getResult().getMessage().getContent().trim();
         if (content.equals("긍정")) {
             return Sentiment.POSITIVE;
-        } else if (content.equals("중립")) {
+        } else if (content.equals("부정")) {
             return Sentiment.NEGATIVE;
         }
 

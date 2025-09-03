@@ -2,10 +2,14 @@ package site.petful.petservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import site.petful.petservice.common.ApiResponse;
 import site.petful.petservice.dto.HistoryRequest;
 import site.petful.petservice.dto.HistoryResponse;
+import site.petful.petservice.dto.MultipleFileUploadResponse;
+import site.petful.petservice.dto.HistoryImageInfo;
 import site.petful.petservice.service.HistoryService;
 
 import java.util.List;
@@ -46,6 +50,14 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
+    @GetMapping("/{petNo}/histories/external")
+    public ResponseEntity<ApiResponse<List<HistoryResponse>>> getHistoriesExternal(
+            @PathVariable Long petNo,
+            @AuthenticationPrincipal Long userNo) {
+        List<HistoryResponse> responses = historyService.getHistories(petNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     // 활동이력 수정
     @PutMapping("/{petNo}/histories/{historyNo}")
     public ResponseEntity<ApiResponse<HistoryResponse>> updateHistory(
@@ -55,6 +67,54 @@ public class HistoryController {
             @RequestBody HistoryRequest request) {
         HistoryResponse response = historyService.updateHistory(petNo, historyNo, userNo, request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+
+
+
+
+
+
+
+
+
+
+    // 활동이력 이미지 업로드
+    @PostMapping("/{petNo}/histories/{historyNo}/images")
+    public ResponseEntity<ApiResponse<MultipleFileUploadResponse>> uploadHistoryImages(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo,
+            @RequestParam("files") List<MultipartFile> files) {
+
+        MultipleFileUploadResponse response = historyService.uploadHistoryImages(files, petNo, historyNo, userNo);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
+        }
+    }
+
+    // 활동이력 이미지 정보 조회 (더 구체적인 패턴을 먼저 정의)
+    @GetMapping("/{petNo}/histories/{historyNo}/images")
+    public ResponseEntity<ApiResponse<List<HistoryImageInfo>>> getHistoryImages(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo) {
+        
+        List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(images));
+    }
+
+    @GetMapping("/{petNo}/histories/{historyNo}/images/external")
+    public ResponseEntity<ApiResponse<List<HistoryImageInfo>>> getHistoryImagesExternal(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @AuthenticationPrincipal Long userNo) {
+
+        List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(images));
     }
 
     // 활동이력 삭제
@@ -67,4 +127,3 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
-

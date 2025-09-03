@@ -1,23 +1,29 @@
 package site.petful.snsservice.instagram.profile.controller;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.petful.snsservice.common.ApiResponse;
 import site.petful.snsservice.common.ApiResponseGenerator;
 import site.petful.snsservice.instagram.auth.service.InstagramTokenService;
-import site.petful.snsservice.instagram.insight.service.InstagramFollowerHistoryService;
+import site.petful.snsservice.instagram.profile.dto.AutoDeleteRequestDto;
 import site.petful.snsservice.instagram.profile.dto.InstagramProfileDto;
 import site.petful.snsservice.instagram.profile.service.InstagramProfileService;
-import site.petful.snsservice.util.DateTimeUtils;
 
+@Slf4j
 @RestController
 @RequestMapping("/instagram/profiles")
 @RequiredArgsConstructor
@@ -25,13 +31,13 @@ public class InstagramProfileController {
 
     private final InstagramProfileService instagramProfileService;
     private final InstagramTokenService instagramTokenService;
-    private final InstagramFollowerHistoryService instagramFollowerHistoryService;
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> getProfiles(
-        @NotNull @RequestParam(name = "user_no") Long userNO) {
+        @AuthenticationPrincipal String userNo) {
         List<InstagramProfileDto> profilesResponseDto = instagramProfileService.getProfiles(
-            userNO);
+            Long.parseLong(userNo)
+        );
 
         return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
     }
@@ -47,7 +53,7 @@ public class InstagramProfileController {
     }
 
 
-    //TODO [유저] 여기 userId 수정 쭉 들어가면서 userNo로 저장
+    @PreAuthorize("hasAuthority('Admin')")
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> syncProfiles(
         @RequestParam(name = "user_no") Long userNo) {
@@ -56,11 +62,6 @@ public class InstagramProfileController {
             userNo,
             accessToken);
 
-        for (InstagramProfileDto profile : profiles) {
-            instagramFollowerHistoryService.saveFollowerHistory(profile.id(),
-                DateTimeUtils.getStartOfCurrentMonth().toLocalDate(), profile.followers_count());
-        }
-
         return ResponseEntity.ok(
             ApiResponseGenerator.success(
                 profiles
@@ -68,11 +69,14 @@ public class InstagramProfileController {
     }
 
 
-    @PostMapping("/auto-delete")
+    @PreAuthorize("hasAuthority('User')")
+    @PutMapping("/auto-delete")
     public ResponseEntity<ApiResponse<Void>> autoDeleteComments(
-        @RequestParam(name = "instagram_id") Long instagramId, @RequestParam Boolean isAutoDelete) {
+        @AuthenticationPrincipal String userNo,
+        @Valid @RequestBody AutoDeleteRequestDto request) {
 
-        instagramProfileService.setAutoDelete(instagramId, isAutoDelete);
+        instagramProfileService.setAutoDelete(Long.parseLong(userNo), request.instagramId(),
+            request.isAutoDelete());
 
         return ResponseEntity.ok(ApiResponseGenerator.success(null));
     }

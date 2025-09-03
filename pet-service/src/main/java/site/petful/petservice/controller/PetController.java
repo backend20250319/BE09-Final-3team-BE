@@ -4,10 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
+<<<<<<<< HEAD:pet-service/src/main/java/org/example/petservice/controller/PetController.java
+========
+import site.petful.petservice.dto.FileUploadResponse;
+>>>>>>>> dev:pet-service/src/main/java/site/petful/petservice/controller/PetController.java
 import site.petful.petservice.service.PetService;
 import site.petful.petservice.common.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -35,13 +40,12 @@ public class PetController {
         return ResponseEntity.ok(ApiResponse.success(pets));
     }
 
-      // 반려동물 목록 조회
-    @GetMapping("/pets")
-    public ResponseEntity<ApiResponse<List<PetResponse>>> getPets(@RequestParam Long userNo) {
+    // 반려동물 목록 조회 (외부 사용자용)
+    @GetMapping("/pets/external")
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getPetsExternal(@RequestParam Long userNo) {
         List<PetResponse> pets = petService.getPetsByUser(userNo);
         return ResponseEntity.ok(ApiResponse.success(pets));
     }
-
 
     // 반려동물 상세 조회
     @GetMapping("/pets/{petNo}")
@@ -84,4 +88,38 @@ public class PetController {
         }
     }
 
+<<<<<<<< HEAD:pet-service/src/main/java/org/example/petservice/controller/PetController.java
+========
+   
+    // 펫스타 전체 조회
+    @GetMapping("/petstars")
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getAllPetStars() {
+        List<PetResponse> petStars = petService.getAllPetStars();
+        return ResponseEntity.ok(ApiResponse.success(petStars));
+    }
+
+    // petNos 리스트로 펫 조회
+    @PostMapping("/petsByPetNos")
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getPetsByPetNos(@RequestBody List<Long> petNos) {
+        List<PetResponse> pets = petService.getPetsByPetNos(petNos);
+        return ResponseEntity.ok(ApiResponse.success(pets));
+    }
+
+    // 반려동물 이미지 업로드
+    @PostMapping("/pets/{petNo}/image")
+    public ResponseEntity<ApiResponse<FileUploadResponse>> uploadPetImage(
+            @PathVariable Long petNo,
+            @RequestAttribute("X-User-No") Long userNo,
+            @RequestParam("file") MultipartFile file) {
+        
+        FileUploadResponse response = petService.uploadPetImage(file, petNo, userNo);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
+        }
+    }
+
+>>>>>>>> dev:pet-service/src/main/java/site/petful/petservice/controller/PetController.java
 }
