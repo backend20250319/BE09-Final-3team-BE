@@ -26,9 +26,14 @@ public class MedicationResponseDTO {
     private String dosage;
     private String frequency;
     private Integer durationDays;
-    private String instructions; // 용법/지시사항
     
     // 시간 관련 필드 추가
     private LocalTime time;         // 대표 시간(startDate 기준)
     private List<LocalTime> times;  // 하루 N회일 때 전개 시간 목록
+    
+    // 알림 관련 필드
+    private Integer reminderDaysBefore;  // 0: 당일, 1: 1일전, 2: 2일전, 3: 3일전
+    
+    // 처방전 구분 필드
+    private Boolean isPrescription;  // true: 처방전으로 등록, false: 일반 등록
 }

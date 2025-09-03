@@ -88,6 +88,10 @@ public class Schedule {
     // 알림 설정 (n일 전 알림) - 단일 값으로 변경
     @Column(name = "reminder_days_before")
     private Integer reminderDaysBefore; // 1 = 1일전, 2 = 2일전, 7 = 7일전
+    
+    // 마지막 알림 시기 저장 (알림 비활성화 시 기억용)
+    @Column(name = "last_reminder_days_before")
+    private Integer lastReminderDaysBefore; // 마지막으로 설정했던 알림 시기
 
     @Column(name = "frequency")
     private String frequency;
@@ -120,6 +124,10 @@ public class Schedule {
     }
 
     public void updateReminders(Integer reminderDaysBefore) {
+        // 알림 시기가 변경될 때만 lastReminderDaysBefore 업데이트
+        if (reminderDaysBefore != null && !reminderDaysBefore.equals(this.reminderDaysBefore)) {
+            this.lastReminderDaysBefore = reminderDaysBefore;
+        }
         this.reminderDaysBefore = reminderDaysBefore;
         this.updatedAt = LocalDateTime.now();
     }
