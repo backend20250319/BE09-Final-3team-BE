@@ -23,9 +23,15 @@ import site.petful.userservice.dto.SignupRequest;
 import site.petful.userservice.dto.SignupResponse;
 import site.petful.userservice.dto.WithdrawRequest;
 import site.petful.userservice.dto.WithdrawResponse;
+import site.petful.userservice.dto.ReportRequest;
 import site.petful.userservice.repository.UserProfileRepository;
 import site.petful.userservice.repository.UserRepository;
 import site.petful.userservice.common.ftp.FtpService;
+import site.petful.userservice.admin.entity.ReportLog;
+import site.petful.userservice.admin.entity.ActorRef;
+import site.petful.userservice.admin.entity.ActorType;
+import site.petful.userservice.admin.entity.ReportStatus;
+import site.petful.userservice.admin.repository.ReportLogRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -44,6 +50,7 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
     private final RedisService redisService;
     private final FtpService ftpService;
+    private final ReportLogRepository reportLogRepository;
 
     @Override
     public SignupResponse signup(SignupRequest request) {
@@ -271,6 +278,8 @@ public class UserServiceImpl implements UserService {
                 .id(user.getUserNo())
                 .nickname(user.getNickname())
                 .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
+                .emil(user.getEmail())
+                .phone(user.getPhone())
                 .build();
     }
 
@@ -516,6 +525,58 @@ public class UserServiceImpl implements UserService {
             
         } catch (Exception e) {
             throw new RuntimeException("프로필 이미지 URL 업데이트 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void reportUser(Long reporterUserNo, String reporterName, ReportRequest request) {
+        try {
+            log.info("신고 요청 시작 - 신고자: {}, 대상: {}, 사유: {}", 
+                    reporterName, request.getTargetName(), request.getReason());
+            
+            // 신고자 정보 조회
+            User reporter = userRepository.findById(reporterUserNo)
+                    .orElseThrow(() -> new RuntimeException("신고자를 찾을 수 없습니다: " + reporterUserNo));
+            
+            log.info("신고자 조회 성공: {}", reporter.getEmail());
+            
+            // 신고 대상 사용자 조회 (targetName으로 검색)
+            User targetUser = userRepository.findByNickname(request.getTargetName())
+                    .orElse(userRepository.findByName(request.getTargetName())
+                            .orElse(null));
+            
+            if (targetUser == null) {
+                log.error("신고 대상을 찾을 수 없습니다: {}", request.getTargetName());
+                throw new RuntimeException("신고 대상을 찾을 수 없습니다: " + request.getTargetName());
+            }
+            
+            log.info("신고 대상 조회 성공: {}", targetUser.getEmail());
+            
+            // 자기 자신을 신고하는 경우 방지
+            if (reporterUserNo.equals(targetUser.getUserNo())) {
+                throw new RuntimeException("자기 자신을 신고할 수 없습니다.");
+            }
+            
+            // ReportLog 생성
+            ReportLog reportLog = new ReportLog();
+            reportLog.setReason(request.getReason());
+            reportLog.setReporter(new ActorRef(ActorType.USER, reporterUserNo));
+            reportLog.setTarget(new ActorRef(ActorType.USER, targetUser.getUserNo()));
+            reportLog.setReportStatus(ReportStatus.BEFORE);
+            reportLog.setCreatedAt(LocalDateTime.now());
+            
+            log.info("ReportLog 객체 생성 완료");
+            
+            // 저장
+            reportLogRepository.save(reportLog);
+            
+            log.info("신고가 접수되었습니다. 신고자: {}, 대상: {}, 사유: {}", 
+                    reporterName, request.getTargetName(), request.getReason());
+            
+        } catch (Exception e) {
+            log.error("신고 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("신고 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 }

@@ -1,12 +1,14 @@
 package site.petful.advertiserservice.admin.service;
 
-import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.petful.advertiserservice.dto.advertisement.AdAdminResponse;
+import site.petful.advertiserservice.dto.advertisement.AdResponse;
+import site.petful.advertiserservice.dto.advertiser.AdvertiserAdminResponse;
 import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import org.springframework.web.server.ResponseStatusException;
 import site.petful.advertiserservice.entity.advertisement.AdStatus;
@@ -27,28 +29,33 @@ public class AdvertiserAdminService {
         restrictAdvertiser.suspend();
     }
     // 광고주 제한 거절
+    @Transactional
     public void rejectAdvertiser(Long id,String reason) {
         Advertiser rejectAdvertiser = advertiserRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "해당 광고주를 찾을 수 없습니다."));
         rejectAdvertiser.setReason(reason);
+        advertiserRepository.save(rejectAdvertiser);
     }
-
+    @Transactional
     public void approveAdvertiser(Long id) {
         Advertiser approveAdvertiser = advertiserRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "해당 광고주를 찾을 수 없습니다."));
         approveAdvertiser.setIsApproved(true);
+        advertiserRepository.save(approveAdvertiser);
     }
 
-    public Page<Advertiser> getAllAdvertiser(Pageable pageable) {
-        return advertiserRepository.findByIsApproved(false,pageable);
+    public Page<AdvertiserAdminResponse> getAllAdvertiser(Pageable pageable) {
+        return  advertiserRepository.findByIsApprovedFalseAndReasonIsNotNull(pageable)
+                .map(AdvertiserAdminResponse::from);
     }
 
-    public Page<Advertisement> getAllCampaign(Pageable pageable) {
-        return adRepository.findByAdStatus(AdStatus.TRIAL, pageable);
+    public Page<AdAdminResponse> getAllCampaign(Pageable pageable) {
+        return adRepository.findByAdStatus(AdStatus.TRIAL, pageable).map(AdAdminResponse::from);
     }
 
+    @Transactional
     public void deleteCampaign(Long adId) {
         Advertisement ad = adRepository.findById(adId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -60,14 +67,8 @@ public class AdvertiserAdminService {
         ad.setAdStatus(AdStatus.REJECTED);
     }
 
-    public Page<Advertisement> getPendingAds(Pageable pageable) {
-        Page<Advertisement> ads = adRepository.findByAdStatus(AdStatus.PENDING, pageable);
-
-        if (ads.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "대기중인 광고가 없습니다.");
-        }
-
-        return ads;
+    public Page<AdAdminResponse> getPendingAds(Pageable pageable) {
+       return adRepository.findByAdStatus(AdStatus.PENDING, pageable).map(AdAdminResponse::from);
     }
 
     public void approve(Long adId) {

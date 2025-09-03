@@ -1,4 +1,4 @@
-package site.petful.userservice.dto;
+package site.petful.petservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,5 +15,5 @@ public class SimpleProfileResponse {
     private String profileImageUrl;
     private String emil;
     private String phone;
-    
+
 }

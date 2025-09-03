@@ -1,4 +1,4 @@
-package site.petful.petservice.admin.client;
+package site.petful.userservice.admin.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -15,4 +15,13 @@ public class UserResponse {
     private String phone;
     @JsonProperty("email")
     private String email;
+    
+    public UserResponse() {}
+    
+    public UserResponse(Long id, String name, String phone, String email) {
+        this.id = id;
+        this.name = name;
+        this.phone = phone;
+        this.email = email;
+    }
 }
