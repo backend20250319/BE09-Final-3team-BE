@@ -43,7 +43,6 @@ public class PetService {
                 .gender(request.getGender())
                 .weight(request.getWeight())
                 .imageUrl(request.getImageUrl())
-                .snsUrl(request.getSnsUrl())  // snsUrl 설정 추가
                 .snsProfileNo(request.getSnsProfileNo())
                 .isPetStar(false)
                 .petStarStatus(PetStarStatus.NONE)
@@ -91,7 +90,6 @@ public class PetService {
         pet.setGender(request.getGender());
         pet.setWeight(request.getWeight());
         pet.setImageUrl(request.getImageUrl());
-        pet.setSnsUrl(request.getSnsUrl());  // snsUrl 설정 추가
         pet.setSnsProfileNo(request.getSnsProfileNo());
 
         Pet updatedPet = petRepository.save(pet);
@@ -216,8 +214,10 @@ public class PetService {
 
     // Pet 엔티티를 PetResponse로 변환
     private PetResponse toPetResponse(Pet pet) {
-        log.debug("Pet 엔티티 변환 - petNo: {}, imageUrl: {}", pet.getPetNo(), pet.getImageUrl());
-        return PetResponse.builder()
+        log.debug("Pet 엔티티 변환 - petNo: {}, imageUrl: {}, snsUrl: {}", 
+                  pet.getPetNo(), pet.getImageUrl(), pet.getSnsUrl());
+        
+        PetResponse response = PetResponse.builder()
                 .petNo(pet.getPetNo())
                 .userNo(pet.getUserNo())
                 .name(pet.getName())
@@ -234,5 +234,8 @@ public class PetService {
                 .createdAt(pet.getCreatedAt())
                 .updatedAt(pet.getUpdatedAt())
                 .build();
+        
+        log.debug("PetResponse 생성 완료 - snsUrl: {}", response.getSnsUrl());
+        return response;
     }
 }
