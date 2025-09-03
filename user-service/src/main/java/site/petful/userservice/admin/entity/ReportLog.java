@@ -48,8 +48,23 @@ public class ReportLog {
     @Enumerated(EnumType.STRING)
     private ReportStatus reportStatus = ReportStatus.BEFORE;
 
+    @Column(name="reject_reason", nullable = true)
+    private String rejectReason;
+
     @PrePersist
     protected void onCreate() {if(createdAt == null) createdAt = LocalDateTime.now();}
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+    
+    public void setReporter(ActorRef reporter) {
+        this.reporter = reporter;
+    }
+    
+    public void setTarget(ActorRef target) {
+        this.target = target;
+    }
 
     public void setReportStatus(ReportStatus reportStatus) {
         this.reportStatus = reportStatus;
@@ -57,5 +72,9 @@ public class ReportLog {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public void setRejectReason(String rejectReason) {
+        this.rejectReason = rejectReason;
     }
 }

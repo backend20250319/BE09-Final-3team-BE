@@ -80,6 +80,42 @@ public class CampaignService {
         return ApplicantsResponse.from(applicantResponses);
     }
 
+    // 2-2. petNo로 체험단 신청 내역 조회
+    public ApplicantsResponse getApplicantsByPetNo(Long petNo) {
+        ApiResponse<PetResponse> petResponse = petFeignClient.getPet(petNo);
+        if (petResponse == null || petResponse.getData() == null) {
+            throw new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage());
+        }
+
+        List<Applicant> applicants = campaignRepository.findByPetNo(petNo);
+
+        List<ApplicantResponse> applicantResponses = applicants.stream()
+                .map(applicant -> ApplicantResponse.from(applicant, petResponse.getData()))
+                .collect(Collectors.toList());
+
+        return ApplicantsResponse.from(applicantResponses);
+    }
+
+    // 2-3. 광고 + 사용자별 신청자 조회
+    public List<ApplicantResponse> getApplicantsByAd(Long userNo, Long adNo) {
+        List<Applicant> applicants = campaignRepository.findByAdNo(adNo);
+        List<PetResponse> petResponses = petFeignClient.getPetsExternal(userNo).getData();
+        List<Long> petNos = petResponses.stream().map(PetResponse::getPetNo).toList();
+
+        List<Applicant> filteredApplicants = applicants.stream()
+                .filter(applicant -> petNos.contains(applicant.getPetNo())).toList();
+
+        return filteredApplicants.stream()
+                .map(applicant -> {
+                    PetResponse pet = petResponses.stream()
+                            .filter(p -> p.getPetNo().equals(applicant.getPetNo()))
+                            .findFirst()
+                            .orElse(null);
+                    return ApplicantResponse.from(applicant, pet);
+                })
+                .collect(Collectors.toList());
+    }
+
     // 3-1. 체험단 추가 내용 수정 - 체험단
     public ApplicantResponse updateApplicant(Long applicantNo, ApplicantRequest request) {
 
@@ -122,4 +158,5 @@ public class CampaignService {
         // advertiser의 applicants 1 감소
         advertiserFeignClient.updateAdByCampaign(applicant.getAdNo(), -1);
     }
+
 }

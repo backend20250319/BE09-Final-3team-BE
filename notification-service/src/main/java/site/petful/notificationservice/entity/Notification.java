@@ -5,8 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name="Notifications")
@@ -56,7 +58,14 @@ public class Notification {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        }
+        // scheduledAt이 있다면 시간대 변환 없이 그대로 유지
+        if (scheduledAt != null) {
+            System.out.println("🔍 [Notification.@PrePersist] scheduledAt 저장 전: " + scheduledAt);
+            // scheduledAt은 그대로 유지 (시간대 변환 없음)
+        }
     }
 
     public void hide() {
@@ -75,11 +84,19 @@ public class Notification {
     }
 
     public static Notification of(Long userId, String type, String title, String content, String linkUrl) {
-        return new Notification(null, userId, type, title, content, linkUrl, false, null, LocalDateTime.now(), null, null, NotificationStatus.PENDING);
+        return new Notification(null, userId, type, title, content, linkUrl, false, null, LocalDateTime.now(ZoneId.of("Asia/Seoul")), null, null, NotificationStatus.PENDING);
     }
 
     public static Notification scheduled(Long userId, String type, String title, String content, String linkUrl, LocalDateTime scheduledAt) {
-        Notification notification = new Notification(null, userId, type, title, content, linkUrl, false, null, LocalDateTime.now(), scheduledAt, null, NotificationStatus.SCHEDULED);
+        System.out.println("🔍 [Notification.scheduled] scheduledAt 파라미터: " + scheduledAt);
+        System.out.println("🔍 [Notification.scheduled] scheduledAt 상세: year=" + scheduledAt.getYear() + 
+                ", month=" + scheduledAt.getMonth() + ", day=" + scheduledAt.getDayOfMonth() + 
+                ", hour=" + scheduledAt.getHour() + ", minute=" + scheduledAt.getMinute() + ", second=" + scheduledAt.getSecond());
+        
+        Notification notification = new Notification(null, userId, type, title, content, linkUrl, false, null, LocalDateTime.now(ZoneId.of("Asia/Seoul")), scheduledAt, null, NotificationStatus.SCHEDULED);
+        
+        System.out.println("🔍 [Notification.scheduled] 생성된 엔티티의 scheduledAt: " + notification.getScheduledAt());
+        
         return notification;
     }
 

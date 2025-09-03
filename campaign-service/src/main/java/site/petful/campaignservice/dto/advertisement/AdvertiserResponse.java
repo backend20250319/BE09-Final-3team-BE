@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class AdvertiserResponse {
 
+    private Long advertiserNo;
     private String name;
     private String phone;
     private String website;

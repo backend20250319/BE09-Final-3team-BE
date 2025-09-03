@@ -84,4 +84,27 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponseGenerator.success());
     }
 
+    /**
+     * 예약 알림 테스트
+     */
+    @PostMapping("/test/scheduled")
+    public ResponseEntity<ApiResponse<NotificationResponseDto>> testScheduledNotification(
+            @RequestBody EventMessage eventMessage,
+            @RequestParam String timeStr) {
+        
+        log.info("🧪 [NotificationController] 예약 알림 테스트: eventId={}, type={}, timeStr={}", 
+                eventMessage.getEventId(), eventMessage.getType(), timeStr);
+
+        try {
+            Notification notification = notificationService.createScheduledNotification(eventMessage, timeStr);
+            NotificationResponseDto response = NotificationResponseDto.from(notification);
+            
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+            
+        } catch (Exception e) {
+            log.error("❌ [NotificationController] 예약 알림 테스트 실패: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ApiResponseGenerator.fail(ErrorCode.OPERATION_FAILED, (NotificationResponseDto) null));
+        }
+    }
+
 }

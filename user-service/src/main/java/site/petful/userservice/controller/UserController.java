@@ -27,6 +27,7 @@ import site.petful.userservice.dto.WithdrawRequest;
 import site.petful.userservice.dto.WithdrawResponse;
 import site.petful.userservice.dto.LogoutRequest;
 import site.petful.userservice.dto.TokenInfoResponse;
+import site.petful.userservice.dto.ReportRequest;
 import site.petful.userservice.service.AuthService;
 import site.petful.userservice.service.UserService;
 import site.petful.userservice.security.JwtUtil;
@@ -377,4 +378,43 @@ public class UserController {
             return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null));
         }
     }
+
+    /**
+     * 사용자 신고
+     * POST /auth/reports
+     */
+    @PostMapping("/reports")
+    public ResponseEntity<ApiResponse<String>> reportUser(@Valid @RequestBody ReportRequest request) {
+        try {
+            // 헤더에서 사용자 번호를 먼저 시도
+            Long userNo = UserHeaderUtil.getCurrentUserNo();
+            
+            // 헤더가 없으면 기존 JWT 방식으로 fallback
+            if (userNo == null) {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null && authentication.isAuthenticated()) {
+                    String email = authentication.getName();
+                    User user = userService.findByEmail(email);
+                    userNo = user.getUserNo();
+                } else {
+                    throw new IllegalStateException("인증 정보가 없습니다.");
+                }
+            }
+            
+            // 사용자 정보 조회
+            User user = userService.findByUserNo(userNo);
+            String reporterName = user.getNickname() != null ? user.getNickname() : user.getName();
+            
+            // 신고 처리
+            userService.reportUser(userNo, reporterName, request);
+            
+            return ResponseEntity.ok(ApiResponseGenerator.success("신고가 성공적으로 접수되었습니다."));
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null)
+            );
+        }
+    }
+
 }

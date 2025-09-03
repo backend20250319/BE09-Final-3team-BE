@@ -24,7 +24,6 @@ public class MedicationUpdateDiffDTO {
         private String dosage;
         private String frequency;
         private Integer durationDays;
-        private String instructions;
         private String subType;
         private Integer reminderDaysBefore;
     }

@@ -1,17 +1,20 @@
 package site.petful.petservice.client;
 
-import site.petful.petservice.admin.client.UserResponse;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
+import site.petful.petservice.common.ApiResponse;
+import site.petful.petservice.config.FeignAuthConfig;
+import site.petful.petservice.dto.SimpleProfileResponse;
 
-@FeignClient(name = "user-service", url = "${user-service.url:http://localhost:8000}")
+
+@FeignClient(name = "user-service", path = "/auth/profile",configuration = FeignAuthConfig.class)
 public interface UserClient {
 
     @GetMapping("/api/v1/user-service/auth/profile/{userNo}")
-    UserProfileResponse getUserProfile(@PathVariable Long userNo, @RequestHeader("Authorization") String token);
+    UserProfileResponse getUserProfie(@PathVariable Long userNo);
 
-    @GetMapping("/api/v1/user-service/admin/users/{id}")
-    UserResponse getUserById(@PathVariable("id") Long userId);
+    @GetMapping("/simple")
+    ApiResponse<SimpleProfileResponse> getUserBrief(@RequestParam("userNo") Long userNo);
 }
