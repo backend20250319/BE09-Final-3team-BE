@@ -20,10 +20,11 @@ public class CareDetailDTO {
     private String subType;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private List<LocalTime> times; // 일정 시간들
-    private String frequency; // 라벨
+    private List<LocalTime> times;
+    private String frequency; 
     private Boolean alarmEnabled;
-    private Integer reminderDaysBefore; // 단일 값
+    private Integer reminderDaysBefore;
+    private Integer lastReminderDaysBefore;
 }
 
 

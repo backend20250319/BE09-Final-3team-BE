@@ -33,6 +33,7 @@ public class MedicationResponseDTO {
     
     // 알림 관련 필드
     private Integer reminderDaysBefore;  // 0: 당일, 1: 1일전, 2: 2일전, 3: 3일전
+    private Integer lastReminderDaysBefore;  // 마지막으로 설정했던 알림 시기
     
     // 처방전 구분 필드
     private Boolean isPrescription;  // true: 처방전으로 등록, false: 일반 등록

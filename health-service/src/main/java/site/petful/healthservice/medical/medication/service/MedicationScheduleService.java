@@ -275,6 +275,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
                             .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
                             .times(slots)
                             .reminderDaysBefore(c.getReminderDaysBefore())
+                            .lastReminderDaysBefore(c.getLastReminderDaysBefore())
                             .isPrescription(isPrescription)
                             .build();
                 })
@@ -321,6 +322,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .frequency(c.getFrequency())
                         .alarmEnabled(c.getReminderDaysBefore() != null)
         .reminderDaysBefore(c.getReminderDaysBefore())
+                .lastReminderDaysBefore(c.getLastReminderDaysBefore())
                 .medicationName(medName)
                 .dosage(dosage)
                 .durationDays(duration)

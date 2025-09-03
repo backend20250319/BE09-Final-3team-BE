@@ -154,6 +154,7 @@ public class CareScheduleService extends AbstractScheduleService {
                         .frequency(c.getFrequency())
                         .alarmEnabled(c.getReminderDaysBefore() != null)
                         .reminderDaysBefore(c.getReminderDaysBefore())
+                        .lastReminderDaysBefore(c.getLastReminderDaysBefore())
                         .times(c.getTimesAsList())
                         .build())
                 .toList();
@@ -188,6 +189,7 @@ public class CareScheduleService extends AbstractScheduleService {
                 .frequency(c.getFrequency())
                 .alarmEnabled(c.getReminderDaysBefore() != null)
                 .reminderDaysBefore(c.getReminderDaysBefore())
+                .lastReminderDaysBefore(c.getLastReminderDaysBefore())
                 .build();
     }
 
