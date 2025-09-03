@@ -43,6 +43,7 @@ public class PetService {
                 .gender(request.getGender())
                 .weight(request.getWeight())
                 .imageUrl(request.getImageUrl())
+                .snsUrl(request.getSnsUrl())  // snsUrl 설정 추가
                 .snsProfileNo(request.getSnsProfileNo())
                 .isPetStar(false)
                 .petStarStatus(PetStarStatus.NONE)

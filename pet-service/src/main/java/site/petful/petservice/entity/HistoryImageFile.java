@@ -50,3 +50,4 @@ public class HistoryImageFile {
                 foreignKeyDefinition = "FOREIGN KEY (history_no) REFERENCES history (history_no) ON DELETE CASCADE"))
     private History history;
 }
+
