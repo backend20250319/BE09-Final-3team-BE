@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -523,15 +524,15 @@ public class MedicationScheduleService extends AbstractScheduleService {
     /**
      * 투약 관련 메타 정보 조회 (드롭다운용)
      */
-    public java.util.Map<String, java.util.List<String>> getMedicationMeta() {
-        java.util.List<String> subTypes = java.util.Arrays.stream(ScheduleSubType.values())
+    public Map<String, List<String>> getMedicationMeta() {
+        List<String> subTypes = Arrays.stream(ScheduleSubType.values())
                 .filter(ScheduleSubType::isMedicationType)
                 .map(Enum::name)
                 .toList();
         
-        java.util.List<String> frequencies = java.util.List.of("하루 1회", "하루 2회", "하루 3회", "주에 1번", "월에 1번");
+        List<String> frequencies = List.of("하루에 한 번", "하루에 두 번", "하루에 세 번", "주에 한 번", "월에 한 번");
         
-        java.util.Map<String, java.util.List<String>> data = new java.util.HashMap<>();
+        Map<String, List<String>> data = new HashMap<>();
         data.put("subTypes", subTypes);
         data.put("frequencies", frequencies);
         return data;

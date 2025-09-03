@@ -14,6 +14,7 @@ import site.petful.healthservice.medical.medication.service.MedicationService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.time.LocalDate;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
@@ -113,8 +114,8 @@ public class MedicationController {
      * 투약 관련 메타 정보 조회 (드롭다운용)
      */
     @GetMapping("/meta")
-    public ResponseEntity<ApiResponse<java.util.Map<String, java.util.List<String>>>> getMedicationMeta() {
-        java.util.Map<String, java.util.List<String>> data = medicationScheduleService.getMedicationMeta();
+    public ResponseEntity<ApiResponse<Map<String, List<String>>>> getMedicationMeta() {
+        Map<String, List<String>> data = medicationScheduleService.getMedicationMeta();
         return ResponseEntity.ok(ApiResponseGenerator.success(data));
     }
 

@@ -67,6 +67,7 @@ public enum ErrorCode {
     PET_NOT_FOUND("7035", "펫을 찾을 수 없습니다."),
     MEDICAL_DATE_FORMAT_ERROR("7036", "건강관리 일정의 날짜 형식이 올바르지 않습니다."),
     MEDICAL_DATE_RANGE_ERROR("7037", "건강관리 일정의 날짜 범위가 올바르지 않습니다."),
+    MEDICAL_DATE_PAST_ERROR("7046", "과거 날짜로 일정을 생성할 수 없습니다."),
     MEDICAL_SCHEDULE_CONFLICT("7038", "건강관리 일정이 중복됩니다."),
     MEDICAL_INVALID_TIME_FORMAT("7039", "건강관리 일정의 시간 형식이 올바르지 않습니다."),
     MEDICAL_INVALID_FREQUENCY("7040", "건강관리 일정의 빈도가 올바르지 않습니다."),

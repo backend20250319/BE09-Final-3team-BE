@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -54,16 +55,12 @@ public class CareScheduleService extends AbstractScheduleService {
     // ==================== 돌봄 일정 생성 ====================
     
     public Long createCareSchedule(Long userNo, @Valid CareRequestDTO request) {
-
+        // 날짜 검증
+        validateDateRange(request.getStartDate(), request.getEndDate());
 
         ScheduleSubType subType = request.getSubType();
         
-        ScheduleMainType mainType;
-        if (subType.isVaccinationType()) {
-            mainType = ScheduleMainType.VACCINATION;
-        } else {
-            mainType = ScheduleMainType.CARE;
-        }
+        ScheduleMainType mainType = ScheduleMainType.CARE;
 
         // 공통 DTO로 변환
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
@@ -120,20 +117,14 @@ public class CareScheduleService extends AbstractScheduleService {
         }
 
         var stream = items.stream()
-                .filter(c -> c.getMainType() == ScheduleMainType.CARE || c.getMainType() == ScheduleMainType.VACCINATION)
+                .filter(c -> c.getMainType() == ScheduleMainType.CARE)
                 .filter(c -> c.getPetNo().equals(petNo)); // 특정 펫의 일정만 필터링
         
         if (subType != null && !subType.isBlank()) {
             try {
                 ScheduleSubType targetSubType = ScheduleSubType.valueOf(subType.toUpperCase());
                 
-                if (targetSubType.isVaccinationType()) {
-                    // 접종 관련 서브타입이면 VACCINATION 메인타입만
-                    stream = stream.filter(c -> c.getMainType() == ScheduleMainType.VACCINATION);
-                } else {
-                    // 일반 돌봄 서브타입이면 CARE 메인타입만
-                    stream = stream.filter(c -> c.getMainType() == ScheduleMainType.CARE);
-                }
+                // 모든 서브타입이 CARE 메인타입이므로 메인타입 필터링 제거
                 
                 // 서브타입도 정확히 매칭
                 stream = stream.filter(c -> c.getSubType() == targetSubType);
@@ -212,20 +203,16 @@ public class CareScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
         }
         
-        if (entity.getMainType() != ScheduleMainType.CARE && entity.getMainType() != ScheduleMainType.VACCINATION) {
-            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "돌봄 또는 접종 일정이 아닙니다.");
+        if (entity.getMainType() != ScheduleMainType.CARE) {
+            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "돌봄 일정이 아닙니다.");
         }
         
-        // 메인타입 변경 방지
-        if (request.getSubType() != null) {
-            ScheduleSubType newSubType = request.getSubType();
-            if (entity.getMainType() == ScheduleMainType.CARE && newSubType.isVaccinationType()) {
-                throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "돌봄 일정을 접종 일정으로 변경할 수 없습니다.");
-            }
-            if (entity.getMainType() == ScheduleMainType.VACCINATION && !newSubType.isVaccinationType()) {
-                throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "접종 일정을 돌봄 일정으로 변경할 수 없습니다.");
-            }
-        }
+        // 메인타입 변경 방지 로직 제거 (모든 서브타입이 CARE 메인타입이므로)
+
+        // 날짜 검증
+        LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
+        LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : entity.getEndDate().toLocalDate();
+        validateDateRange(startDate, endDate);
 
         // 일정 업데이트
         updateCareScheduleFields(entity, request);
@@ -322,8 +309,8 @@ public class CareScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
         }
 
-        if (entity.getMainType() != ScheduleMainType.CARE && entity.getMainType() != ScheduleMainType.VACCINATION) {
-            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "돌봄 또는 접종 일정이 아닙니다.");
+        if (entity.getMainType() != ScheduleMainType.CARE) {
+            throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "돌봄 일정이 아닙니다.");
         }
 
         // 현재 알림 상태 확인
@@ -357,21 +344,38 @@ public class CareScheduleService extends AbstractScheduleService {
     /**
      * 돌봄 및 접종 관련 메타 정보 조회 (드롭다운용)
      */
-    public java.util.Map<String, java.util.List<String>> getCareMeta() {
-        java.util.List<String> subTypes = java.util.Arrays.stream(ScheduleSubType.values())
-                .filter(st -> st.isCareType() || st.isVaccinationType())
+    public Map<String, List<String>> getCareMeta() {
+        List<String> subTypes = Arrays.stream(ScheduleSubType.values())
+                .filter(ScheduleSubType::isCareType)
                 .map(Enum::name)
                 .toList();
-        java.util.List<String> frequencies = java.util.Arrays.stream(CareFrequency.values())
+        List<String> frequencies = Arrays.stream(CareFrequency.values())
                 .map(Enum::name)
                 .toList();
-        java.util.Map<String, java.util.List<String>> data = new java.util.HashMap<>();
+        Map<String, List<String>> data = new HashMap<>();
         data.put("subTypes", subTypes);
         data.put("frequencies", frequencies);
         return data;
     }
 
-
+    // ==================== 날짜 검증 메서드 ====================
+    
+    /**
+     * 날짜 범위 검증
+     */
+    private void validateDateRange(LocalDate startDate, LocalDate endDate) {
+        // 시작일이 과거인지 확인
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.MEDICAL_DATE_PAST_ERROR, 
+                "과거 날짜로 일정을 생성할 수 없습니다.");
+        }
+        
+        // 종료일이 시작일보다 이전인지 확인
+        if (endDate != null && endDate.isBefore(startDate)) {
+            throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
+                "종료일은 시작일보다 이전일 수 없습니다.");
+        }
+    }
 
     // ==================== 이벤트 발행 ====================
     
