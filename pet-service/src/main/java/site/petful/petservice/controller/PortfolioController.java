@@ -3,6 +3,7 @@ package site.petful.petservice.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.petservice.common.ApiResponse;
 import site.petful.petservice.dto.PortfolioRequest;
@@ -34,6 +35,14 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<PortfolioResponse>> getPortfolio(
             @PathVariable Long petNo,
             @RequestAttribute("X-User-No") Long userNo) {
+        PortfolioResponse response = portfolioService.getPortfolio(petNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/pets/{petNo}/portfolio/external")
+    public ResponseEntity<ApiResponse<PortfolioResponse>> getPortfolioExternal(
+            @PathVariable Long petNo,
+            @AuthenticationPrincipal Long userNo) {
         PortfolioResponse response = portfolioService.getPortfolio(petNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(response));
     }

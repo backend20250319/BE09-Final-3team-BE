@@ -12,4 +12,6 @@ public interface CampaignRepository extends JpaRepository<Applicant, Long> {
     List<Applicant> findByPetNoIn(List<Long> petNos);
 
     List<Applicant> findByAdNo(Long adNo);
+
+    List<Applicant> findByPetNo(Long petNo);
 }
