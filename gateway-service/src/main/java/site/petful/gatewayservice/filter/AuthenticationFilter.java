@@ -30,7 +30,7 @@ public class AuthenticationFilter extends
     // 기본 화이트리스트 - 인증 없이 접근 가능한 경로들
     private static final List<String> DEFAULT_WHITELIST = List.of(
 
-        "/api/v1/user-service/auth/login",
+       "/api/v1/user-service/auth/login",
         "/api/v1/user-service/auth/signup",
         "/api/v1/user-service/auth/password/reset",
         "/api/v1/user-service/auth/password/verify",

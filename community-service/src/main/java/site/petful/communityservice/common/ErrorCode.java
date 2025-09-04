@@ -28,6 +28,20 @@ public enum ErrorCode {
     NOTIFICATION_NOT_FOUND("5000","알림이 존재하지 않습니다."),
     NOTIFICATION_FORBIDDEN("5001","해당 알림에 접근할 수 없습니다."),
     NOTIFICATION_SEND_FAILED("5002","알림 전송에 실패했습니다."),
+    POST_NOT_FOUND("5003","게시글을 찾을 수 없습니다."),
+    POST_FORBIDDEN("5004","해당 게시글에 접근할 수 없습니다."),
+    POST_CREATE_FAILED("5005","게시글 생성에 실패했습니다."),
+    POST_UPDATE_FAILED("5006","게시글 수정에 실패했습니다."),
+    POST_DELETE_FAILED("5007","게시글 삭제에 실패했습니다."),
+    COMMENT_NOT_FOUND("5008","댓글을 찾을 수 없습니다."),
+    COMMENT_FORBIDDEN("5009","해당 댓글에 접근할 수 없습니다."),
+    COMMENT_CREATE_FAILED("5010","댓글 생성에 실패했습니다."),
+    COMMENT_UPDATE_FAILED("5011","댓글 수정에 실패했습니다."),
+    COMMENT_DELETE_FAILED("5012","댓글 삭제에 실패했습니다."),
+    INVALID_POST_ID("5013","유효하지 않은 게시글 ID입니다."),
+    INVALID_COMMENT_ID("5014","유효하지 않은 댓글 ID입니다."),
+    INVALID_USER_ID("5015","유효하지 않은 사용자 ID입니다."),
+    INVALID_CONTENT("5016","유효하지 않은 내용입니다."),
     // 6000번대 : 건강관리
 
     // 7000번대 : SNS 관리

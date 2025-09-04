@@ -27,7 +27,7 @@ public class NotificationReadService {
                 Sort.Order.desc("id")
         ));
 
-        return notificationRepository.findByUserIdAndHiddenFalse(userId,pageable).map(NotificationDto::from);
+        return notificationRepository.findByUserIdAndStatusAndHiddenFalse(userId, Notification.NotificationStatus.SENT, pageable).map(NotificationDto::from);
     }
 
     @Transactional
