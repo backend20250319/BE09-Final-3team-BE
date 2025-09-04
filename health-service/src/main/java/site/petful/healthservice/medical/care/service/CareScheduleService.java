@@ -62,6 +62,12 @@ public class CareScheduleService extends AbstractScheduleService {
         
         ScheduleMainType mainType = ScheduleMainType.CARE;
 
+        // careFrequency 처리
+        CareFrequency careFreq = request.getCareFrequency() != null ? request.getCareFrequency() : CareFrequency.DAILY;
+        RecurrenceType recurrenceType = careFreq.getRecurrenceType();
+        Integer interval = careFreq.getInterval();
+        String frequencyText = careFreq.getLabel();
+
         // 공통 DTO로 변환
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
                 .petNo(request.getPetNo())
@@ -70,11 +76,11 @@ public class CareScheduleService extends AbstractScheduleService {
                 .endDate(request.getEndDate())
                 .subType(request.getSubType())
                 .times(request.getTimes())
-                .frequency(RecurrenceType.DAILY)
-                .recurrenceInterval(1)
+                .frequency(recurrenceType)
+                .recurrenceInterval(interval)
                 .recurrenceEndDate(request.getEndDate())
                 .reminderDaysBefore(request.getReminderDaysBefore())
-                .frequencyText("매일")
+                .frequencyText(frequencyText)
                 .build();
 
         // 공통 서비스 사용
@@ -250,8 +256,8 @@ public class CareScheduleService extends AbstractScheduleService {
         entity.updateSchedule(entity.getTitle(), startDt, endDt, startDt);
 
         // 빈도/반복 업데이트
-        if (request.getFrequency() != null) {
-            CareFrequency cf = request.getFrequency();
+        if (request.getCareFrequency() != null) {
+            CareFrequency cf = request.getCareFrequency();
             RecurrenceType recurrenceType = cf.getRecurrenceType();
             Integer interval = cf.getInterval();
             
