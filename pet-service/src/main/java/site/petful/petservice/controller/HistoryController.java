@@ -69,16 +69,6 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-
-
-
-
-
-
-
-
-
-
     // 활동이력 이미지 업로드
     @PostMapping("/{petNo}/histories/{historyNo}/images")
     public ResponseEntity<ApiResponse<MultipleFileUploadResponse>> uploadHistoryImages(
@@ -115,6 +105,26 @@ public class HistoryController {
 
         List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(images));
+    }
+
+    // 활동이력 이미지 삭제
+    @DeleteMapping("/{petNo}/histories/{historyNo}/images/{imageId}")
+    public ResponseEntity<ApiResponse<Void>> deleteHistoryImage(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @PathVariable Long imageId,
+            @RequestAttribute("X-User-No") Long userNo) {
+        historyService.deleteHistoryImage(petNo, historyNo, imageId, userNo);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 중복 활동이력 정리
+    @PostMapping("/{petNo}/histories/cleanup")
+    public ResponseEntity<ApiResponse<Void>> cleanupDuplicateHistories(
+            @PathVariable Long petNo,
+            @RequestAttribute("X-User-No") Long userNo) {
+        // TODO: cleanup 로직 구현 필요
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // 활동이력 삭제
