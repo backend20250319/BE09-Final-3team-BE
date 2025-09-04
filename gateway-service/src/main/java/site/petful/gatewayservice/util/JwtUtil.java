@@ -21,6 +21,7 @@ public class JwtUtil {
 
     private static final String CLAIM_USER_NO = "userNo";
     private static final String CLAIM_USER_TYPE = "userType";
+    private static final String CLAIM_ADVERTISER_NO = "advertiserNo";
 
     private final JwtConfig jwtConfig;
 
@@ -73,6 +74,23 @@ public class JwtUtil {
             return claims.get(CLAIM_USER_TYPE, String.class);
         } catch (JwtException | IllegalArgumentException e) {
             log.error("Error extracting userType from token: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 토큰에서 advertiserNo를 직접 추출하는 메서드
+     */
+    public String getAdvertiserNoFromToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            Object advertiserNoObj = claims.get(CLAIM_ADVERTISER_NO);
+            if (advertiserNoObj == null) {
+                return null;
+            }
+            return advertiserNoObj.toString();
+        } catch (JwtException | IllegalArgumentException e) {
+            log.error("Error extracting advertiserNo from token: {}", e.getMessage());
             return null;
         }
     }
