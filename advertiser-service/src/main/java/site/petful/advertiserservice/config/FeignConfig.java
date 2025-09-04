@@ -1,6 +1,5 @@
 package site.petful.advertiserservice.config;
 
-import feign.Client;
 import feign.RequestInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

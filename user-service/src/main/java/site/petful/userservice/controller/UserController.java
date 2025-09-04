@@ -233,6 +233,13 @@ public class UserController {
         ProfileResponse profile = userService.getProfile(userNo);
         return ResponseEntity.ok(ApiResponseGenerator.success(profile));
     }
+
+    @GetMapping("/profile/{userNo}")
+    public ResponseEntity<ApiResponse<ProfileResponse>> getProfile(@PathVariable Long userNo) {
+
+        ProfileResponse profile = userService.getProfile(userNo);
+        return ResponseEntity.ok(ApiResponseGenerator.success(profile));
+    }
     
     /**
      * 현재 로그인한 사용자의 프로필 정보 수정

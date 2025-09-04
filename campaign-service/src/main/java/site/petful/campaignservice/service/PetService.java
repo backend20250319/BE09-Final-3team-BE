@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import site.petful.campaignservice.client.PetFeignClient;
 import site.petful.campaignservice.dto.HistoryImageInfo;
 import site.petful.campaignservice.dto.HistoryResponse;
-import site.petful.campaignservice.dto.PetResponse;
-import site.petful.campaignservice.dto.PortfolioResponse;
+import site.petful.campaignservice.dto.pet.PetResponse;
+import site.petful.campaignservice.dto.pet.PortfolioResponse;
 
 import java.util.List;
 

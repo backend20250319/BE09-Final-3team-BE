@@ -95,6 +95,17 @@ public class HistoryService {
                 .collect(Collectors.toList());
     }
 
+    public List<HistoryResponse> getHistoriesExternal(Long petNo) {
+        // 펫 존재 여부 및 소유권 확인
+        Pet pet = petRepository.findById(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
+
+        List<History> histories = historyRepository.findByPetNo(petNo);
+        return histories.stream()
+                .map(this::toHistoryResponse)
+                .collect(Collectors.toList());
+    }
+
     // 활동이력 수정
     @Transactional
     public HistoryResponse updateHistory(Long petNo, Long historyNo, Long userNo, HistoryRequest request) {

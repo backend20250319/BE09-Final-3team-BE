@@ -5,12 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.campaignservice.client.AdvertiserFeignClient;
 import site.petful.campaignservice.client.PetFeignClient;
+import site.petful.campaignservice.client.UserFeignClient;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ErrorCode;
 import site.petful.campaignservice.dto.advertisement.AdResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantRequest;
-import site.petful.campaignservice.dto.PetResponse;
+import site.petful.campaignservice.dto.pet.PetResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantsResponse;
 import site.petful.campaignservice.entity.Applicant;
 import site.petful.campaignservice.entity.ApplicantStatus;
@@ -39,6 +40,8 @@ public class CampaignService {
 
         ApiResponse<PetResponse> petResponse = petFeignClient.getPet(petNo);
         PetResponse pet = petResponse.getData();
+
+
 
         Applicant applicant = new Applicant();
         applicant.setAdNo(adNo);

@@ -1,4 +1,4 @@
-package site.petful.campaignservice.dto;
+package site.petful.advertiserservice.dto.campaign;
 
 import lombok.Getter;
 import lombok.Setter;

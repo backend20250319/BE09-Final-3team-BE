@@ -3,7 +3,7 @@ package site.petful.campaignservice.dto.campaign;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import site.petful.campaignservice.dto.PetResponse;
+import site.petful.campaignservice.dto.pet.PetResponse;
 import site.petful.campaignservice.entity.ApplicantStatus;
 
 import java.time.LocalDateTime;

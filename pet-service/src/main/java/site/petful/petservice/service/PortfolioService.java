@@ -2,6 +2,7 @@ package site.petful.petservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.spi.LocationAwareLogger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.petservice.dto.PortfolioRequest;
@@ -85,8 +86,17 @@ public class PortfolioService {
                 .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
         
         if (!pet.getUserNo().equals(userNo)) {
+            log.debug(String.valueOf(pet.getUserNo()));
+            log.debug(String.valueOf(userNo));
             throw new IllegalArgumentException("해당 포트폴리오를 조회할 권한이 없습니다.");
         }
+
+        return toPortfolioResponse(portfolio);
+    }
+
+    public PortfolioResponse getPortfolioExternal(Long petNo) {
+        Portfolio portfolio = portfolioRepository.findByPetNo(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다: " + petNo));
 
         return toPortfolioResponse(portfolio);
     }
