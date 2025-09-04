@@ -102,30 +102,5 @@ public class UserAdminController {
         }
     }
 
-    /**
-     * Admin 로그아웃
-     * POST /api/v1/admin/users/logout
-     */
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<AdminLogoutResponse>> logout(
-            @AuthenticationPrincipal Long adminId,
-            @AuthenticationPrincipal String adminType,
-            @Valid @RequestBody AdminLogoutRequest request
-    ) {
-        try {
-            // 리프레시 토큰 검증 및 로그아웃 처리
-            adminAuthService.logout(request.getRefreshToken());
-
-            AdminLogoutResponse response = AdminLogoutResponse.builder()
-                    .message("Admin 로그아웃이 성공적으로 처리되었습니다.")
-                    .adminId(adminId)
-                    .adminType(adminType)
-                    .build();
-
-            return ResponseEntity.ok(ApiResponseGenerator.success(response));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null));
-        }
-    }
 
 }
