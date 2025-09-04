@@ -33,10 +33,10 @@ public class AuthenticationFilter extends
         "/api/v1/user-service/auth/**",
         "/api/v1/user-service/health",
         "/api/v1/advertiser-service/advertiser/**",
-        "/api/v1/advertiser-service/ad/",
-        "/api/v1/advertiser-service/file/",
         "/api/v1/advertiser-service/health",
         "/api/v1/advertiser-service/advertiser/email/**",
+        "/api/v1/advertiser-service/ad/**",
+        "/api/v1/advertiser-service/file/**",
         "/actuator/**"
     );
 

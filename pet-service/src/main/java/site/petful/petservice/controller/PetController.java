@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
-<<<<<<<< HEAD:pet-service/src/main/java/org/example/petservice/controller/PetController.java
-========
 import site.petful.petservice.dto.FileUploadResponse;
->>>>>>>> dev:pet-service/src/main/java/site/petful/petservice/controller/PetController.java
 import site.petful.petservice.service.PetService;
 import site.petful.petservice.common.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -88,8 +85,6 @@ public class PetController {
         }
     }
 
-<<<<<<<< HEAD:pet-service/src/main/java/org/example/petservice/controller/PetController.java
-========
    
     // 펫스타 전체 조회
     @GetMapping("/petstars")
@@ -120,6 +115,4 @@ public class PetController {
             return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
         }
     }
-
->>>>>>>> dev:pet-service/src/main/java/site/petful/petservice/controller/PetController.java
 }
