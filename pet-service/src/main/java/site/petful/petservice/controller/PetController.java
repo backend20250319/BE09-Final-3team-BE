@@ -84,7 +84,7 @@ public class PetController {
         }
     }
 
-
+   
     // 펫스타 전체 조회
     @GetMapping("/petstars")
     public ResponseEntity<ApiResponse<List<PetResponse>>> getAllPetStars() {
@@ -105,9 +105,9 @@ public class PetController {
             @PathVariable Long petNo,
             @RequestAttribute("X-User-No") Long userNo,
             @RequestParam("file") MultipartFile file) {
-
+        
         FileUploadResponse response = petService.uploadPetImage(file, petNo, userNo);
-
+        
         if (response.isSuccess()) {
             return ResponseEntity.ok(ApiResponse.success(response));
         } else {
