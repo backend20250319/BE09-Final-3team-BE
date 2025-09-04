@@ -39,15 +39,19 @@ public class NotificationResponseDto {
                 .sentAt(notification.getSentAt())
                 .status(notification.getStatus())
                 .isRead(notification.getIsRead())
-                .relativeTime(calculateRelativeTime(notification.getCreatedAt()))
+                .relativeTime(calculateRelativeTime(notification))
                 .build();
     }
 
-    private static String calculateRelativeTime(LocalDateTime createdAt) {
+    private static String calculateRelativeTime(Notification notification) {
+        // sentAt이 있으면 sentAt 기준으로, 없으면 createdAt 기준으로 계산
+        LocalDateTime baseTime = notification.getSentAt() != null ? 
+            notification.getSentAt() : notification.getCreatedAt();
+        
         LocalDateTime now = LocalDateTime.now();
-        long minutes = ChronoUnit.MINUTES.between(createdAt, now);
-        long hours = ChronoUnit.HOURS.between(createdAt, now);
-        long days = ChronoUnit.DAYS.between(createdAt, now);
+        long minutes = ChronoUnit.MINUTES.between(baseTime, now);
+        long hours = ChronoUnit.HOURS.between(baseTime, now);
+        long days = ChronoUnit.DAYS.between(baseTime, now);
 
         if (minutes < 1) {
             return "방금전";
@@ -58,7 +62,7 @@ public class NotificationResponseDto {
         } else if (days < 7) {
             return days + "일전";
         } else {
-            return createdAt.toLocalDate().toString();
+            return baseTime.toLocalDate().toString();
         }
     }
 }

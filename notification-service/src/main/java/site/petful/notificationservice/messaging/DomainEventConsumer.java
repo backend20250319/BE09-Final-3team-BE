@@ -98,6 +98,9 @@ public class DomainEventConsumer {
                     // 사전 알림 (자정으로 설정)
                     createAdvanceNotifications(message, scheduleTitle, subType, startDate, durationDays, times, reminderDaysBefore);
                 }
+            } else if ("campaign.applicant.selected".equals(message.getType())) {
+                handleCampaignSelectionNotification(message);
+                
             } else {
                 // 기타 메시지는 즉시 알림 생성
                 Notification savedNotification = notificationService.createImmediateNotification(message);
@@ -108,7 +111,77 @@ public class DomainEventConsumer {
             throw e; // 메시지 재처리를 위해 예외를 다시 던짐
         }
     }
-    
+
+    private void handleCampaignSelectionNotification(EventMessage message) {
+        try{
+        // 1. 광고 번호 추출
+        Long adNo = message.getTarget().getResourceId();
+        String campaignName = (String) message.getAttributes().get("campaignName");
+        String campaignLink = (String) message.getAttributes().get("campaignLink");
+
+        // 2. 해당 광고에 선정된 모든 지원자 조회 (다른 서비스 호출)
+        @SuppressWarnings("unchecked")
+        List<Long> selectedApplicantIds = (List<Long>)message.getAttributes().get("selectedApplicantIds");
+        if(selectedApplicantIds == null || selectedApplicantIds.isEmpty()) {
+            log.warn("⚠️ [NotificationConsumer] 선정된 지원자가 없습니다: adNo={}", adNo);
+            return;
+        }
+        log.info("🔍 [NotificationConsumer] 선정된 지원자 수: {}", selectedApplicantIds.size());
+        // 3. 각 지원자에게 개별 알림 생성
+        int successCount = 0;
+        for(Long applicantId : selectedApplicantIds) {
+            try{
+                EventMessage notificationMessage = createdApplicantNotificationMessage(
+                        message, applicantId, campaignName, campaignLink
+                );
+                Notification notification = notificationService.createImmediateNotification(notificationMessage);
+                successCount ++;
+
+                log.info("✅ [NotificationConsumer] 체험단 선정 알림 생성 성공: applicantId={}, notificationId={}",
+                        applicantId, notification.getId());
+
+            }catch(Exception e) {
+                log.error("❌ [NotificationConsumer] 지원자별 알림 생성 실패: applicantId={}, error={}",
+                        applicantId, e.getMessage(), e);
+            }}
+        }catch(Exception e){
+            log.error("❌ [NotificationConsumer] 체험단 선정 알림 처리 실패: eventId={}, error={}",
+                    message.getEventId(), e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    private EventMessage createdApplicantNotificationMessage(
+            EventMessage message, Long applicantId, String campaignName, String campaignLink
+    ) {
+        EventMessage notificationMessage = new EventMessage();
+        notificationMessage.setEventId(java.util.UUID.randomUUID().toString());
+        notificationMessage.setType("campaign.applicant.selected");
+        notificationMessage.setOccurredAt(java.time.Instant.now());
+
+        notificationMessage.setActor(message.getActor());
+
+        EventMessage.Target target = new EventMessage.Target();
+        target.setResourceId(applicantId);
+        target.setResourceType("APPLICANT");
+        notificationMessage.setTarget(target);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("title", "체험단 선정 알림");
+        attributes.put("message", createCampaignSelectionMessage(campaignName,campaignLink));
+        attributes.put("campaignName", campaignName);
+        attributes.put("campaignLink", campaignLink);
+        attributes.put("applicantId", applicantId);
+        notificationMessage.setAttributes(attributes);
+        notificationMessage.setSchemaVersion(1);
+
+        return notificationMessage;
+    }
+
+    private String createCampaignSelectionMessage(String campaignName,String campaignLink) {
+        return String.format("[%s] 체험단에 선정되셨습니다. 자세한 내용은 링크를 확인해주세요.\n [%s]", campaignName,campaignLink);
+    }
+
     /**
      * 등록 알림 메시지 생성
      */
@@ -119,13 +192,13 @@ public class DomainEventConsumer {
         enrollMessage.setOccurredAt(java.time.Instant.now());
         enrollMessage.setActor(originalMessage.getActor());
         enrollMessage.setTarget(originalMessage.getTarget());
-        
+
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("title", "새로운 건강 일정");
         attributes.put("message", "새로운 건강 일정이 등록되었습니다.");
         enrollMessage.setAttributes(attributes);
         enrollMessage.setSchemaVersion(1);
-        
+
         return enrollMessage;
     }
     

@@ -11,14 +11,10 @@ import site.petful.notificationservice.entity.Notification;
 @RequiredArgsConstructor
 public class NotificationDeliveryService {
 
-//    private final RealtimePusher realtimePusher;
-//    private final WebPushSender webPushSender;
+    private final WebPushService webPushService;
 
-//    @Value()
-//    private boolean wsEnabled;
-//
-//    @Value()
-//    private WebPushEnabled;
+    @Value("${app.notification.webpush.enabled:true}")
+    private boolean webPushEnabled;
     /**
      * 알림을 발송합니다.
      * @param notification 발송할 알림
@@ -29,16 +25,19 @@ public class NotificationDeliveryService {
                 notification.getId(), notification.getUserId(), notification.getType());
 
         try {
-            // 2. 웹 푸시 알림 발송 (웹 브라우저)
+            // 웹 푸시 알림 발송 시도 (실패해도 알림 자체는 성공으로 처리)
             boolean webPushSent = sendWebPushNotification(notification);
             
-            boolean success = webPushSent;
+            // 웹푸시 발송 실패해도 알림 자체는 성공으로 처리
+            // (웹푸시 구독이 없거나 발송 실패해도 알림은 정상적으로 생성됨)
+            boolean success = true;
             
-            if (success) {
-                log.info("✅ [NotificationDeliveryService] 알림 발송 성공: notificationId={}, push={}, webPush={}, email={}, sms={}", 
-                        notification.getId(),  webPushSent);
+            if (webPushSent) {
+                log.info("✅ [NotificationDeliveryService] 알림 발송 성공 (웹푸시 포함): notificationId={}, webPush={}", 
+                        notification.getId(), webPushSent);
             } else {
-                log.warn("⚠️ [NotificationDeliveryService] 모든 채널에서 알림 발송 실패: notificationId={}", notification.getId());
+                log.info("✅ [NotificationDeliveryService] 알림 발송 성공 (웹푸시 제외): notificationId={}, webPush={}", 
+                        notification.getId(), webPushSent);
             }
             
             return success;
@@ -56,15 +55,30 @@ public class NotificationDeliveryService {
      */
     private boolean sendWebPushNotification(Notification notification) {
         try {
-            // TODO: 웹 푸시 알림 서비스 연동
+            if (!webPushEnabled) {
+                log.info("🌐 [NotificationDeliveryService] 웹푸시가 비활성화됨: userId={}", notification.getUserId());
+                return true; // 비활성화된 경우 성공으로 처리
+            }
+
             log.info("🌐 [NotificationDeliveryService] 웹 푸시 알림 발송: userId={}, title={}", 
                     notification.getUserId(), notification.getTitle());
             
-            // 임시로 성공 반환 (실제 구현 시에는 웹 푸시 서비스 API 호출)
-            return true;
+            // 실제 웹푸시 서비스 호출
+            boolean success = webPushService.sendPushToUser(notification.getUserId(), notification);
+            
+            if (success) {
+                log.info("✅ [NotificationDeliveryService] 웹푸시 발송 성공: userId={}, notificationId={}", 
+                        notification.getUserId(), notification.getId());
+            } else {
+                log.warn("⚠️ [NotificationDeliveryService] 웹푸시 발송 실패 (구독 없음 또는 오류): userId={}, notificationId={}", 
+                        notification.getUserId(), notification.getId());
+            }
+            
+            return success;
             
         } catch (Exception e) {
-            log.error("❌ [NotificationDeliveryService] 웹 푸시 알림 발송 실패: {}", e.getMessage(), e);
+            log.error("❌ [NotificationDeliveryService] 웹 푸시 알림 발송 실패: userId={}, error={}", 
+                    notification.getUserId(), e.getMessage(), e);
             return false;
         }
     }
