@@ -43,6 +43,12 @@ public class Notification {
     @Column(name = "hidden_at")
     private LocalDateTime hiddenAt;
 
+    @Column(name = "is_read", nullable = false)
+    private Boolean isRead = false;              // 읽음 여부
+
+    @Column(name = "read_at")
+    private LocalDateTime readAt;                // 읽은 시간
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -74,6 +80,12 @@ public class Notification {
         this.hiddenAt = LocalDateTime.now();
     }
 
+    public void markAsRead() {
+        if (Boolean.TRUE.equals(this.isRead)) return;
+        this.isRead = true;
+        this.readAt = LocalDateTime.now();
+    }
+
     public void markAsSent() {
         this.status = NotificationStatus.SENT;
         this.sentAt = LocalDateTime.now();
@@ -83,8 +95,14 @@ public class Notification {
         this.status = NotificationStatus.FAILED;
     }
 
+    public void markAsRead() {
+        if (Boolean.TRUE.equals(this.isRead)) return;
+        this.isRead = true;
+        this.readAt = LocalDateTime.now();
+    }
+
     public static Notification of(Long userId, String type, String title, String content, String linkUrl) {
-        return new Notification(null, userId, type, title, content, linkUrl, false, null, LocalDateTime.now(ZoneId.of("Asia/Seoul")), null, null, NotificationStatus.PENDING);
+        return new Notification(null, userId, type, title, content, linkUrl, false, null, false, null, LocalDateTime.now(ZoneId.of("Asia/Seoul")), null, null, NotificationStatus.PENDING);
     }
 
     public static Notification scheduled(Long userId, String type, String title, String content, String linkUrl, LocalDateTime scheduledAt) {
@@ -93,7 +111,7 @@ public class Notification {
                 ", month=" + scheduledAt.getMonth() + ", day=" + scheduledAt.getDayOfMonth() + 
                 ", hour=" + scheduledAt.getHour() + ", minute=" + scheduledAt.getMinute() + ", second=" + scheduledAt.getSecond());
         
-        Notification notification = new Notification(null, userId, type, title, content, linkUrl, false, null, LocalDateTime.now(ZoneId.of("Asia/Seoul")), scheduledAt, null, NotificationStatus.SCHEDULED);
+        Notification notification = new Notification(null, userId, type, title, content, linkUrl, false, null, false, null, LocalDateTime.now(ZoneId.of("Asia/Seoul")), scheduledAt, null, NotificationStatus.SCHEDULED);
         
         System.out.println("🔍 [Notification.scheduled] 생성된 엔티티의 scheduledAt: " + notification.getScheduledAt());
         

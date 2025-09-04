@@ -2,6 +2,7 @@ package site.petful.notificationservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import site.petful.notificationservice.entity.Notification;
 
@@ -10,6 +11,14 @@ import site.petful.notificationservice.entity.Notification;
 @RequiredArgsConstructor
 public class NotificationDeliveryService {
 
+//    private final RealtimePusher realtimePusher;
+//    private final WebPushSender webPushSender;
+
+//    @Value()
+//    private boolean wsEnabled;
+//
+//    @Value()
+//    private WebPushEnabled;
     /**
      * 알림을 발송합니다.
      * @param notification 발송할 알림
