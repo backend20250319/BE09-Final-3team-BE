@@ -168,7 +168,7 @@ public class DomainEventConsumer {
 
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("title", "체험단 선정 알림");
-        attributes.put("message", createCampaignSelectionMessage(campaignName));
+        attributes.put("message", createCampaignSelectionMessage(campaignName,campaignLink));
         attributes.put("campaignName", campaignName);
         attributes.put("campaignLink", campaignLink);
         attributes.put("applicantId", applicantId);
