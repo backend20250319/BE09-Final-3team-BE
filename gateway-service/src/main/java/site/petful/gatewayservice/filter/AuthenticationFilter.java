@@ -40,6 +40,7 @@ public class AuthenticationFilter extends
         "/api/v1/advertiser-service/advertiser/signup",
         "/api/v1/advertiser-service/advertiser/signup/email/send",
         "/api/v1/advertiser-service/advertiser/signup/email/verify",
+        "/api/v1/advertiser-service/advertiser/login",
         "/api/v1/advertiser-service/advertiser/password/reset/request",
         "/api/v1/advertiser-service/advertiser/password/reset/verify"
     );

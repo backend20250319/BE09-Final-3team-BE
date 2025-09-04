@@ -57,11 +57,21 @@ public class JwtUtil {
     public String getUserNoFromToken(String token) {
         try {
             Claims claims = parseClaims(token);
+            
+            // 먼저 userNo 클레임 확인
             Object userNoObj = claims.get(CLAIM_USER_NO);
-            if (userNoObj == null) {
-                return null;
+            if (userNoObj != null) {
+                return userNoObj.toString();
             }
-            return userNoObj.toString();
+            
+            // userNo가 없으면 advertiserNo 클레임 확인
+            Object advertiserNoObj = claims.get(CLAIM_ADVERTISER_NO);
+            if (advertiserNoObj != null) {
+                log.debug("Using advertiserNo as userNo: {}", advertiserNoObj);
+                return advertiserNoObj.toString();
+            }
+            
+            return null;
         } catch (JwtException | IllegalArgumentException e) {
             log.error("Error extracting userNo from token: {}", e.getMessage());
             return null;
