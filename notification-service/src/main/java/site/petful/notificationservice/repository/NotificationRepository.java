@@ -30,9 +30,4 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // 예약된 알림 조회 (스케줄러용)
     List<Notification> findByStatusAndScheduledAtBefore(Notification.NotificationStatus status, LocalDateTime scheduledAt);
 
-    // 특정 상태의 알림 조회
-    List<Notification> findByStatus(Notification.NotificationStatus status);
-
-    // 사용자별 특정 상태의 알림 조회
-    List<Notification> findByUserIdAndStatus(Long userId, Notification.NotificationStatus status);
 }

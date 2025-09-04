@@ -80,12 +80,6 @@ public class Notification {
         this.hiddenAt = LocalDateTime.now();
     }
 
-    public void markAsRead() {
-        if (Boolean.TRUE.equals(this.isRead)) return;
-        this.isRead = true;
-        this.readAt = LocalDateTime.now();
-    }
-
     public void markAsSent() {
         this.status = NotificationStatus.SENT;
         this.sentAt = LocalDateTime.now();
@@ -93,6 +87,12 @@ public class Notification {
 
     public void markAsFailed() {
         this.status = NotificationStatus.FAILED;
+    }
+
+    public void markAsRead() {
+        if (Boolean.TRUE.equals(this.isRead)) return;
+        this.isRead = true;
+        this.readAt = LocalDateTime.now();
     }
 
     public static Notification of(Long userId, String type, String title, String content, String linkUrl) {

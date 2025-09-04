@@ -28,6 +28,11 @@ public enum ErrorCode {
     NOTIFICATION_NOT_FOUND("5000","알림이 존재하지 않습니다."),
     NOTIFICATION_FORBIDDEN("5001","해당 알림에 접근할 수 없습니다."),
     NOTIFICATION_SEND_FAILED("5002","알림 전송에 실패했습니다."),
+    NOTIFICATION_COUNT_FAILED("5003","알림 개수 조회에 실패했습니다."),
+    NOTIFICATION_READ_FAILED("5004","알림 읽음 처리에 실패했습니다."),
+    NOTIFICATION_HIDE_FAILED("5005","알림 숨김 처리에 실패했습니다."),
+    INVALID_NOTIFICATION_ID("5006","유효하지 않은 알림 ID입니다."),
+    INVALID_USER_ID("5007","유효하지 않은 사용자 ID입니다."),
     // 6000번대 : 건강관리
 
     // 7000번대 : SNS 관리
