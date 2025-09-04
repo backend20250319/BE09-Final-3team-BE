@@ -264,49 +264,10 @@ public class NotificationService {
                 );
                 
             case "health.schedule":
-                return new NotificationContent(
-                    "새로운 건강 일정",
-                    "새로운 건강 일정이 등록되었습니다.",
-                    "/schedules/" + eventMessage.getTarget().getResourceId()
-                );
-                
-            case "health.schedule.enroll":
-                String enrollMessage = (String) eventMessage.getAttributes().get("message");
-                return new NotificationContent(
-                    "새로운 건강 일정",
-                    enrollMessage != null ? enrollMessage : "새로운 건강 일정이 등록되었습니다.",
-                    "/schedules/" + eventMessage.getTarget().getResourceId()
-                );
-                
-            case "health.schedule.reserve":
-                String reserveMessage = (String) eventMessage.getAttributes().get("message");
-                return new NotificationContent(
-                    "복용 시간",
-                    reserveMessage != null ? reserveMessage : "복용 시간입니다.",
-                    "/schedules/" + eventMessage.getTarget().getResourceId()
-                );
-                
-            case "health.schedule.reminder":
-                String reminderMessage = (String) eventMessage.getAttributes().get("message");
-                return new NotificationContent(
-                    "복용 알림 예정",
-                    reminderMessage != null ? reminderMessage : "복용 시간이 예정되어 있습니다.",
-                    "/schedules/" + eventMessage.getTarget().getResourceId()
-                );
-                
-            case "health.schedule.medication":
-                String medicationMessage = (String) eventMessage.getAttributes().get("message");
-                return new NotificationContent(
-                    "복용 시간",
-                    medicationMessage != null ? medicationMessage : "복용 시간입니다.",
-                    "/schedules/" + eventMessage.getTarget().getResourceId()
-                );
-                
-            case "health.schedule.notification":
-                String notificationMessage = (String) eventMessage.getAttributes().get("message");
+                String scheduleMessage = (String) eventMessage.getAttributes().get("message");
                 return new NotificationContent(
                     "스케줄 알림",
-                    notificationMessage != null ? notificationMessage : "스케줄 시간입니다.",
+                    scheduleMessage != null ? scheduleMessage : "스케줄 시간입니다.",
                     "/schedules/" + eventMessage.getTarget().getResourceId()
                 );
                 

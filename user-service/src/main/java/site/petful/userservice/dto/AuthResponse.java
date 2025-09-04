@@ -18,4 +18,5 @@ public class AuthResponse {
     private String message;
     private String email;
     private String name;
+    private String userType;  // 사용자 타입 추가
 }

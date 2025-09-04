@@ -65,6 +65,8 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()                  // (선택) 기본 에러 핸들러 공개
                         .requestMatchers("/internal/**").hasAnyRole("USER", "ADVERTISER","ADMIN") // 인증된 사용자만 접근
                         .requestMatchers("/admin/**").hasAnyRole("ADVERTISER", "ADMIN") // 관리자 기능은 ADVERTISER 또는 Admin 권한 필요
+                        .requestMatchers("/advertiser/**").hasAnyRole("ADVERTISER")
+                        .requestMatchers("/advertiser-service/**").hasAnyRole("ADVERTISER") // 게이트웨이 경로 추가
                         .anyRequest().authenticated()
                 )
 

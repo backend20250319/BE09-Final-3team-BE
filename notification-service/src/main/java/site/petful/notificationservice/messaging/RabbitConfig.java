@@ -2,6 +2,7 @@
 package site.petful.notificationservice.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -18,6 +19,7 @@ import java.util.List;
 @EnableRabbit
 @Configuration
 @EnableConfigurationProperties(MessagingProps.class)
+@Slf4j
 public class RabbitConfig {
 
     private final MessagingProps props;
@@ -62,8 +64,14 @@ public class RabbitConfig {
 
     @Bean
     RabbitTemplate rabbitTemplate(ConnectionFactory cf, Jackson2JsonMessageConverter conv) {
-        RabbitTemplate t = new RabbitTemplate(cf);
+        var t = new RabbitTemplate(cf);
         t.setMessageConverter(conv);
+        t.setMandatory(true); // return callback 활성화
+        t.setConfirmCallback((corr, ack, cause) ->
+                log.info("confirm id={} ack={} cause={}", corr != null? corr.getId(): null, ack, cause));
+        t.setReturnsCallback(ret ->
+                log.warn("returned rk={} replyText={} body={}",
+                        ret.getRoutingKey(), ret.getReplyText(), new String(ret.getMessage().getBody())));
         return t;
     }
 
