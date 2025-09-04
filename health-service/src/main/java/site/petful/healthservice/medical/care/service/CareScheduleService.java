@@ -55,15 +55,15 @@ public class CareScheduleService extends AbstractScheduleService {
     // ==================== 돌봄 일정 생성 ====================
     
     public Long createCareSchedule(Long userNo, @Valid CareRequestDTO request) {
-        // 날짜 검증
-        validateDateRange(request.getStartDate(), request.getEndDate());
-
-        ScheduleSubType subType = request.getSubType();
-        
-        ScheduleMainType mainType = ScheduleMainType.CARE;
-
         // careFrequency 처리
         CareFrequency careFreq = request.getCareFrequency() != null ? request.getCareFrequency() : CareFrequency.DAILY;
+        
+        // 빈도별 날짜 검증 및 종료일 자동 계산
+        LocalDate calculatedEndDate = validateAndCalculateEndDate(request.getStartDate(), request.getEndDate(), careFreq);
+        
+        ScheduleSubType subType = request.getSubType();
+        ScheduleMainType mainType = ScheduleMainType.CARE;
+
         RecurrenceType recurrenceType = careFreq.getRecurrenceType();
         Integer interval = careFreq.getInterval();
         String frequencyText = careFreq.getLabel();
@@ -73,12 +73,12 @@ public class CareScheduleService extends AbstractScheduleService {
                 .petNo(request.getPetNo())
                 .title(request.getTitle())
                 .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
+                .endDate(calculatedEndDate)
                 .subType(request.getSubType())
                 .times(request.getTimes())
                 .frequency(recurrenceType)
                 .recurrenceInterval(interval)
-                .recurrenceEndDate(request.getEndDate())
+                .recurrenceEndDate(calculatedEndDate)
                 .reminderDaysBefore(request.getReminderDaysBefore())
                 .frequencyText(frequencyText)
                 .build();
@@ -215,20 +215,25 @@ public class CareScheduleService extends AbstractScheduleService {
         
         // 메인타입 변경 방지 로직 제거 (모든 서브타입이 CARE 메인타입이므로)
 
-        // 날짜 검증
+        // 날짜 검증 및 종료일 자동 계산
         LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
         LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : entity.getEndDate().toLocalDate();
-        validateDateRange(startDate, endDate);
+        
+        // 수정 시에는 기존 빈도 정보를 사용하거나 요청에서 받은 빈도 사용
+        CareFrequency frequency = request.getCareFrequency() != null ? request.getCareFrequency() : 
+            (entity.getFrequency() != null ? CareFrequency.from(entity.getFrequency()) : CareFrequency.DAILY);
+        
+        LocalDate calculatedEndDate = validateAndCalculateEndDate(startDate, endDate, frequency);
 
-        // 일정 업데이트
-        updateCareScheduleFields(entity, request);
+        // 일정 업데이트 (계산된 종료일 포함)
+        updateCareScheduleFields(entity, request, calculatedEndDate);
         
         // 엔티티 저장
         scheduleRepository.save(entity);
         return entity.getScheduleNo();
     }
 
-    private void updateCareScheduleFields(Schedule entity, CareUpdateRequestDTO request) {
+    private void updateCareScheduleFields(Schedule entity, CareUpdateRequestDTO request, LocalDate calculatedEndDate) {
         // 기본 정보 업데이트
         if (request.getTitle() != null) {
             entity.updateSchedule(request.getTitle(), entity.getStartDate(), entity.getEndDate(), entity.getAlarmTime());
@@ -243,15 +248,14 @@ public class CareScheduleService extends AbstractScheduleService {
             entity.updateTimes(request.getTimes());
         }
 
-        // 날짜/시간 업데이트
+        // 날짜/시간 업데이트 (계산된 종료일 사용)
         LocalDate base = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
-        LocalDate endBase = request.getEndDate() != null ? request.getEndDate() : entity.getEndDate().toLocalDate();
         LocalTime time = (request.getTimes() != null && !request.getTimes().isEmpty()) 
             ? request.getTimes().get(0) 
             : entity.getStartDate().toLocalTime();
 
         LocalDateTime startDt = LocalDateTime.of(base, time);
-        LocalDateTime endDt = LocalDateTime.of(endBase, time);
+        LocalDateTime endDt = LocalDateTime.of(calculatedEndDate, time);
 
         entity.updateSchedule(entity.getTitle(), startDt, endDt, startDt);
 
@@ -367,20 +371,142 @@ public class CareScheduleService extends AbstractScheduleService {
     // ==================== 날짜 검증 메서드 ====================
     
     /**
-     * 날짜 범위 검증
+     * 돌봄 일정 날짜 범위 검증 및 종료일 자동 계산
      */
-    private void validateDateRange(LocalDate startDate, LocalDate endDate) {
+    private LocalDate validateAndCalculateEndDate(LocalDate startDate, LocalDate endDate, CareFrequency frequency) {
         // 시작일이 과거인지 확인
         if (startDate.isBefore(LocalDate.now())) {
             throw new BusinessException(ErrorCode.MEDICAL_DATE_PAST_ERROR, 
                 "과거 날짜로 일정을 생성할 수 없습니다.");
         }
+
+        // 빈도별 종료일 검증 및 자동 계산
+        switch (frequency) {
+            case DAILY:
+                // 매일: 종료날짜가 있으면 그대로 사용, 없으면 시작일과 동일
+                if (endDate != null) {
+                    if (endDate.isBefore(startDate)) {
+                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                                "종료일은 시작일보다 이전일 수 없습니다.");
+                    }
+                    return endDate;  // 사용자가 선택한 종료날짜 사용
+                }
+                return startDate;  // 종료날짜 없으면 시작일과 동일
+
+            case WEEKLY:
+                // 매주: 최소 7일 이후의 종료날짜만 허용
+                if (endDate != null) {
+                    LocalDate minEndDate = startDate.plusDays(7);
+                    if (endDate.isBefore(minEndDate)) {
+                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                                "매주 일정의 종료일은 시작일로부터 최소 7일 이후여야 합니다. 최소 종료일: " + minEndDate);
+                    }
+                    return endDate;
+                }
+                // 종료일이 없으면 1주일 후로 설정
+                return startDate.plusWeeks(1);
+
+            case MONTHLY:
+                // 매월: 최소 30일 이후의 종료날짜만 허용
+                if (endDate != null) {
+                    LocalDate minEndDate = startDate.plusDays(30);
+                    if (endDate.isBefore(minEndDate)) {
+                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                                "매월 일정의 종료일은 시작일로부터 최소 30일 이후여야 합니다. 최소 종료일: " + minEndDate);
+                    }
+                    return endDate;
+                }
+                // 종료일이 없으면 1개월 후로 설정
+                return startDate.plusMonths(1);
+
+            case YEARLY_ONCE:
+                // 연 1회: 최소 365일 이후의 종료날짜만 허용
+                if (endDate != null) {
+                    LocalDate minEndDate = startDate.plusDays(365);
+                    if (endDate.isBefore(minEndDate)) {
+                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                                "연 1회 일정의 종료일은 시작일로부터 최소 365일 이후여야 합니다. 최소 종료일: " + minEndDate);
+                    }
+                    return endDate;
+                }
+                // 종료일이 없으면 1년 후로 설정
+                return startDate.plusYears(1);
+
+            case HALF_YEARLY_ONCE:
+                // 반년 1회: 최소 6개월 이후의 종료날짜만 허용
+                if (endDate != null) {
+                    LocalDate minEndDate = startDate.plusMonths(6);
+                    if (endDate.isBefore(minEndDate)) {
+                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                                "반년 1회 일정의 종료일은 시작일로부터 최소 6개월 이후여야 합니다. 최소 종료일: " + minEndDate);
+                    }
+                    return endDate;
+                }
+                // 종료일이 없으면 6개월 후로 설정
+                return startDate.plusMonths(6);
+
+            default:
+                // 기본값: 종료일이 시작일보다 이전인지 확인
+                if (endDate != null && endDate.isBefore(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "종료일은 시작일보다 이전일 수 없습니다.");
+                }
+                return endDate != null ? endDate : startDate;
+        }
+    }
+    
+    /**
+     * 월만 입력된 경우 해당 월의 마지막 날로 계산 (매주, 매월용)
+     */
+    private LocalDate calculateMonthlyEndDate(LocalDate startDate, LocalDate endDate, String frequencyType) {
+        // 종료일이 해당 월의 1일인 경우 (예: 2024-02-01)
+        if (endDate.getDayOfMonth() == 1) {
+            // 해당 월의 마지막 날로 계산
+            LocalDate lastDayOfMonth = endDate.withDayOfMonth(endDate.lengthOfMonth());
+            
+            // 시작일이 해당 월보다 이후인지 확인
+            if (startDate.isAfter(lastDayOfMonth)) {
+                throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
+                    frequencyType + " 일정의 시작일이 종료월보다 이후일 수 없습니다.");
+            }
+            
+            return lastDayOfMonth;
+        }
         
-        // 종료일이 시작일보다 이전인지 확인
-        if (endDate != null && endDate.isBefore(startDate)) {
+        // 정확한 날짜가 입력된 경우
+        if (endDate.isBefore(startDate)) {
             throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
                 "종료일은 시작일보다 이전일 수 없습니다.");
         }
+        
+        return endDate;
+    }
+    
+    /**
+     * 년도만 입력된 경우 해당 년도의 시작일과 동일한 날짜로 계산 (연 1회용)
+     */
+    private LocalDate calculateYearlyEndDate(LocalDate startDate, LocalDate endDate) {
+        // 종료일이 해당 년도의 1월 1일인 경우 (예: 2025-01-01)
+        if (endDate.getMonthValue() == 1 && endDate.getDayOfMonth() == 1) {
+            // 시작일과 동일한 월일로 다음 년도에 설정
+            LocalDate nextYearSameDate = startDate.withYear(endDate.getYear());
+            
+            // 시작일이 종료년도보다 이후인지 확인
+            if (startDate.getYear() > endDate.getYear()) {
+                throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
+                    "연 1회 일정의 시작일이 종료년도보다 이후일 수 없습니다.");
+            }
+            
+            return nextYearSameDate;
+        }
+        
+        // 정확한 날짜가 입력된 경우
+        if (endDate.isBefore(startDate)) {
+            throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
+                "종료일은 시작일보다 이전일 수 없습니다.");
+        }
+        
+        return endDate;
     }
 
     // ==================== 이벤트 발행 ====================
