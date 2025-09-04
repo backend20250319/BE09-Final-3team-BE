@@ -27,7 +27,7 @@ public class HistoryResponse {
     private String title;              // 제목
     private String content;            // 내용
     
-    @Deprecated // 기존 호환성을 위해 유지, 향후 제거 예정
+    @Deprecated
     private List<String> imageUrls;    // 이미지 URL 목록 (기존)
     
     private List<HistoryImageInfo> images; // 이미지 상세 정보 (새로 추가)

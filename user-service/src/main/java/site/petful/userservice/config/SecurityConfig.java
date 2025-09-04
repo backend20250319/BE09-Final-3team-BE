@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,7 +20,8 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import site.petful.userservice.security.CustomUserDetailsService;
-import site.petful.userservice.security.JwtAuthenticationFilter;
+import site.petful.userservice.security.HeaderAuthenticationFilter;
+
 
 
 @Configuration
@@ -28,7 +30,7 @@ import site.petful.userservice.security.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
-    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final HeaderAuthenticationFilter headerBasedAuthFilter;
 
     // 공개 엔드포인트 (인증 불필요)
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -46,7 +48,6 @@ public class SecurityConfig {
             "/api/auth/password/reset",
             "/api/auth/password/verify",
             "/api/auth/password/change",
-            "/api/auth/profile/**",
             "/api/v1/admin/users/logout",  // Admin 로그아웃 엔드포인트 공개
             "/v3/api-docs/**",
             "/swagger-ui/**",
@@ -79,7 +80,9 @@ public class SecurityConfig {
                 )
 
                 // 커스텀 인증 프로바이더 + JWT 필터 + 헤더 기반 인증 필터
-                .authenticationProvider(authenticationProvider());
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(headerBasedAuthFilter, UsernamePasswordAuthenticationFilter.class);
+//                .addFilterBefore(jwtAuthFilter, HeaderBasedAuthenticationFilter.class);
 
         return http.build();
     }
