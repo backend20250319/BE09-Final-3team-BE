@@ -5,11 +5,11 @@ import site.petful.healthservice.medical.schedule.enums.RecurrenceType;
 
 @Getter
 public enum MedicationFrequency {
-    DAILY_ONCE("하루에 한번", RecurrenceType.DAILY, 1, 1),
-    DAILY_TWICE("하루에 두번", RecurrenceType.DAILY, 1, 2),
-    DAILY_THREE_TIMES("하루에 세번", RecurrenceType.DAILY, 1, 3),
-    WEEKLY_ONCE("주에 한번", RecurrenceType.WEEKLY, 1, 1),
-    MONTHLY_ONCE("월에 한번", RecurrenceType.MONTHLY, 1, 1);
+    DAILY_ONCE("하루에 한 번", RecurrenceType.DAILY, 1, 1),
+    DAILY_TWICE("하루에 두 번", RecurrenceType.DAILY, 1, 2),
+    DAILY_THREE_TIMES("하루에 세 번", RecurrenceType.DAILY, 1, 3),
+    WEEKLY_ONCE("주에 한 번", RecurrenceType.WEEKLY, 1, 1),
+    MONTHLY_ONCE("월에 한 번", RecurrenceType.MONTHLY, 1, 1);
 
     private final String label;
     private final RecurrenceType recurrenceType;
