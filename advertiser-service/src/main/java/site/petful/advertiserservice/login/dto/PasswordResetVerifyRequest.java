@@ -22,3 +22,4 @@ public class PasswordResetVerifyRequest {
     @Size(min = 6, max = 6, message = "인증 코드는 6자리여야 합니다.")
     private String verificationCode;
 }
+

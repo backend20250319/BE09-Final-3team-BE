@@ -317,7 +317,21 @@ public class UserController {
     public ResponseEntity<ApiResponse<FileUploadResponse>> uploadProfileImage(
             @RequestParam("file") MultipartFile file) {
         
-        Long userNo = UserHeaderUtil.getCurrentUserNoOrThrow();
+        // 헤더에서 사용자 번호를 먼저 시도
+        Long userNo = UserHeaderUtil.getCurrentUserNo();
+        
+        // 헤더가 없으면 기존 JWT 방식으로 fallback
+        if (userNo == null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                User user = userService.findByEmail(email);
+                userNo = user.getUserNo();
+            } else {
+                throw new IllegalStateException("인증 정보가 없습니다.");
+            }
+        }
+        
         FileUploadResponse response = userService.uploadProfileImage(file, userNo);
         
         if (response.isSuccess()) {
@@ -334,7 +348,21 @@ public class UserController {
      */
     @DeleteMapping("/withdraw")
     public ResponseEntity<ApiResponse<WithdrawResponse>> withdraw(@Valid @RequestBody WithdrawRequest request) {
-        Long userNo = UserHeaderUtil.getCurrentUserNoOrThrow();
+        // 헤더에서 사용자 번호를 먼저 시도
+        Long userNo = UserHeaderUtil.getCurrentUserNo();
+        
+        // 헤더가 없으면 기존 JWT 방식으로 fallback
+        if (userNo == null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                User user = userService.findByEmail(email);
+                userNo = user.getUserNo();
+            } else {
+                throw new IllegalStateException("인증 정보가 없습니다.");
+            }
+        }
+        
         WithdrawResponse response = userService.withdraw(userNo, request);
         
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
@@ -346,8 +374,21 @@ public class UserController {
      */
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser() {
-        Long userNo = UserHeaderUtil.getCurrentUserNoOrThrow();
+        // 헤더에서 사용자 번호를 먼저 시도
+        Long userNo = UserHeaderUtil.getCurrentUserNo();
         String userType = UserHeaderUtil.getCurrentUserType();
+        
+        // 헤더가 없으면 기존 JWT 방식으로 fallback
+        if (userNo == null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                User user = userService.findByEmail(email);
+                userNo = user.getUserNo();
+            } else {
+                throw new IllegalStateException("인증 정보가 없습니다.");
+            }
+        }
         
         User user = userService.findByUserNo(userNo);
         

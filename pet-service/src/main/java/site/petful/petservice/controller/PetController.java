@@ -4,12 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
+
 import site.petful.petservice.dto.FileUploadResponse;
+
 import site.petful.petservice.service.PetService;
 import site.petful.petservice.common.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+//
 import java.util.List;
 
 @Slf4j
@@ -31,7 +34,7 @@ public class PetController {
 
     // 반려동물 목록 조회
     @GetMapping("/pets")
-    public ResponseEntity<ApiResponse<List<PetResponse>>> getPets(@RequestAttribute("X-User-No") Long userNo) {
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getPets(@RequestParam Long userNo) {
         List<PetResponse> pets = petService.getPetsByUser(userNo);
         return ResponseEntity.ok(ApiResponse.success(pets));
     }
@@ -84,7 +87,6 @@ public class PetController {
         }
     }
 
-   
     // 펫스타 전체 조회
     @GetMapping("/petstars")
     public ResponseEntity<ApiResponse<List<PetResponse>>> getAllPetStars() {
@@ -105,14 +107,13 @@ public class PetController {
             @PathVariable Long petNo,
             @RequestAttribute("X-User-No") Long userNo,
             @RequestParam("file") MultipartFile file) {
-        
+
         FileUploadResponse response = petService.uploadPetImage(file, petNo, userNo);
-        
+
         if (response.isSuccess()) {
             return ResponseEntity.ok(ApiResponse.success(response));
         } else {
             return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
         }
     }
-
 }
