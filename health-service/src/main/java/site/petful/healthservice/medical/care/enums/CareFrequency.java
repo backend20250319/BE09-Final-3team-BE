@@ -10,8 +10,7 @@ public enum CareFrequency {
     DAILY("매일", RecurrenceType.DAILY, 1),
     WEEKLY("매주", RecurrenceType.WEEKLY, 1),
     MONTHLY("매월", RecurrenceType.MONTHLY, 1),
-    YEARLY_ONCE("연 1회", RecurrenceType.YEARLY, 1),
-    HALF_YEARLY_ONCE("반년 1회", RecurrenceType.CUSTOM, 6);
+    SINGLE_DAY("당일", RecurrenceType.DAILY, 1);
 
     private final String label;
     private final RecurrenceType recurrenceType;

@@ -93,16 +93,17 @@ public class CareScheduleService extends AbstractScheduleService {
         
         switch (frequency) {
             case DAILY:
-                // 매일: 시작일과 종료일만 생성
-                schedules.add(createScheduleForDate(userNo, request, mainType, startDate));
-                if (!startDate.equals(endDate)) {
-                    schedules.add(createScheduleForDate(userNo, request, mainType, endDate));
+                // 매일: 시작일부터 종료일까지 모든 날에 일정 생성
+                LocalDate current = startDate;
+                while (!current.isAfter(endDate)) {
+                    schedules.add(createScheduleForDate(userNo, request, mainType, current));
+                    current = current.plusDays(1);
                 }
                 break;
                 
             case WEEKLY:
-                // 매주: 7일마다 일정 생성
-                LocalDate current = startDate;
+                // 매주: 시작일부터 종료일까지 7일마다 일정 생성
+                current = startDate;
                 while (!current.isAfter(endDate)) {
                     schedules.add(createScheduleForDate(userNo, request, mainType, current));
                     current = current.plusWeeks(1);
@@ -110,30 +111,22 @@ public class CareScheduleService extends AbstractScheduleService {
                 break;
                 
             case MONTHLY:
-                // 매월: 매월 같은 날짜에 일정 생성
+                // 매월: 시작일과 종료월의 같은 날짜에 일정 생성
+                // 예: 9월 3일 시작, 10월 종료 -> 9월 3일, 10월 3일에 일정 생성
                 current = startDate;
-                while (!current.isAfter(endDate)) {
+                int endMonth = endDate.getMonthValue();
+                int endYear = endDate.getYear();
+                
+                while (current.getYear() < endYear || 
+                       (current.getYear() == endYear && current.getMonthValue() <= endMonth)) {
                     schedules.add(createScheduleForDate(userNo, request, mainType, current));
                     current = current.plusMonths(1);
                 }
                 break;
                 
-            case YEARLY_ONCE:
-                // 연 1회: 매년 같은 날짜에 일정 생성
-                current = startDate;
-                while (!current.isAfter(endDate)) {
-                    schedules.add(createScheduleForDate(userNo, request, mainType, current));
-                    current = current.plusYears(1);
-                }
-                break;
-                
-            case HALF_YEARLY_ONCE:
-                // 반년 1회: 6개월마다 일정 생성
-                current = startDate;
-                while (!current.isAfter(endDate)) {
-                    schedules.add(createScheduleForDate(userNo, request, mainType, current));
-                    current = current.plusMonths(6);
-                }
+            case SINGLE_DAY:
+                // 당일: 시작일과 종료일이 동일한 하루만 일정 생성
+                schedules.add(createScheduleForDate(userNo, request, mainType, startDate));
                 break;
         }
         
@@ -461,79 +454,52 @@ public class CareScheduleService extends AbstractScheduleService {
         // 빈도별 종료일 검증 및 자동 계산
         switch (frequency) {
             case DAILY:
-                // 매일: 종료날짜가 있으면 그대로 사용, 없으면 시작일과 동일
-                if (endDate != null) {
-                    if (endDate.isBefore(startDate)) {
-                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "종료일은 시작일보다 이전일 수 없습니다.");
-                    }
-                    return endDate;  // 사용자가 선택한 종료날짜 사용
+                // 매일: 시작일과 종료일 사이의 모든 날에 일정 생성
+                if (endDate == null) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "매일 일정은 종료일을 반드시 입력해야 합니다.");
                 }
-                return startDate;  // 종료날짜 없으면 시작일과 동일
+                if (endDate.isBefore(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "종료일은 시작일보다 이전일 수 없습니다.");
+                }
+                if (endDate.equals(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "매일 일정은 시작일과 종료일이 같을 수 없습니다.");
+                }
+                return endDate;
 
             case WEEKLY:
                 // 매주: 시작일부터 종료일까지 7일마다 일정 생성
-                if (endDate != null) {
-                    if (endDate.isBefore(startDate)) {
-                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "종료일은 시작일보다 이전일 수 없습니다.");
-                    }
-                    // 종료일이 시작일과 같으면 1주일 후로 설정 (최소 2개 일정)
-                    if (endDate.equals(startDate)) {
-                        return startDate.plusWeeks(1);
-                    }
-                    return endDate;
+                if (endDate == null) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "매주 일정은 종료일을 반드시 입력해야 합니다.");
                 }
-                // 종료일이 없으면 1주일 후로 설정 (최소 2개 일정)
-                return startDate.plusWeeks(1);
+                if (endDate.isBefore(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "종료일은 시작일보다 이전일 수 없습니다.");
+                }
+                return endDate;
 
             case MONTHLY:
-                // 매월: 시작일부터 종료일까지 매월 같은 날짜에 일정 생성
-                if (endDate != null) {
-                    if (endDate.isBefore(startDate)) {
-                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "종료일은 시작일보다 이전일 수 없습니다.");
-                    }
-                    // 종료일이 시작일과 같으면 1개월 후로 설정 (최소 2개 일정)
-                    if (endDate.equals(startDate)) {
-                        return startDate.plusMonths(1);
-                    }
-                    return endDate;
+                // 매월: 시작일과 종료월의 같은 날짜에 일정 생성
+                if (endDate == null) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "매월 일정은 종료월을 반드시 입력해야 합니다.");
                 }
-                // 종료일이 없으면 1개월 후로 설정 (최소 2개 일정)
-                return startDate.plusMonths(1);
+                if (endDate.isBefore(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "종료월은 시작일보다 이전일 수 없습니다.");
+                }
+                return endDate;
 
-            case YEARLY_ONCE:
-                // 연 1회: 시작일부터 종료일까지 매년 같은 날짜에 일정 생성
-                if (endDate != null) {
-                    if (endDate.isBefore(startDate)) {
-                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "종료일은 시작일보다 이전일 수 없습니다.");
-                    }
-                    // 종료일이 시작일과 같으면 1년 후로 설정 (최소 2개 일정)
-                    if (endDate.equals(startDate)) {
-                        return startDate.plusYears(1);
-                    }
-                    return endDate;
+            case SINGLE_DAY:
+                // 당일: 시작일과 종료일이 동일해야 함
+                if (endDate != null && !endDate.equals(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "당일 일정은 시작일과 종료일이 같아야 합니다.");
                 }
-                // 종료일이 없으면 1년 후로 설정 (최소 2개 일정)
-                return startDate.plusYears(1);
-
-            case HALF_YEARLY_ONCE:
-                // 반년 1회: 시작일부터 종료일까지 6개월마다 일정 생성
-                if (endDate != null) {
-                    if (endDate.isBefore(startDate)) {
-                        throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "종료일은 시작일보다 이전일 수 없습니다.");
-                    }
-                    // 종료일이 시작일과 같으면 6개월 후로 설정 (최소 2개 일정)
-                    if (endDate.equals(startDate)) {
-                        return startDate.plusMonths(6);
-                    }
-                    return endDate;
-                }
-                // 종료일이 없으면 6개월 후로 설정 (최소 2개 일정)
-                return startDate.plusMonths(6);
+                return startDate; // 종료일을 시작일과 동일하게 설정
 
             default:
                 // 기본값: 종료일이 시작일보다 이전인지 확인
@@ -543,60 +509,6 @@ public class CareScheduleService extends AbstractScheduleService {
                 }
                 return endDate != null ? endDate : startDate;
         }
-    }
-    
-    /**
-     * 월만 입력된 경우 해당 월의 마지막 날로 계산 (매주, 매월용)
-     */
-    private LocalDate calculateMonthlyEndDate(LocalDate startDate, LocalDate endDate, String frequencyType) {
-        // 종료일이 해당 월의 1일인 경우 (예: 2024-02-01)
-        if (endDate.getDayOfMonth() == 1) {
-            // 해당 월의 마지막 날로 계산
-            LocalDate lastDayOfMonth = endDate.withDayOfMonth(endDate.lengthOfMonth());
-            
-            // 시작일이 해당 월보다 이후인지 확인
-            if (startDate.isAfter(lastDayOfMonth)) {
-                throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
-                    frequencyType + " 일정의 시작일이 종료월보다 이후일 수 없습니다.");
-            }
-            
-            return lastDayOfMonth;
-        }
-        
-        // 정확한 날짜가 입력된 경우
-        if (endDate.isBefore(startDate)) {
-            throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
-                "종료일은 시작일보다 이전일 수 없습니다.");
-        }
-        
-        return endDate;
-    }
-    
-    /**
-     * 년도만 입력된 경우 해당 년도의 시작일과 동일한 날짜로 계산 (연 1회용)
-     */
-    private LocalDate calculateYearlyEndDate(LocalDate startDate, LocalDate endDate) {
-        // 종료일이 해당 년도의 1월 1일인 경우 (예: 2025-01-01)
-        if (endDate.getMonthValue() == 1 && endDate.getDayOfMonth() == 1) {
-            // 시작일과 동일한 월일로 다음 년도에 설정
-            LocalDate nextYearSameDate = startDate.withYear(endDate.getYear());
-            
-            // 시작일이 종료년도보다 이후인지 확인
-            if (startDate.getYear() > endDate.getYear()) {
-                throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
-                    "연 1회 일정의 시작일이 종료년도보다 이후일 수 없습니다.");
-            }
-            
-            return nextYearSameDate;
-        }
-        
-        // 정확한 날짜가 입력된 경우
-        if (endDate.isBefore(startDate)) {
-            throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
-                "종료일은 시작일보다 이전일 수 없습니다.");
-        }
-        
-        return endDate;
     }
 
     // ==================== 이벤트 발행 ====================
