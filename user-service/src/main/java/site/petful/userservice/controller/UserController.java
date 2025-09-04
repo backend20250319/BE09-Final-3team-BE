@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.web.bind.annotation.*;
@@ -461,6 +462,23 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(
                 new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null)
+            );
+        }
+    }
+
+    @PostMapping("/reports/advertiser")
+    public ResponseEntity<ApiResponse<String>> reportUserByAdvertiser(
+            @RequestHeader("USER-NO") Long advertiserNo,
+            @Valid @RequestBody ReportRequest request) {
+        try {
+            // 신고 처리
+            userService.reportUserByAdvertiser(advertiserNo, request);
+
+            return ResponseEntity.ok(ApiResponseGenerator.success("신고가 성공적으로 접수되었습니다."));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null)
             );
         }
     }

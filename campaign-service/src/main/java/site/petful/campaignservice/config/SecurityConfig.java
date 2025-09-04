@@ -14,7 +14,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import site.petful.campaignservice.security.JwtAuthenticationFilter;
+import site.petful.campaignservice.security.HeaderAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -22,7 +22,7 @@ import site.petful.campaignservice.security.JwtAuthenticationFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
     // 공개 엔드포인트
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -58,7 +58,7 @@ public class SecurityConfig {
                 )
 
                 // JWT 필터
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

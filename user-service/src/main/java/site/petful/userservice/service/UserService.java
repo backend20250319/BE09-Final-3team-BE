@@ -45,4 +45,6 @@ public interface UserService {
     // 신고 관련 메서드들
     void reportUser(Long reporterUserNo, String reporterName, ReportRequest request);
 
+    void reportUserByAdvertiser(Long advertiserNo, ReportRequest request);
+
 }
