@@ -19,12 +19,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // RabbitMQ STOMP 브로커로 릴레이
-        registry.enableStompBrokerRelay("/topic", "/queue")
-                .setRelayHost(System.getenv().getOrDefault("RABBIT_HOST", "localhost"))
-                .setRelayPort(15672)
-                .setClientLogin(System.getenv().getOrDefault("RABBIT_STOMP_USER", "petful-noti"))
-                .setClientPasscode(System.getenv().getOrDefault("RABBIT_STOMP_PASS", "noti1234"));
+        // 간단한 메모리 브로커 사용 (STOMP 브로커 연결 문제 해결)
+        registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user"); // /user/queue/...
     }

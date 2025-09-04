@@ -28,7 +28,7 @@ public class NotificationService {
     private final NotificationDeliveryService notificationDeliveryService;
 
     /**
-     * 사용자별 알림 목록 조회 (최신순 정렬)
+     * 사용자별 알림 목록 조회 (최신순 정렬) - SENT 상태만 표시
      */
     @Transactional(readOnly = true)
     public Page<Notification> getUserNotifications(Long userId, Pageable pageable) {
@@ -46,7 +46,8 @@ public class NotificationService {
                 Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
             );
             
-            return notificationRepository.findByUserIdAndHiddenFalse(userId, sortedPageable);
+            // SENT 상태이고 숨김처리되지 않은 알림만 조회
+            return notificationRepository.findByUserIdAndStatusAndHiddenFalse(userId, Notification.NotificationStatus.SENT, sortedPageable);
         } catch (Exception e) {
             log.error("❌ [NotificationService] 사용자 알림 조회 실패: userId={}, error={}", userId, e.getMessage(), e);
             throw new RuntimeException("알림 조회 중 오류가 발생했습니다.", e);
@@ -54,7 +55,7 @@ public class NotificationService {
     }
 
     /**
-     * 읽지 않은 알림 개수 조회
+     * 읽지 않은 알림 개수 조회 (SENT 상태만)
      */
     @Transactional(readOnly = true)
     public long getUnreadNotificationCount(Long userId) {
@@ -65,7 +66,7 @@ public class NotificationService {
         }
 
         try {
-            return notificationRepository.countByUserIdAndIsReadFalseAndHiddenFalse(userId);
+            return notificationRepository.countByUserIdAndStatusAndIsReadFalseAndHiddenFalse(userId, Notification.NotificationStatus.SENT);
         } catch (Exception e) {
             log.error("❌ [NotificationService] 읽지 않은 알림 개수 조회 실패: userId={}, error={}", userId, e.getMessage(), e);
             throw new RuntimeException("알림 개수 조회 중 오류가 발생했습니다.", e);
@@ -111,7 +112,7 @@ public class NotificationService {
     }
 
     /**
-     * 모든 알림 읽음 처리
+     * 모든 알림 읽음 처리 (SENT 상태만)
      */
     public void markAllNotificationsAsRead(Long userId) {
         log.info("👁️ [NotificationService] 모든 알림 읽음 처리: userId={}", userId);
@@ -119,7 +120,7 @@ public class NotificationService {
         try {
             Pageable pageable = PageRequest.of(0, 1000); // 한 번에 처리할 최대 개수
             Page<Notification> unreadNotifications = notificationRepository
-                    .findByUserIdAndIsReadFalseAndHiddenFalse(userId, pageable);
+                    .findByUserIdAndStatusAndIsReadFalseAndHiddenFalse(userId, Notification.NotificationStatus.SENT, pageable);
             
             for (Notification notification : unreadNotifications.getContent()) {
                 notification.markAsRead();
@@ -303,7 +304,7 @@ public class NotificationService {
                 return new NotificationContent(
                     "좋아요",
                     actorName + "님이 게시글을 좋아합니다.",
-                    "/posts/" + eventMessage.getTarget().getResourceId()
+                    "/posts/liked/" + eventMessage.getTarget().getResourceId()
                 );
                 
             case "notification.campaign.new":
@@ -313,11 +314,11 @@ public class NotificationService {
                     "/campaigns/" + eventMessage.getTarget().getResourceId()
                 );
                 
-            case "notification.user.followed":
+            case "campaign.selected":
                 return new NotificationContent(
-                    "새로운 팔로워",
-                    actorName + "님이 회원님을 팔로우하기 시작했습니다.",
-                    "/users/" + eventMessage.getActor().getId()
+                    "체험단 선정",
+                    actorName + "님이 체험단에 선정되었습니다.",
+                    "/campaign/selected/" + eventMessage.getActor().getId()
                 );
                 
             case "health.schedule":
