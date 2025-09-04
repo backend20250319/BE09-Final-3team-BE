@@ -30,12 +30,19 @@ public class AuthenticationFilter extends
     // 기본 화이트리스트 - 인증 없이 접근 가능한 경로들
     private static final List<String> DEFAULT_WHITELIST = List.of(
 
-        "/api/v1/user-service/auth/**",
-        "/api/v1/user-service/health",
-        "/api/v1/advertiser-service/advertiser/**",
-        "/api/v1/advertiser-service/health",
-        "/api/v1/advertiser-service/advertiser/email/**",
-        "/actuator/**"
+       "/api/v1/user-service/auth/login",
+        "/api/v1/user-service/auth/signup",
+        "/api/v1/user-service/auth/password/reset",
+        "/api/v1/user-service/auth/password/verify",
+        "/api/v1/user-service/auth/password/change",
+
+        // 광고주 인증 관련
+        "/api/v1/advertiser-service/advertiser/signup",
+        "/api/v1/advertiser-service/advertiser/signup/email/send",
+        "/api/v1/advertiser-service/advertiser/signup/email/verify",
+        "/api/v1/advertiser-service/advertiser/login",
+        "/api/v1/advertiser-service/advertiser/password/reset/request",
+        "/api/v1/advertiser-service/advertiser/password/reset/verify"
     );
 
     private final JwtUtil jwtUtil;
@@ -85,17 +92,28 @@ public class AuthenticationFilter extends
                 return cfg.required ? unauthorized(exchange) : chain.filter(exchange);
             }
 
-            // 헤더에 추가
-            ServerHttpRequest modifiedRequest = request.mutate()
+            // advertiserNo를 userNo로 사용하는 경우
+            String advertiserNo = jwtUtil.getAdvertiserNoFromToken(token);
+            if (advertiserNo != null && !advertiserNo.equals(userNo)) {
+                userNo = advertiserNo;
+                log.debug("Using advertiserNo as userNo: {}", userNo);
+            }
+
+            // 헤더와 쿼리 파라미터 추가
+            String currentQuery = request.getURI().getQuery();
+            String userNoParam = "userNo=" + userNo;
+            String newQuery = currentQuery == null ? userNoParam : currentQuery + "&" + userNoParam;
+            
+            ServerHttpRequest finalRequest = request.mutate()
                 .header(HDR_USER_NO, userNo)
                 .header(HDR_USER_TYPE, userType)
+                .uri(request.getURI().resolve(path + "?" + newQuery))
                 .build();
 
             log.debug("Authentication successful - userNo: {}, userType: {}, path: {}", userNo,
-
                 userType, path);
 
-            return chain.filter(exchange.mutate().request(modifiedRequest).build());
+            return chain.filter(exchange.mutate().request(finalRequest).build());
         };
     }
 

@@ -2,6 +2,7 @@ package site.petful.petservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import site.petful.petservice.common.ApiResponse;
@@ -49,6 +50,14 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
+    @GetMapping("/{petNo}/histories/external")
+    public ResponseEntity<ApiResponse<List<HistoryResponse>>> getHistoriesExternal(
+            @PathVariable Long petNo,
+            @AuthenticationPrincipal Long userNo) {
+        List<HistoryResponse> responses = historyService.getHistories(petNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     // 활동이력 수정
     @PutMapping("/{petNo}/histories/{historyNo}")
     public ResponseEntity<ApiResponse<HistoryResponse>> updateHistory(
@@ -59,16 +68,6 @@ public class HistoryController {
         HistoryResponse response = historyService.updateHistory(petNo, historyNo, userNo, request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-
-
-
-
-
-
-
-
-
-
 
     // 활동이력 이미지 업로드
     @PostMapping("/{petNo}/histories/{historyNo}/images")
@@ -98,14 +97,14 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(images));
     }
 
-    // 활동이력 삭제
-    @DeleteMapping("/{petNo}/histories/{historyNo}")
-    public ResponseEntity<ApiResponse<Void>> deleteHistory(
+    @GetMapping("/{petNo}/histories/{historyNo}/images/external")
+    public ResponseEntity<ApiResponse<List<HistoryImageInfo>>> getHistoryImagesExternal(
             @PathVariable Long petNo,
             @PathVariable Long historyNo,
-            @RequestAttribute("X-User-No") Long userNo) {
-        historyService.deleteHistory(petNo, historyNo, userNo);
-        return ResponseEntity.ok(ApiResponse.success(null));
+            @AuthenticationPrincipal Long userNo) {
+
+        List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
+        return ResponseEntity.ok(ApiResponse.success(images));
     }
 
     // 활동이력 이미지 삭제
@@ -119,12 +118,22 @@ public class HistoryController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // 중복 활동이력 정리 (관리자용)
+    // 중복 활동이력 정리
     @PostMapping("/{petNo}/histories/cleanup")
     public ResponseEntity<ApiResponse<Void>> cleanupDuplicateHistories(
             @PathVariable Long petNo,
             @RequestAttribute("X-User-No") Long userNo) {
         // TODO: cleanup 로직 구현 필요
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 활동이력 삭제
+    @DeleteMapping("/{petNo}/histories/{historyNo}")
+    public ResponseEntity<ApiResponse<Void>> deleteHistory(
+            @PathVariable Long petNo,
+            @PathVariable Long historyNo,
+            @RequestAttribute("X-User-No") Long userNo) {
+        historyService.deleteHistory(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

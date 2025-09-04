@@ -10,14 +10,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import site.petful.userservice.admin.dto.AdminLogoutRequest;
+import site.petful.userservice.admin.dto.AdminLogoutResponse;
 import site.petful.userservice.admin.dto.ReportResponse;
 import site.petful.userservice.admin.dto.UserResponse;
 import site.petful.userservice.admin.entity.ActorType;
 import site.petful.userservice.admin.entity.ReportStatus;
+import site.petful.userservice.admin.service.AdminAuthService;
 import site.petful.userservice.admin.service.UserAdminService;
 import site.petful.userservice.common.ApiResponse;
 import site.petful.userservice.common.ApiResponseGenerator;
 import site.petful.userservice.entity.User;
+import site.petful.userservice.common.ErrorCode;
+import jakarta.validation.Valid;
 
 import java.util.Map;
 
@@ -29,6 +34,7 @@ import java.util.Map;
 @PreAuthorize("hasRole('Admin')")
 public class UserAdminController {
     private final UserAdminService userAdminService;
+    private final AdminAuthService adminAuthService;
 
     @GetMapping("/restrict/all")
     public ResponseEntity<ApiResponse<Page<ReportResponse>>> getReportUsers(
@@ -40,12 +46,12 @@ public class UserAdminController {
     ) {
         try {
             log.info("getReportUsers API 호출됨 - user: {}", user);
-            
+
             Long userNo = user != null ? user.getUserNo() : null;
             String userType = user != null ? user.getUserType().name() : null;
-            
+
             log.info("사용자 정보 - userNo: {}, userType: {}", userNo, userType);
-            
+
             Page<ReportResponse> page = userAdminService.getAllReports(userNo, userType, targetType, status, pageable);
             log.info("신고 목록 조회 성공 - 총 {}개", page.getTotalElements());
             return ResponseEntity.ok(ApiResponseGenerator.success(page));
@@ -77,6 +83,9 @@ public class UserAdminController {
         return ResponseEntity.ok(ApiResponseGenerator.success());
     }
 
+
+
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(
             @AuthenticationPrincipal User user,
@@ -92,5 +101,6 @@ public class UserAdminController {
             throw e;
         }
     }
+
 
 }

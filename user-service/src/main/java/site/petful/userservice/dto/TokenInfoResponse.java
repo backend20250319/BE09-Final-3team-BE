@@ -21,4 +21,5 @@ public class TokenInfoResponse {
     private long refreshExpiresIn; // 초 단위
     private String tokenType;
     private String message;
+    private String userType;  // 사용자 타입 추가
 }
