@@ -19,8 +19,6 @@ import site.petful.healthservice.medical.schedule.dto.ScheduleRequestDTO;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 import site.petful.healthservice.common.response.ApiResponse;
-import site.petful.healthservice.common.client.PetServiceClient;
-import site.petful.healthservice.common.dto.PetResponse;
 import site.petful.healthservice.medical.medication.entity.ScheduleMedDetail;
 import site.petful.healthservice.medical.medication.repository.ScheduleMedicationDetailRepository;
 
@@ -28,11 +26,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
+
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import site.petful.healthservice.connectNotice.dto.EventMessage;
 
@@ -40,14 +35,12 @@ import site.petful.healthservice.connectNotice.dto.EventMessage;
 @Service
 public class CareScheduleService extends AbstractScheduleService {
 
-    private final PetServiceClient petServiceClient;
     private final RabbitTemplate rabbitTemplate;
     private final ScheduleMedicationDetailRepository medicationDetailRepository;
 
-    public CareScheduleService(ScheduleRepository scheduleRepository, PetServiceClient petServiceClient, 
+    public CareScheduleService(ScheduleRepository scheduleRepository, 
                              RabbitTemplate rabbitTemplate, ScheduleMedicationDetailRepository medicationDetailRepository) {
         super(scheduleRepository);
-        this.petServiceClient = petServiceClient;
         this.rabbitTemplate = rabbitTemplate;
         this.medicationDetailRepository = medicationDetailRepository;
     }
@@ -83,14 +76,99 @@ public class CareScheduleService extends AbstractScheduleService {
                 .frequencyText(frequencyText)
                 .build();
 
-        // 공통 서비스 사용
-        Schedule entity = createScheduleEntity(userNo, commonRequest, mainType);
+        // 주기별 일정 생성
+        List<Schedule> createdSchedules = createRecurringSchedules(userNo, commonRequest, mainType, careFreq);
+        
+        // 첫 번째 일정의 ID 반환 (하위 호환성)
+        return createdSchedules.isEmpty() ? null : createdSchedules.get(0).getScheduleNo();
+    }
+
+    /**
+     * 주기별 일정 생성
+     */
+    private List<Schedule> createRecurringSchedules(Long userNo, ScheduleRequestDTO request, ScheduleMainType mainType, CareFrequency frequency) {
+        List<Schedule> schedules = new ArrayList<>();
+        LocalDate startDate = request.getStartDate();
+        LocalDate endDate = request.getEndDate();
+        
+        switch (frequency) {
+            case DAILY:
+                // 매일: 시작일과 종료일만 생성
+                schedules.add(createScheduleForDate(userNo, request, mainType, startDate));
+                if (!startDate.equals(endDate)) {
+                    schedules.add(createScheduleForDate(userNo, request, mainType, endDate));
+                }
+                break;
+                
+            case WEEKLY:
+                // 매주: 7일마다 일정 생성
+                LocalDate current = startDate;
+                while (!current.isAfter(endDate)) {
+                    schedules.add(createScheduleForDate(userNo, request, mainType, current));
+                    current = current.plusWeeks(1);
+                }
+                break;
+                
+            case MONTHLY:
+                // 매월: 매월 같은 날짜에 일정 생성
+                current = startDate;
+                while (!current.isAfter(endDate)) {
+                    schedules.add(createScheduleForDate(userNo, request, mainType, current));
+                    current = current.plusMonths(1);
+                }
+                break;
+                
+            case YEARLY_ONCE:
+                // 연 1회: 매년 같은 날짜에 일정 생성
+                current = startDate;
+                while (!current.isAfter(endDate)) {
+                    schedules.add(createScheduleForDate(userNo, request, mainType, current));
+                    current = current.plusYears(1);
+                }
+                break;
+                
+            case HALF_YEARLY_ONCE:
+                // 반년 1회: 6개월마다 일정 생성
+                current = startDate;
+                while (!current.isAfter(endDate)) {
+                    schedules.add(createScheduleForDate(userNo, request, mainType, current));
+                    current = current.plusMonths(6);
+                }
+                break;
+        }
+        
+        // 이벤트 발행
+        for (Schedule schedule : schedules) {
+            publishScheduleCreatedEvent(schedule);
+        }
+        
+        return schedules;
+    }
+    
+    /**
+     * 특정 날짜에 일정 생성
+     */
+    private Schedule createScheduleForDate(Long userNo, ScheduleRequestDTO request, ScheduleMainType mainType, LocalDate date) {
+        // 날짜를 수정한 새로운 DTO 생성
+        ScheduleRequestDTO dateRequest = ScheduleRequestDTO.builder()
+                .petNo(request.getPetNo())
+                .title(request.getTitle())
+                .startDate(date)
+                .endDate(date) // 시작일과 종료일을 동일하게 설정
+                .subType(request.getSubType())
+                .times(request.getTimes())
+                .frequency(request.getFrequency())
+                .recurrenceInterval(request.getRecurrenceInterval())
+                .recurrenceEndDate(request.getRecurrenceEndDate())
+                .reminderDaysBefore(request.getReminderDaysBefore())
+                .frequencyText(request.getFrequencyText())
+                .build();
+        
+        Schedule entity = createScheduleEntity(userNo, dateRequest, mainType);
         Long scheduleNo = saveSchedule(entity);
         
-        // 스케줄 생성 이벤트 발행
-        publishScheduleCreatedEvent(entity);
-        
-        return scheduleNo;
+        // 원본 엔티티를 그대로 반환 (ID는 필요시 조회해서 사용)
+        return entity;
     }
 
     // ==================== 돌봄 일정 조회 ====================
@@ -394,55 +472,67 @@ public class CareScheduleService extends AbstractScheduleService {
                 return startDate;  // 종료날짜 없으면 시작일과 동일
 
             case WEEKLY:
-                // 매주: 최소 7일 이후의 종료날짜만 허용
+                // 매주: 시작일부터 종료일까지 7일마다 일정 생성
                 if (endDate != null) {
-                    LocalDate minEndDate = startDate.plusDays(7);
-                    if (endDate.isBefore(minEndDate)) {
+                    if (endDate.isBefore(startDate)) {
                         throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "매주 일정의 종료일은 시작일로부터 최소 7일 이후여야 합니다. 최소 종료일: " + minEndDate);
+                                "종료일은 시작일보다 이전일 수 없습니다.");
+                    }
+                    // 종료일이 시작일과 같으면 1주일 후로 설정 (최소 2개 일정)
+                    if (endDate.equals(startDate)) {
+                        return startDate.plusWeeks(1);
                     }
                     return endDate;
                 }
-                // 종료일이 없으면 1주일 후로 설정
+                // 종료일이 없으면 1주일 후로 설정 (최소 2개 일정)
                 return startDate.plusWeeks(1);
 
             case MONTHLY:
-                // 매월: 최소 30일 이후의 종료날짜만 허용
+                // 매월: 시작일부터 종료일까지 매월 같은 날짜에 일정 생성
                 if (endDate != null) {
-                    LocalDate minEndDate = startDate.plusDays(30);
-                    if (endDate.isBefore(minEndDate)) {
+                    if (endDate.isBefore(startDate)) {
                         throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "매월 일정의 종료일은 시작일로부터 최소 30일 이후여야 합니다. 최소 종료일: " + minEndDate);
+                                "종료일은 시작일보다 이전일 수 없습니다.");
+                    }
+                    // 종료일이 시작일과 같으면 1개월 후로 설정 (최소 2개 일정)
+                    if (endDate.equals(startDate)) {
+                        return startDate.plusMonths(1);
                     }
                     return endDate;
                 }
-                // 종료일이 없으면 1개월 후로 설정
+                // 종료일이 없으면 1개월 후로 설정 (최소 2개 일정)
                 return startDate.plusMonths(1);
 
             case YEARLY_ONCE:
-                // 연 1회: 최소 365일 이후의 종료날짜만 허용
+                // 연 1회: 시작일부터 종료일까지 매년 같은 날짜에 일정 생성
                 if (endDate != null) {
-                    LocalDate minEndDate = startDate.plusDays(365);
-                    if (endDate.isBefore(minEndDate)) {
+                    if (endDate.isBefore(startDate)) {
                         throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "연 1회 일정의 종료일은 시작일로부터 최소 365일 이후여야 합니다. 최소 종료일: " + minEndDate);
+                                "종료일은 시작일보다 이전일 수 없습니다.");
+                    }
+                    // 종료일이 시작일과 같으면 1년 후로 설정 (최소 2개 일정)
+                    if (endDate.equals(startDate)) {
+                        return startDate.plusYears(1);
                     }
                     return endDate;
                 }
-                // 종료일이 없으면 1년 후로 설정
+                // 종료일이 없으면 1년 후로 설정 (최소 2개 일정)
                 return startDate.plusYears(1);
 
             case HALF_YEARLY_ONCE:
-                // 반년 1회: 최소 6개월 이후의 종료날짜만 허용
+                // 반년 1회: 시작일부터 종료일까지 6개월마다 일정 생성
                 if (endDate != null) {
-                    LocalDate minEndDate = startDate.plusMonths(6);
-                    if (endDate.isBefore(minEndDate)) {
+                    if (endDate.isBefore(startDate)) {
                         throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                                "반년 1회 일정의 종료일은 시작일로부터 최소 6개월 이후여야 합니다. 최소 종료일: " + minEndDate);
+                                "종료일은 시작일보다 이전일 수 없습니다.");
+                    }
+                    // 종료일이 시작일과 같으면 6개월 후로 설정 (최소 2개 일정)
+                    if (endDate.equals(startDate)) {
+                        return startDate.plusMonths(6);
                     }
                     return endDate;
                 }
-                // 종료일이 없으면 6개월 후로 설정
+                // 종료일이 없으면 6개월 후로 설정 (최소 2개 일정)
                 return startDate.plusMonths(6);
 
             default:
