@@ -78,7 +78,9 @@ public class StatusSchedulerService {
                     req.setStatus(applicant.getStatus()); // 기존 상태 유지
 
                     campaignFeignClient.updateApplicant(applicant.getApplicantNo(), req);
-                    campaignFeignClient.createReview(applicant.getApplicantNo());
+                    if(applicant.getStatus().equals(ApplicantStatus.SELECTED)) {
+                        campaignFeignClient.createReview(applicant.getApplicantNo());
+                    }
                 }
             }
         }
