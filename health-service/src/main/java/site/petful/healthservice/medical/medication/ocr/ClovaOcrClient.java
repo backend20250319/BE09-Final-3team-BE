@@ -18,6 +18,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 import java.io.File;
+import java.util.HashMap;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class ClovaOcrClient {
 		body.add("file", new FileSystemResource(imageFile));
 
 		// Build OCR message JSON
-		Map<String, Object> requestJsonMap = new java.util.HashMap<>();
+		Map<String, Object> requestJsonMap = new HashMap<>();
 		requestJsonMap.put("version", "V2");
 		requestJsonMap.put("requestId", UUID.randomUUID().toString());
 		requestJsonMap.put("timestamp", System.currentTimeMillis());

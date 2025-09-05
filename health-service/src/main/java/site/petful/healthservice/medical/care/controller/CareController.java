@@ -11,6 +11,7 @@ import site.petful.healthservice.medical.care.dto.*;
 import site.petful.healthservice.medical.care.service.CareScheduleService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/medical/care")
@@ -20,8 +21,8 @@ public class CareController {
     private final CareScheduleService careScheduleService;
 
     @GetMapping("/meta")
-    public ResponseEntity<ApiResponse<java.util.Map<String, java.util.List<String>>>> getMeta() {
-        java.util.Map<String, java.util.List<String>> data = careScheduleService.getCareMeta();
+    public ResponseEntity<ApiResponse<Map<String, List<String>>>> getMeta() {
+        Map<String, List<String>> data = careScheduleService.getCareMeta();
         return ResponseEntity.ok(ApiResponseGenerator.success(data));
     }
 
