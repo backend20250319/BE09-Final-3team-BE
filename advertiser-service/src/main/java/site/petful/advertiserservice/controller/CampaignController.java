@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.common.ErrorCode;
+import site.petful.advertiserservice.dto.campaign.ApplicantRequest;
 import site.petful.advertiserservice.dto.campaign.ApplicantResponse;
 import site.petful.advertiserservice.dto.campaign.ApplicantsResponse;
 import site.petful.advertiserservice.entity.ApplicantStatus;
@@ -34,12 +35,12 @@ public class CampaignController {
     }
 
     // 2. 체험단 선정
-    @PutMapping("/advertiser/{applicantNo}")
+    @PutMapping("/applicant/{applicantNo}")
     public ResponseEntity<ApiResponse<?>> updateApplicant(
             @PathVariable Long applicantNo,
-            @RequestParam ApplicantStatus status){
+            @RequestBody ApplicantRequest request){
         try {
-            ApplicantResponse response = campaignService.updateApplicant(applicantNo, status);
+            ApplicantResponse response = campaignService.updateApplicant(applicantNo, request);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

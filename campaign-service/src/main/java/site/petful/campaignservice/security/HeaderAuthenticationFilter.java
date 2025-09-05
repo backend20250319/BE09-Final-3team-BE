@@ -33,6 +33,12 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
                     new PreAuthenticatedAuthenticationToken(userId, null,
                             List.of(new SimpleGrantedAuthority(role)));
             SecurityContextHolder.getContext().setAuthentication(authentication);
+        } else if ("SERVICE".equals(role)) {
+            // SERVICE 역할일 때는 userId가 null이어도 허용
+            PreAuthenticatedAuthenticationToken authentication =
+                    new PreAuthenticatedAuthenticationToken("SERVICE", null,
+                            List.of(new SimpleGrantedAuthority("SERVICE")));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);

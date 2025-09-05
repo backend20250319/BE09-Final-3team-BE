@@ -66,7 +66,7 @@ public class CampaignController {
         }
     }
 
-    // 3-1. 체험단 추가 내용 수정 - 체험단
+    // 3. 체험단 추가 내용/ adStatus 수정
     @PutMapping("/applicant/{applicantNo}")
     public ResponseEntity<ApiResponse<?>> updateApplicant(
             @PathVariable Long applicantNo,

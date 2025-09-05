@@ -17,6 +17,7 @@ public class ApplicantResponse {
     private PetResponse pet;
     private String content;
     private ApplicantStatus status;
+    private Boolean isSaved;
     private LocalDateTime createdAt;
 
     public static ApplicantResponse from(Applicant applicant, PetResponse petResponse) {
@@ -26,6 +27,7 @@ public class ApplicantResponse {
         res.setPet(petResponse);
         res.setContent(applicant.getContent());
         res.setStatus(applicant.getStatus());
+        res.setIsSaved(applicant.getIsSaved());
         res.setCreatedAt(applicant.getCreatedAt());
         return res;
     }

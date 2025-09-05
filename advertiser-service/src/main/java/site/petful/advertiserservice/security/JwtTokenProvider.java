@@ -62,6 +62,20 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    // 서비스 간 통신용 토큰 생성 (스케줄러 등에서 사용)
+    public String generateServiceToken() {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + (accessExpMin * 60 * 1000));
+
+        return Jwts.builder()
+                .claim("userType", "SERVICE")
+                .claim("tokenType", "SERVICE")
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getAccessSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public Claims getAccessTokenClaims(String token) {
         try {
             Claims claims = Jwts.parserBuilder()
