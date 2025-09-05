@@ -13,7 +13,6 @@ import site.petful.communityservice.client.UserClient;
 import site.petful.communityservice.dto.*;
 import site.petful.communityservice.entity.Comment;
 import site.petful.communityservice.entity.CommentStatus;
-import site.petful.communityservice.entity.Post;
 import site.petful.communityservice.repository.CommentRepository;
 import site.petful.communityservice.repository.PostRepository;
 
