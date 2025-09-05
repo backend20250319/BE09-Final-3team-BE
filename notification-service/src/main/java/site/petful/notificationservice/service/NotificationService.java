@@ -336,7 +336,7 @@ public class NotificationService {
                     "/campaigns/" + eventMessage.getTarget().get(0).getResourceId()
                 );
                 
-            case "campaign.selected":
+            case "campaign.applicant.selected":
                 return new NotificationContent(
                     "체험단 선정",
                     actorName + "님이 체험단에 선정되었습니다.",
