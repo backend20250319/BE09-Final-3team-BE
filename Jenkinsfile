@@ -56,7 +56,7 @@ pipeline {
                         services.each { service ->
                             echo "Building Docker image for ${service}..."
                             IMAGE_TAG = "v0.0.${currentBuild.number}"
-                            bat "cd ${service} && docker build -t ${DOCKER_USER}/petful-${service}:${IMAGE_TAG} ."
+                            bat "cd ${service} && docker buildx build --platform linux/amd64,linux/arm64 -t ${DOCKER_USER}/petful-${service}:${IMAGE_TAG} ."
 
                             echo "Pushing Docker image for ${service}..."
                             bat "docker push ${DOCKER_USER}/petful-${service}:${IMAGE_TAG}"
