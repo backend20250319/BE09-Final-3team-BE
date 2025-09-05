@@ -5,12 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.campaignservice.client.AdvertiserFeignClient;
 import site.petful.campaignservice.client.PetFeignClient;
+import site.petful.campaignservice.client.UserFeignClient;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ErrorCode;
 import site.petful.campaignservice.dto.advertisement.AdResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantRequest;
-import site.petful.campaignservice.dto.PetResponse;
+import site.petful.campaignservice.dto.pet.PetResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantsResponse;
 import site.petful.campaignservice.entity.Applicant;
 import site.petful.campaignservice.entity.ApplicantStatus;
@@ -40,11 +41,14 @@ public class CampaignService {
         ApiResponse<PetResponse> petResponse = petFeignClient.getPet(petNo);
         PetResponse pet = petResponse.getData();
 
+
+
         Applicant applicant = new Applicant();
         applicant.setAdNo(adNo);
         applicant.setPetNo(petNo);
         applicant.setContent(request.getContent());
         applicant.setStatus(applicant.getStatus() == null ? ApplicantStatus.APPLIED : applicant.getStatus());
+        applicant.setIsSaved(false);
         Applicant saved = campaignRepository.save(applicant);
 
         // advertiser의 applicants 1 증가
@@ -116,29 +120,23 @@ public class CampaignService {
                 .collect(Collectors.toList());
     }
 
-    // 3-1. 체험단 추가 내용 수정 - 체험단
+    // 3. 체험단 추가 내용 수정
     public ApplicantResponse updateApplicant(Long applicantNo, ApplicantRequest request) {
 
         Applicant applicant = campaignRepository.findApplicantByApplicantNo(applicantNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.APPLICANT_NOT_FOUND.getDefaultMessage()));
 
+        if(request.getContent() != null) {
+            applicant.setContent(request.getContent());
+        }
+        if(request.getIsSaved() != null) {
+            applicant.setIsSaved(request.getIsSaved());
+        }
+        if(request.getStatus() != null) {
+            applicant.setStatus(request.getStatus());
+        }
+
         applicant.setContent(request.getContent());
-        Applicant saved = campaignRepository.save(applicant);
-
-        ApiResponse<PetResponse> petResponse = petFeignClient.getPet(saved.getPetNo());
-        PetResponse pet = petResponse.getData();
-
-        return ApplicantResponse.from(saved, pet);
-    }
-
-
-    // 3-2. 체험단 applicantStatus 수정 - 광고주
-    public ApplicantResponse updateApplicantByAdvertiser(Long applicantNo, ApplicantStatus status) {
-
-        Applicant applicant = campaignRepository.findApplicantByApplicantNo(applicantNo)
-                .orElseThrow(() -> new RuntimeException(ErrorCode.APPLICANT_NOT_FOUND.getDefaultMessage()));
-
-        applicant.setStatus(status);
         Applicant saved = campaignRepository.save(applicant);
 
         ApiResponse<PetResponse> petResponse = petFeignClient.getPet(saved.getPetNo());

@@ -8,6 +8,7 @@ import site.petful.campaignservice.common.ApiResponseGenerator;
 import site.petful.campaignservice.common.ErrorCode;
 import site.petful.campaignservice.dto.ReviewRequest;
 import site.petful.campaignservice.dto.ReviewResponse;
+import site.petful.campaignservice.dto.campaign.ApplicantRequest;
 import site.petful.campaignservice.dto.campaign.ApplicantResponse;
 import site.petful.campaignservice.dto.campaign.ApplicantsResponse;
 import site.petful.campaignservice.entity.ApplicantStatus;
@@ -39,13 +40,13 @@ public class InternalController {
         }
     }
 
-    // 3-2. 체험단 applicantStatus 수정 - 광고주
-    @PutMapping("/advertiser/{applicantNo}")
-    public ResponseEntity<ApiResponse<?>> updateApplicantByAdvertiser(
+    // 3. 체험단 applicantStatus 수정
+    @PutMapping("/applicant/{applicantNo}")
+    public ResponseEntity<ApiResponse<?>> updateApplicant(
             @PathVariable Long applicantNo,
-            @RequestParam ApplicantStatus status) {
+            @RequestBody ApplicantRequest request) {
         try {
-            ApplicantResponse response = campaignService.updateApplicantByAdvertiser(applicantNo, status);
+            ApplicantResponse response = campaignService.updateApplicant(applicantNo, request);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

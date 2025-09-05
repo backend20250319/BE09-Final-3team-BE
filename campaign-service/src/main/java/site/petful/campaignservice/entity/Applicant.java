@@ -30,6 +30,9 @@ public class Applicant {
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
+    private Boolean isSaved;
+
+    @Column(nullable = false)
     private Long adNo;
 
     @Column(nullable = false)

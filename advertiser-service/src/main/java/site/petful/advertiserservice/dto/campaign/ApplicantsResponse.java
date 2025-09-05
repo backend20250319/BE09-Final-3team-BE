@@ -25,6 +25,7 @@ public class ApplicantsResponse {
         private PetResponse pet;
         private String content;
         private ApplicantStatus status;
+        private Boolean isSaved;
         private LocalDateTime createdAt;
     }
 }

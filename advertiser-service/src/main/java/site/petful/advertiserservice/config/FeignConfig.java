@@ -1,9 +1,9 @@
 package site.petful.advertiserservice.config;
 
-import feign.Client;
 import feign.RequestInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -12,6 +12,7 @@ import site.petful.advertiserservice.security.JwtTokenProvider;
 
 @Configuration
 @RequiredArgsConstructor
+@Slf4j
 public class FeignConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
