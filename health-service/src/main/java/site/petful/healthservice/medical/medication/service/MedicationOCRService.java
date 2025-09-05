@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import site.petful.healthservice.common.exception.BusinessException;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,12 +32,17 @@ public class MedicationOCRService {
     private final MedicationFrequencyService frequencyService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
-    // 기본 시간 슬롯 배열
-    private static final LocalTime[][] DEFAULT_TIME_SLOTS = {
-        {LocalTime.of(9, 0)},                                    // 1회
-        {LocalTime.of(8, 0), LocalTime.of(20, 0)},              // 2회
-        {LocalTime.of(8, 0), LocalTime.of(12, 0), LocalTime.of(20, 0)} // 3회
-    };
+    @Value("${medication.file.max-size:10485760}")
+    private long maxFileSize;
+    
+    @Value("${medication.default-times.once:09:00}")
+    private List<String> onceTimes;
+    
+    @Value("${medication.default-times.twice:08:00,20:00}")
+    private List<String> twiceTimes;
+    
+    @Value("${medication.default-times.three-times:08:00,12:00,20:00}")
+    private List<String> threeTimes;
     
     /**
      * 처방전 이미지를 OCR로 분석하고 파싱된 정보를 반환합니다.
@@ -123,9 +130,24 @@ public class MedicationOCRService {
      * 복용 횟수에 따른 기본 시간 슬롯 반환
      */
     public List<LocalTime> getDefaultTimeSlots(int times) {
-        // 배열 인덱스는 0부터 시작하므로 times-1 사용, 범위 체크
-        int index = Math.max(0, Math.min(times - 1, DEFAULT_TIME_SLOTS.length - 1));
-        return List.of(DEFAULT_TIME_SLOTS[index]);
+        List<String> timeStrings;
+        switch (times) {
+            case 1:
+                timeStrings = onceTimes;
+                break;
+            case 2:
+                timeStrings = twiceTimes;
+                break;
+            case 3:
+                timeStrings = threeTimes;
+                break;
+            default:
+                timeStrings = onceTimes; // 기본값
+        }
+        
+        return timeStrings.stream()
+                .map(LocalTime::parse)
+                .collect(Collectors.toList());
     }
     
     /**
@@ -285,9 +307,10 @@ public class MedicationOCRService {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "업로드된 파일이 없습니다.");
         }
         
-        // 파일 크기 체크 (10MB 제한)
-        if (file.getSize() > 10 * 1024 * 1024) {
-            throw new BusinessException(ErrorCode.IMAGE_SIZE_TOO_LARGE, "파일 크기가 10MB를 초과합니다.");
+        // 파일 크기 체크 (설정값 사용)
+        if (file.getSize() > maxFileSize) {
+            throw new BusinessException(ErrorCode.IMAGE_SIZE_TOO_LARGE, 
+                "파일 크기가 " + (maxFileSize / 1024 / 1024) + "MB를 초과합니다.");
         }
         
         // 이미지 파일 형식 체크
