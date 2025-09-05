@@ -457,6 +457,12 @@ public class CareScheduleService extends AbstractScheduleService {
                 "시작날짜는 당일보다 이전일 수 없습니다.");
         }
 
+        // 종료일이 시작일보다 이전인지 확인 (종료일이 있는 경우)
+        if (endDate != null && endDate.isBefore(startDate)) {
+            throw new BusinessException(ErrorCode.MEDICAL_END_DATE_BEFORE_START_ERROR, 
+                "종료날짜는 시작날짜보다 이전일 수 없습니다.");
+        }
+
         // 빈도별 종료일 검증 및 자동 계산
         switch (frequency) {
             case DAILY:
@@ -466,8 +472,8 @@ public class CareScheduleService extends AbstractScheduleService {
                             "매일 일정은 종료일을 반드시 입력해야 합니다.");
                 }
                 if (endDate.isBefore(startDate)) {
-                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                            "종료일은 시작일보다 이전일 수 없습니다.");
+                    throw new BusinessException(ErrorCode.MEDICAL_END_DATE_BEFORE_START_ERROR,
+                            "종료날짜는 시작날짜보다 이전일 수 없습니다.");
                 }
                 if (endDate.equals(startDate)) {
                     throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
@@ -482,8 +488,8 @@ public class CareScheduleService extends AbstractScheduleService {
                             "매주 일정은 종료일을 반드시 입력해야 합니다.");
                 }
                 if (endDate.isBefore(startDate)) {
-                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                            "종료일은 시작일보다 이전일 수 없습니다.");
+                    throw new BusinessException(ErrorCode.MEDICAL_END_DATE_BEFORE_START_ERROR,
+                            "종료날짜는 시작날짜보다 이전일 수 없습니다.");
                 }
                 
                 // 매주 빈도일 때 종료날짜의 요일(dayOfWeek)이 시작날짜의 요일(dayOfWeek)과 동일한지 확인
