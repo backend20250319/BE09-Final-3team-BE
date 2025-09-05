@@ -286,6 +286,12 @@ public class CareScheduleService extends AbstractScheduleService {
         
         // 메인타입 변경 방지 로직 제거 (모든 서브타입이 CARE 메인타입이므로)
 
+        // 시작날짜 검증 (수정 시 시작날짜가 변경되는 경우)
+        if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                "시작날짜는 당일보다 이전일 수 없습니다.");
+        }
+
         // 날짜 검증 및 종료일 자동 계산
         LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
         LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : entity.getEndDate().toLocalDate();
@@ -445,10 +451,10 @@ public class CareScheduleService extends AbstractScheduleService {
      * 돌봄 일정 날짜 범위 검증 및 종료일 자동 계산
      */
     private LocalDate validateAndCalculateEndDate(LocalDate startDate, LocalDate endDate, CareFrequency frequency) {
-        // 시작일이 과거인지 확인
+        // 시작일이 오늘 이전인지 확인
         if (startDate.isBefore(LocalDate.now())) {
-            throw new BusinessException(ErrorCode.MEDICAL_DATE_PAST_ERROR, 
-                "과거 날짜로 일정을 생성할 수 없습니다.");
+            throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                "시작날짜는 당일보다 이전일 수 없습니다.");
         }
 
         // 빈도별 종료일 검증 및 자동 계산
