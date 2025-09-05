@@ -1,8 +1,6 @@
 spring:
   config:
     import:
-      configserver:http://localhost:8888
+      configserver:${CONFIG_SERVER_URI:http://localhost:8888}
   application:
     name: gateway-service
-
-

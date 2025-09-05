@@ -1,0 +1,45 @@
+package site.petful.userservice.common;
+
+public class ApiResponseGenerator {
+
+    private static final ApiResponse<Void> RESULT_SUCCESS = new ApiResponse<>(ErrorCode.SUCCESS);
+    private static final ApiResponse<Void> RESULT_ERROR = new ApiResponse<>(
+        ErrorCode.UNKNOWN_ERROR);
+
+    private ApiResponseGenerator() {
+
+    }
+
+    public static ApiResponse<Void> success() {
+        return RESULT_SUCCESS;
+    }
+
+    public static <T> ApiResponse<T> success(T data) {
+        return new ApiResponse<>(ErrorCode.SUCCESS, null, data);
+    }
+
+    public static ApiResponse<Void> fail() {
+        return RESULT_ERROR;
+    }
+
+    public static ApiResponse<Void> fail(ErrorCode code) {
+        return new ApiResponse<>(code);
+    }
+
+    public static <T> ApiResponse<T> fail(ErrorCode code, T data) {
+        return new ApiResponse<>(code, data);
+    }
+
+    public static ApiResponse<Void> fail(ErrorCode code, String msg) {
+        return new ApiResponse<>(code, msg, null);
+    }
+
+    public static ApiResponse<String> fail(ErrorCode code, String msg, String messageCode) {
+        return new ApiResponse<>(code, msg, messageCode, null);
+    }
+
+    public static <T> ApiResponse<T> fail(ErrorCode code, String msg, T data) {
+        return new ApiResponse<>(code, msg, data);
+    }
+
+}
