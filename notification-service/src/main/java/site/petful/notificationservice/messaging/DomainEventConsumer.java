@@ -25,7 +25,7 @@ public class DomainEventConsumer {
                 message.getEventId(),
                 message.getType(),
                 message.getActor() != null ? message.getActor().getName() : "N/A",
-                message.getTarget() != null ? message.getTarget().getResourceType() : "N/A"
+                message.getTarget() != null && !message.getTarget().isEmpty() ? message.getTarget().get(0).getResourceType() : "N/A"
         );
 
         try {
@@ -43,6 +43,7 @@ public class DomainEventConsumer {
                 Integer durationDays = (Integer) attributes.get("durationDays");
                 String scheduleTitle = (String) attributes.get("title");
                 String subType = (String) attributes.get("subType");
+                @SuppressWarnings("unchecked")
                 List<String> times = (List<String>) attributes.get("times");
                 
                 log.info("🔍 [NotificationConsumer] 스케줄 정보 파싱: startDate={}, reminderDaysBefore={}, durationDays={}, title={}, subType={}, times={}", 
@@ -115,12 +116,17 @@ public class DomainEventConsumer {
     private void handleCampaignSelectionNotification(EventMessage message) {
         try {
             // 1. 광고 정보 추출
-            Long adNo = message.getActor().getId();
             String adTitle = message.getActor().getName();
             
             // 2. 선정된 지원자 정보 추출 (advertiser-service에서 개별 이벤트로 발송)
-            Long userId = Long.parseLong(message.getTarget().getUserId());
-            Long applicantNo = message.getTarget().getResourceId();
+            // Target이 List이므로 첫 번째 요소 사용
+            if (message.getTarget() == null || message.getTarget().isEmpty()) {
+                log.error("❌ [NotificationConsumer] Target이 null이거나 비어있습니다.");
+                return;
+            }
+            EventMessage.Target target = message.getTarget().get(0);
+            Long userId = Long.parseLong(target.getUserId());
+            Long applicantNo = target.getResourceId();
             
             // 3. attributes에서 추가 정보 추출
             Map<String, Object> attributes = message.getAttributes();
@@ -159,12 +165,12 @@ public class DomainEventConsumer {
         // Actor 설정 (광고 정보)
         notificationMessage.setActor(originalMessage.getActor());
 
-        // Target 설정 (선정된 사용자)
+        // Target 설정 (선정된 사용자) - List로 설정
         EventMessage.Target target = new EventMessage.Target();
         target.setUserId(String.valueOf(userId));
         target.setResourceId(applicantNo);
         target.setResourceType("CAMPAIGN");
-        notificationMessage.setTarget(target);
+        notificationMessage.setTarget(java.util.Arrays.asList(target));
 
         // 알림 속성 설정
         Map<String, Object> attributes = new HashMap<>();

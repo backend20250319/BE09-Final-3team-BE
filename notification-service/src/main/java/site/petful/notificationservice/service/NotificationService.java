@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -145,9 +144,13 @@ public class NotificationService {
         // 이벤트 타입에 따른 알림 내용 생성
         NotificationContent content = createNotificationContent(eventMessage);
         
-        // 알림 엔티티 생성
+        // 알림 엔티티 생성 - Target이 List이므로 첫 번째 요소 사용
+        if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
+            throw new IllegalArgumentException("EventMessage의 Target이 null이거나 비어있습니다.");
+        }
+        EventMessage.Target target = eventMessage.getTarget().get(0);
         Notification notification = Notification.of(
-                Long.valueOf(eventMessage.getTarget().getUserId()),
+                Long.valueOf(target.getUserId()),
                 eventMessage.getType(),
                 content.getTitle(),
                 content.getContent(),
@@ -219,9 +222,13 @@ public class NotificationService {
         // 이벤트 타입에 따른 알림 내용 생성
         NotificationContent content = createNotificationContent(eventMessage);
         
-        // 예약 알림 엔티티 생성
+        // 예약 알림 엔티티 생성 - Target이 List이므로 첫 번째 요소 사용
+        if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
+            throw new IllegalArgumentException("EventMessage의 Target이 null이거나 비어있습니다.");
+        }
+        EventMessage.Target target = eventMessage.getTarget().get(0);
         Notification notification = Notification.scheduled(
-                Long.valueOf(eventMessage.getTarget().getUserId()),
+                Long.valueOf(target.getUserId()),
                 eventMessage.getType(),
                 content.getTitle(),
                 content.getContent(),
@@ -262,8 +269,13 @@ public class NotificationService {
         // 예약 알림 엔티티 생성
         log.info("🔍 [NotificationService] 엔티티 생성 전 scheduledTime: {}", scheduledTime);
         
+        // Target이 List이므로 첫 번째 요소 사용
+        if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
+            throw new IllegalArgumentException("EventMessage의 Target이 null이거나 비어있습니다.");
+        }
+        EventMessage.Target target = eventMessage.getTarget().get(0);
         Notification notification = Notification.scheduled(
-                Long.valueOf(eventMessage.getTarget().getUserId()),
+                Long.valueOf(target.getUserId()),
                 eventMessage.getType(),
                 content.getTitle(),
                 content.getContent(),
@@ -291,27 +303,37 @@ public class NotificationService {
         String type = eventMessage.getType();
         String actorName = eventMessage.getActor() != null ? eventMessage.getActor().getName() : "알 수 없는 사용자";
         
+        // Target이 null이거나 비어있는 경우 처리
+        if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
+            log.warn("⚠️ [NotificationService] EventMessage의 Target이 null이거나 비어있습니다. 기본 알림을 생성합니다.");
+            return new NotificationContent(
+                "새로운 알림",
+                "새로운 알림이 도착했습니다.",
+                null
+            );
+        }
+        
         // 이벤트 타입별로 다른 알림 내용 생성
         switch (type) {
             case "notification.comment.created":
                 return new NotificationContent(
                     "새로운 댓글",
                     actorName + "님이 댓글을 작성했습니다.",
-                    "/posts/" + eventMessage.getTarget().getResourceId()
+                    "/posts/" + eventMessage.getTarget().get(0).getResourceId()
                 );
                 
             case "notification.post.liked":
                 return new NotificationContent(
                     "좋아요",
                     actorName + "님이 게시글을 좋아합니다.",
-                    "/posts/liked/" + eventMessage.getTarget().getResourceId()
+                    "/posts/liked/" + eventMessage.getTarget().get(0).getResourceId()
                 );
                 
             case "notification.campaign.new":
                 return new NotificationContent(
                     "새로운 캠페인",
                     "새로운 캠페인이 등록되었습니다.",
-                    "/campaigns/" + eventMessage.getTarget().getResourceId()
+                    "/campaigns/" + eventMessage.getTarget().get(0).getResourceId()
                 );
                 
             case "campaign.selected":
@@ -326,14 +348,14 @@ public class NotificationService {
                 return new NotificationContent(
                     "새로운 건강 일정",
                     scheduleMessage != null ? scheduleMessage : "새로운 건강 일정이 등록되었습니다.",
-                    "/schedules/" + eventMessage.getTarget().getResourceId()
+                    "/schedules/" + eventMessage.getTarget().get(0).getResourceId()
                 );
             case "health.schedule.reserve":
                 String reserveMessage = (String) eventMessage.getAttributes().get("message");
                 return new NotificationContent(
                         "건강 알림",
                         reserveMessage != null ? reserveMessage : "건강 일정 알림입니다.",
-                        "/schedules/" + eventMessage.getTarget().getResourceId()
+                        "/schedules/" + eventMessage.getTarget().get(0).getResourceId()
                 );
                 
             default:
