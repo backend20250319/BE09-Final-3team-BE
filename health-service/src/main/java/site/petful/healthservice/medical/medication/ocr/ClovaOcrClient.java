@@ -17,6 +17,10 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
+import jakarta.annotation.PostConstruct;
+import site.petful.healthservice.common.exception.BusinessException;
+import site.petful.healthservice.common.response.ErrorCode;
+
 import java.io.File;
 import java.util.HashMap;
 import java.io.IOException;
@@ -37,22 +41,29 @@ public class ClovaOcrClient {
 	@Value("${clova.ocr.template-id}")
 	private String templateId;
 
-	private final RestTemplate restTemplate;
+	@Value("${clova.ocr.connect-timeout:5000}")
+	private int connectTimeout;
 
-	public ClovaOcrClient() {
+	@Value("${clova.ocr.read-timeout:10000}")
+	private int readTimeout;
+
+	private RestTemplate restTemplate;
+
+	@PostConstruct
+	public void init() {
 		SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-		factory.setConnectTimeout(5000);
-		factory.setReadTimeout(10000);
+		factory.setConnectTimeout(connectTimeout);
+		factory.setReadTimeout(readTimeout);
 		this.restTemplate = new RestTemplate(factory);
 	}
 
 	public String extractTextFromImage(File imageFile) throws IOException {
-		// 설정이 없으면 Mock 응답 반환
+		// OCR API 설정 검증
 		if (invokeUrl == null || invokeUrl.trim().isEmpty() ||
 			secretKey == null || secretKey.trim().isEmpty() ||
 			templateId == null || templateId.trim().isEmpty()) {
-			log.info("=== MOCK OCR 응답 반환 (설정값 부족) ===");
-			return createMockOcrResponse();
+			throw new BusinessException(ErrorCode.OCR_PROCESSING_FAILED,
+				"OCR API 설정이 올바르지 않습니다. 설정을 확인해주세요.");
 		}
 		
 		// 실제 OCR API 호출
@@ -104,8 +115,4 @@ public class ClovaOcrClient {
 		}
 	}
 	
-	private String createMockOcrResponse() {
-		// 실제 Clova OCR 응답과 동일한 구조의 Mock 데이터
-		return "{\"uid\":\"1acdd85e0dd6497282051103ce54dbda\",\"name\":\"name\",\"inferResult\":\"SUCCESS\",\"message\":\"SUCCESS\",\"matchedTemplate\":{\"id\":38632,\"name\":\"처방전4\"},\"validationResult\":{\"result\":\"NO_REQUESTED\"},\"fields\":[{\"name\":\"1번 성분명\",\"valueType\":\"ALL\",\"inferText\":\"Amoxicillin (항생제)\",\"inferConfidence\":0.98230004},{\"name\":\"1번 용량\",\"valueType\":\"ALL\",\"inferText\":\"50mg\",\"inferConfidence\":0.9996},{\"name\":\"1번 용법\",\"valueType\":\"ALL\",\"inferText\":\"경구루 여, 하루 2회\",\"inferConfidence\":0.9957},{\"name\":\"1번 처방일수\",\"valueType\":\"ALL\",\"inferText\":\"3일\",\"inferConfidence\":0.9993},{\"name\":\"2번 성분명\",\"valueType\":\"ALL\",\"inferText\":\"Firocoxib (소염진통제)\",\"inferConfidence\":0.9979},{\"name\":\"2번 용량\",\"valueType\":\"ALL\",\"inferText\":\"57mg\",\"inferConfidence\":0.9996},{\"name\":\"2번 용법\",\"valueType\":\"ALL\",\"inferText\":\"경구두 여, 하루 1회\",\"inferConfidence\":0.9855333},{\"name\":\"2번 처방일수\",\"valueType\":\"ALL\",\"inferText\":\"7일\",\"inferConfidence\":1.0}]}";
-	}
 }
