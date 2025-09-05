@@ -65,7 +65,7 @@ public class StatusSchedulerService {
     }
 
     @Transactional
-    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")  // 매일 0시 실행
+    @Scheduled(cron = "0 5 21 * * *", zone = "Asia/Seoul")  // 매일 0시 실행
     public void updateAdStatusByCampaignSelect() {
         LocalDate today = LocalDate.now();
 
