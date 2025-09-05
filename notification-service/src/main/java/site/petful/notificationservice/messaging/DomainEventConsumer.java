@@ -113,73 +113,79 @@ public class DomainEventConsumer {
     }
 
     private void handleCampaignSelectionNotification(EventMessage message) {
-        try{
-        // 1. 광고 번호 추출
-        Long adNo = message.getTarget().getResourceId();
-        String campaignName = (String) message.getAttributes().get("campaignName");
-        String campaignLink = (String) message.getAttributes().get("campaignLink");
-
-        // 2. 해당 광고에 선정된 모든 지원자 조회 (다른 서비스 호출)
-        @SuppressWarnings("unchecked")
-        List<Long> selectedApplicantIds = (List<Long>)message.getAttributes().get("selectedApplicantIds");
-        if(selectedApplicantIds == null || selectedApplicantIds.isEmpty()) {
-            log.warn("⚠️ [NotificationConsumer] 선정된 지원자가 없습니다: adNo={}", adNo);
-            return;
-        }
-        log.info("🔍 [NotificationConsumer] 선정된 지원자 수: {}", selectedApplicantIds.size());
-        // 3. 각 지원자에게 개별 알림 생성
-        int successCount = 0;
-        for(Long applicantId : selectedApplicantIds) {
-            try{
-                EventMessage notificationMessage = createdApplicantNotificationMessage(
-                        message, applicantId, campaignName, campaignLink
-                );
-                Notification notification = notificationService.createImmediateNotification(notificationMessage);
-                successCount ++;
-
-                log.info("✅ [NotificationConsumer] 체험단 선정 알림 생성 성공: applicantId={}, notificationId={}",
-                        applicantId, notification.getId());
-
-            }catch(Exception e) {
-                log.error("❌ [NotificationConsumer] 지원자별 알림 생성 실패: applicantId={}, error={}",
-                        applicantId, e.getMessage(), e);
-            }}
-        }catch(Exception e){
+        try {
+            // 1. 광고 정보 추출
+            Long adNo = message.getActor().getId();
+            String adTitle = message.getActor().getName();
+            
+            // 2. 선정된 지원자 정보 추출 (advertiser-service에서 개별 이벤트로 발송)
+            Long userId = Long.parseLong(message.getTarget().getUserId());
+            Long applicantNo = message.getTarget().getResourceId();
+            
+            // 3. attributes에서 추가 정보 추출
+            Map<String, Object> attributes = message.getAttributes();
+            String petName = (String) attributes.get("petName");
+            String campaignStart = (String) attributes.get("campaignStart");
+            String campaignEnd = (String) attributes.get("campaignEnd");
+            
+            // 4. 알림 메시지 생성
+            EventMessage notificationMessage = createCampaignSelectionNotificationMessage(
+                    message, userId, applicantNo, adTitle, petName, campaignStart, campaignEnd
+            );
+            
+            // 5. 알림 저장
+            Notification notification = notificationService.createImmediateNotification(notificationMessage);
+            
+            log.info("✅ [NotificationConsumer] 체험단 선정 알림 생성 성공: userId={}, applicantNo={}, notificationId={}",
+                    userId, applicantNo, notification.getId());
+                    
+        } catch (Exception e) {
             log.error("❌ [NotificationConsumer] 체험단 선정 알림 처리 실패: eventId={}, error={}",
                     message.getEventId(), e.getMessage(), e);
             throw e;
         }
     }
 
-    private EventMessage createdApplicantNotificationMessage(
-            EventMessage message, Long applicantId, String campaignName, String campaignLink
+    private EventMessage createCampaignSelectionNotificationMessage(
+            EventMessage originalMessage, Long userId, Long applicantNo, String adTitle, 
+            String petName, String campaignStart, String campaignEnd
     ) {
         EventMessage notificationMessage = new EventMessage();
         notificationMessage.setEventId(java.util.UUID.randomUUID().toString());
         notificationMessage.setType("campaign.applicant.selected");
         notificationMessage.setOccurredAt(java.time.Instant.now());
+        notificationMessage.setSchemaVersion(1);
 
-        notificationMessage.setActor(message.getActor());
+        // Actor 설정 (광고 정보)
+        notificationMessage.setActor(originalMessage.getActor());
 
+        // Target 설정 (선정된 사용자)
         EventMessage.Target target = new EventMessage.Target();
-        target.setResourceId(applicantId);
-        target.setResourceType("APPLICANT");
+        target.setUserId(String.valueOf(userId));
+        target.setResourceId(applicantNo);
+        target.setResourceType("CAMPAIGN");
         notificationMessage.setTarget(target);
 
+        // 알림 속성 설정
         Map<String, Object> attributes = new HashMap<>();
-        attributes.put("title", "체험단 선정 알림");
-        attributes.put("message", createCampaignSelectionMessage(campaignName,campaignLink));
-        attributes.put("campaignName", campaignName);
-        attributes.put("campaignLink", campaignLink);
-        attributes.put("applicantId", applicantId);
+        attributes.put("title", "🎉 체험단 선정 알림");
+        attributes.put("message", createCampaignSelectionMessage(adTitle, petName, campaignStart, campaignEnd));
+        attributes.put("adTitle", adTitle);
+        attributes.put("petName", petName);
+        attributes.put("applicantNo", applicantNo);
+        attributes.put("campaignStart", campaignStart);
+        attributes.put("campaignEnd", campaignEnd);
         notificationMessage.setAttributes(attributes);
-        notificationMessage.setSchemaVersion(1);
 
         return notificationMessage;
     }
 
-    private String createCampaignSelectionMessage(String campaignName,String campaignLink) {
-        return String.format("[%s] 체험단에 선정되셨습니다. 자세한 내용은 링크를 확인해주세요.\n [%s]", campaignName,campaignLink);
+    private String createCampaignSelectionMessage(String adTitle, String petName, String campaignStart, String campaignEnd) {
+        return String.format("🎉 축하합니다! [%s] 체험단에 선정되셨습니다.\n\n" +
+                "🐾 반려동물: %s\n" +
+                "📅 캠페인 기간: %s ~ %s\n\n" +
+                "자세한 내용은 해당 페이지에서 확인해주세요.", 
+                adTitle, petName, campaignStart, campaignEnd);
     }
 
     /**

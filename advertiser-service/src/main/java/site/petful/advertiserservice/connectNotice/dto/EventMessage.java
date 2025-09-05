@@ -1,4 +1,4 @@
-package site.petful.healthservice.connectNotice.dto;
+package site.petful.advertiserservice.connectNotice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +19,7 @@ public class EventMessage {
     private String type;
     private Instant occurredAt;
     private Actor actor;
-    private Target target;
+    private List<Target> target;
     private Map<String, Object> attributes;
     private Integer schemaVersion;
 
@@ -33,15 +32,15 @@ public class EventMessage {
         private String name;
     }
 
-    public enum ResourceType { POST, COMMENT, CAMPAIGN, USER, ETC , SCHEDULE}
+    public enum ResourceType { POST, COMMENT, CAMPAIGN, USER, ETC }
 
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Target {
-        private String userId;
+        private Long userId;
         private Long resourceId;
-        private String resourceType;
+        private String  resourceType;
     }
 }
