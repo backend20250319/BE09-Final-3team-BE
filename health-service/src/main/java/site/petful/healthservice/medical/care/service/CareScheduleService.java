@@ -479,6 +479,15 @@ public class CareScheduleService extends AbstractScheduleService {
                     throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
                             "종료일은 시작일보다 이전일 수 없습니다.");
                 }
+                
+                // 매주 빈도일 때 종료날짜의 요일(dayOfWeek)이 시작날짜의 요일(dayOfWeek)과 동일한지 확인
+                if (endDate.getDayOfWeek() != startDate.getDayOfWeek()) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "매주 일정의 종료날짜는 시작날짜와 같은 요일이어야 합니다. " +
+                            "시작날짜: " + startDate.getDayOfWeek() + "(" + startDate.getDayOfWeek().getValue() + "), " +
+                            "종료날짜: " + endDate.getDayOfWeek() + "(" + endDate.getDayOfWeek().getValue() + ")");
+                }
+                
                 return endDate;
 
             case MONTHLY:
@@ -491,6 +500,15 @@ public class CareScheduleService extends AbstractScheduleService {
                     throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
                             "종료월은 시작일보다 이전일 수 없습니다.");
                 }
+                
+                // 매월 빈도일 때 종료날짜의 일(day)이 시작날짜의 일(day)과 동일한지 확인
+                if (endDate.getDayOfMonth() != startDate.getDayOfMonth()) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "매월 일정의 종료날짜는 시작날짜와 같은 일(day)이어야 합니다. " +
+                            "시작날짜: " + startDate.getDayOfMonth() + "일, " +
+                            "종료날짜: " + endDate.getDayOfMonth() + "일");
+                }
+                
                 return endDate;
 
             case SINGLE_DAY:
