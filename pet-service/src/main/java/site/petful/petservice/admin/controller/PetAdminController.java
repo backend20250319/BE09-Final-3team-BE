@@ -56,9 +56,10 @@ public class PetAdminController {
     @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<ApiResponse<Void>> rejectPetStar(
             @AuthenticationPrincipal Long userNo,
+            @RequestBody String reason,
             @PathVariable Long petNo) {
-        log.info("rejectPetStar API 호출됨 - userNo: {}, petNo: {}", userNo, petNo);
-        petAdminService.rejectPetStar(petNo);
+        log.info("rejectPetStar API 호출됨 - userNo: {}, petNo: {}", userNo, petNo,reason);
+        petAdminService.rejectPetStar(petNo,reason);
         return ResponseEntity.ok(ApiResponse.success());
     }
 }
