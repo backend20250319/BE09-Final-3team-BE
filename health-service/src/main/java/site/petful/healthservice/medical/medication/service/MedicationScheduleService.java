@@ -67,7 +67,18 @@ public class MedicationScheduleService extends AbstractScheduleService {
      * 복용약/영양제 일정 생성 (캘린더 기반)
      */
     public Long createMedication(Long userNo, @Valid MedicationRequestDTO request) {
+        // 시작날짜 검증
+        if (request.getStartDate().isBefore(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                "시작날짜는 당일보다 이전일 수 없습니다.");
+        }
 
+        // 종료날짜 검증 (시작일 + 기간 - 1일)
+        LocalDate endDate = request.getStartDate().plusDays(request.getDurationDays() - 1);
+        if (endDate.isBefore(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.MEDICAL_END_DATE_PAST_ERROR, 
+                "종료날짜는 당일보다 이전일 수 없습니다.");
+        }
 
         // 공통 DTO로 변환하여 상속된 공통 로직 활용
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
@@ -368,6 +379,26 @@ public class MedicationScheduleService extends AbstractScheduleService {
         
         if (Boolean.TRUE.equals(entity.getDeleted())) {
             throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
+        }
+
+        // 시작날짜 검증 (수정 시 시작날짜가 변경되는 경우)
+        if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                "시작날짜는 당일보다 이전일 수 없습니다.");
+        }
+
+        // 종료날짜 검증 (수정 시 시작날짜나 기간이 변경되는 경우)
+        if (request.getStartDate() != null || request.getDurationDays() != null) {
+            LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
+            Integer durationDays = request.getDurationDays() != null ? request.getDurationDays() : 
+                (entity.getStartDate() != null && entity.getEndDate() != null ? 
+                    (int) java.time.temporal.ChronoUnit.DAYS.between(entity.getStartDate().toLocalDate(), entity.getEndDate().toLocalDate()) + 1 : 1);
+            
+            LocalDate endDate = startDate.plusDays(durationDays - 1);
+            if (endDate.isBefore(LocalDate.now())) {
+                throw new BusinessException(ErrorCode.MEDICAL_END_DATE_PAST_ERROR, 
+                    "종료날짜는 당일보다 이전일 수 없습니다.");
+            }
         }
 
         // 변경 전 스냅샷 수집
