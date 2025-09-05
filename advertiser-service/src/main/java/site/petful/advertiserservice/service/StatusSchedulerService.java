@@ -183,7 +183,7 @@ public class StatusSchedulerService {
                 ));
                 
                 // RabbitMQ로 메시지 발송
-                rabbitTemplate.convertAndSend("notification.exchange", "campaign.selected", event);
+                rabbitTemplate.convertAndSend("notif.events", "campaign.selected", event);
                 
                 log.info("체험단 선정 알림 발송 완료: adNo={}, applicantNo={}, userId={}", 
                         ad.getAdNo(), applicant.getApplicantNo(), applicant.getPet().getUserNo());
