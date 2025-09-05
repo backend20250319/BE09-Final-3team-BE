@@ -69,4 +69,7 @@ public class Pet {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "reject_reason")
+    private String rejectReason;
 }
