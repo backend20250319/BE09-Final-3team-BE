@@ -42,6 +42,11 @@ public class ReviewService {
         return reviews;
     }
 
+    // 1-2. 체험단 개별 리뷰 조회
+    public ReviewResponse getReview(Long applicantNo) {
+        return campaignFeignClient.getReview(applicantNo).getData();
+    }
+
     // 2. 체험단 리뷰 승인/반려
     @Transactional
     public ReviewResponse updateReview(Long applicantNo, ReviewRequest request) {

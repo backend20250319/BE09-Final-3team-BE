@@ -40,4 +40,7 @@ public class Applicant {
 
     @OneToOne(mappedBy = "applicant", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Review review;
+
+    @Column(nullable = false)
+    private Boolean isDeleted;
 }

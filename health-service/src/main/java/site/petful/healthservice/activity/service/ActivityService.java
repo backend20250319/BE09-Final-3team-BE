@@ -18,8 +18,6 @@ import site.petful.healthservice.common.dto.PetResponse;
 import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.activity.dto.ActivityUpdateRequest;
 import site.petful.healthservice.activity.dto.ActivityUpdateResponse;
-import site.petful.healthservice.activity.dto.ActivitySummaryResponse;
-import site.petful.healthservice.activity.enums.PeriodType;
 
 
 import java.time.LocalDate;
@@ -290,7 +288,6 @@ public class ActivityService {
      * 새로운 식사 정보 생성
      */
     private ActivityMeal createNewMeal(ActivityUpdateRequest.MealUpdateRequest mealRequest) {
-        // 섭취 칼로리 자동 계산
         int consumedCalories = calculateConsumedCalories(
             mealRequest.getTotalCalories(),
             mealRequest.getTotalWeightG(),
@@ -343,76 +340,68 @@ public class ActivityService {
     }
     
     /**
-     * 차트 데이터 조회 (일/주/월/년 단위)
+     * 차트 데이터 조회
+     * startDate, endDate가 없으면 당일 데이터만 조회
      */
-    public ActivityChartResponse getActivityChartData(Long userNo, Long petNo, String periodType, String startDateStr, String endDateStr) {
+    public ActivityChartResponse getActivityChartData(Long userNo, Long petNo, String startDateStr, String endDateStr) {
+        try {
+            LocalDate startDate;
+            LocalDate endDate;
 
-
-        
-        LocalDate startDate;
-        LocalDate endDate;
-
-        // startDate, endDate가 제공되지 않은 경우 periodType에 따른 기본 기간 사용
-        if (startDateStr == null || endDateStr == null) {
-            try {
-                PeriodType periodTypeEnum = PeriodType.valueOf(periodType.toUpperCase());
-                PeriodType.DateRange dateRange = periodTypeEnum.calculateDateRange();
-                startDate = dateRange.getStartDate();
-                endDate = dateRange.getEndDate();
-            } catch (IllegalArgumentException e) {
-                // 기존 periodType (DAY, WEEK, MONTH, YEAR) 처리
+            // startDate, endDate가 제공되지 않은 경우 당일 데이터만 조회
+            if (startDateStr == null || endDateStr == null) {
                 LocalDate today = LocalDate.now();
-                switch (periodType.toUpperCase()) {
-                    case "DAY" -> {
-                        startDate = today;
-                        endDate = today;
-                    }
-                    case "WEEK" -> {
-                        startDate = today.minusDays(6);
-                        endDate = today;
-                    }
-                    case "MONTH" -> {
-                        startDate = today.minusDays(29);
-                        endDate = today;
-                    }
-                    case "YEAR" -> {
-                        startDate = today.minusDays(364);
-                        endDate = today;
-                    }
-                    default -> {
-                        startDate = today.minusDays(6);
-                        endDate = today;
-                    }
+                startDate = today;
+                endDate = today;
+            } else {
+                startDate = LocalDate.parse(startDateStr);
+                endDate = LocalDate.parse(endDateStr);
+                
+                // 날짜 유효성 검증
+                if (startDate.isAfter(endDate)) {
+                    throw new BusinessException(ErrorCode.DATE_RANGE_INVALID, "시작일은 종료일보다 이전이어야 합니다.");
+                }
+                
+                // 최대 7일 제한
+                if (startDate.until(endDate).getDays() > 7) {
+                    throw new BusinessException(ErrorCode.DATE_RANGE_INVALID, "최대 7일까지 조회 가능합니다.");
                 }
             }
-        } else {
-            startDate = LocalDate.parse(startDateStr);
-            endDate = LocalDate.parse(endDateStr);
+            
+            List<Activity> activities = activityRepository.findByPetNoAndDateRange(petNo, startDate, endDate);
+            
+            // 사용자 권한 확인
+            activities = activities.stream()
+                    .filter(activity -> activity.getUserNo().equals(userNo))
+                    .collect(Collectors.toList());
+            
+            List<ActivityChartResponse.ChartData> chartDataList = activities.stream()
+                    .map(activity -> convertToChartData(activity))
+                    .sorted((a, b) -> a.getDate().compareTo(b.getDate()))
+                    .collect(Collectors.toList());
+            
+            // 요약 통계 계산
+            ActivityChartResponse.SummaryStats summaryStats = calculateSummaryStats(activities);
+            
+            return ActivityChartResponse.builder()
+                    .chartData(chartDataList)
+                    .summaryStats(summaryStats)
+                    .build();
+                    
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("활동 차트 데이터 조회 중 오류 발생: userNo={}, petNo={}, startDate={}, endDate={}", 
+                     userNo, petNo, startDateStr, endDateStr, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "활동 차트 데이터 조회 중 오류가 발생했습니다.");
         }
-        
-        List<Activity> activities = activityRepository.findByPetNoAndDateRange(petNo, startDate, endDate);
-        
-        // 사용자 권한 확인
-        activities = activities.stream()
-                .filter(activity -> activity.getUserNo().equals(userNo))
-                .collect(Collectors.toList());
-        
-        List<ActivityChartResponse.ChartData> chartDataList = activities.stream()
-                .map(activity -> convertToChartData(activity, periodType))
-                .sorted((a, b) -> a.getDate().compareTo(b.getDate()))
-                .collect(Collectors.toList());
-        
-        return ActivityChartResponse.builder()
-                .chartData(chartDataList)
-                .periodType(periodType)
-                .build();
     }
     
     /**
      * Activity 엔티티를 ChartData DTO로 변환
      */
-    private ActivityChartResponse.ChartData convertToChartData(Activity activity, String periodType) {
-        String displayDate = getDisplayDate(activity.getActivityDate(), periodType);
+    private ActivityChartResponse.ChartData convertToChartData(Activity activity) {
+        String displayDate = getDisplayDate(activity.getActivityDate());
         
         return ActivityChartResponse.ChartData.builder()
                 .date(activity.getActivityDate().toString())
@@ -428,41 +417,94 @@ public class ActivityService {
     }
     
     /**
-     * 표시용 날짜 문자열 생성
+     * 표시용 날짜 문자열 생성 (요일 표시)
      */
-    private String getDisplayDate(LocalDate date, String periodType) {
-        return switch (periodType.toUpperCase()) {
-            case "DAY" -> getDayOfWeekKorean(date);
-            case "WEEK" -> getWeekDisplay(date);
-            case "MONTH" -> getMonthDisplay(date);
-            case "YEAR" -> getYearDisplay(date);
-            default -> date.toString();
-        };
-    }
-    
-    private String getDayOfWeekKorean(LocalDate date) {
+    private String getDisplayDate(LocalDate date) {
         String[] days = {"월", "화", "수", "목", "금", "토", "일"};
         return days[date.getDayOfWeek().getValue() - 1];
     }
     
-    private String getWeekDisplay(LocalDate date) {
-        return date.getMonthValue() + "월 " + date.getDayOfMonth() + "일";
-    }
-    
-    private String getMonthDisplay(LocalDate date) {
-        return date.getMonthValue() + "월";
-    }
-    
-    private String getYearDisplay(LocalDate date) {
-        return String.valueOf(date.getYear());
+    /**
+     * 요약 통계 계산
+     */
+    private ActivityChartResponse.SummaryStats calculateSummaryStats(List<Activity> activities) {
+        int totalDays = activities.size();
+        
+        if (totalDays == 0) {
+            return ActivityChartResponse.SummaryStats.builder()
+                    .totalDays(0)
+                    .totalWalkingDistance(0.0)
+                    .totalCaloriesBurned(0)
+                    .totalCaloriesIntake(0)
+                    .averageSleepHours(0.0)
+                    .totalPoopCount(0)
+                    .totalPeeCount(0)
+                    .averageWalkingDistance(0.0)
+                    .averageCaloriesBurned(0.0)
+                    .averageCaloriesIntake(0.0)
+                    .averagePoopCount(0.0)
+                    .averagePeeCount(0.0)
+                    .build();
+        }
+        
+        // 총합 계산
+        double totalWalkingDistance = activities.stream()
+                .mapToDouble(activity -> activity.getWalkingDistanceKm() != null ? activity.getWalkingDistanceKm() : 0.0)
+                .sum();
+        
+        int totalCaloriesBurned = activities.stream()
+                .mapToInt(activity -> activity.getCaloriesBurned() != null ? activity.getCaloriesBurned() : 0)
+                .sum();
+        
+        int totalCaloriesIntake = activities.stream()
+                .mapToInt(this::calculateTotalConsumedCalories)
+                .sum();
+        
+        double totalSleepHours = activities.stream()
+                .mapToDouble(activity -> activity.getSleepHours() != null ? activity.getSleepHours() : 0.0)
+                .sum();
+        
+        int totalPoopCount = activities.stream()
+                .mapToInt(activity -> activity.getPoopCount() != null ? activity.getPoopCount() : 0)
+                .sum();
+        
+        int totalPeeCount = activities.stream()
+                .mapToInt(activity -> activity.getPeeCount() != null ? activity.getPeeCount() : 0)
+                .sum();
+        
+        // 평균 계산
+        double averageWalkingDistance = totalWalkingDistance / totalDays;
+        double averageCaloriesBurned = (double) totalCaloriesBurned / totalDays;
+        double averageCaloriesIntake = (double) totalCaloriesIntake / totalDays;
+        double averageSleepHours = totalSleepHours / totalDays;
+        double averagePoopCount = (double) totalPoopCount / totalDays;
+        double averagePeeCount = (double) totalPeeCount / totalDays;
+        
+        return ActivityChartResponse.SummaryStats.builder()
+                .totalDays(totalDays)
+                .totalWalkingDistance(totalWalkingDistance)
+                .totalCaloriesBurned(totalCaloriesBurned)
+                .totalCaloriesIntake(totalCaloriesIntake)
+                .averageSleepHours(averageSleepHours)
+                .totalPoopCount(totalPoopCount)
+                .totalPeeCount(totalPeeCount)
+                .averageWalkingDistance(averageWalkingDistance)
+                .averageCaloriesBurned(averageCaloriesBurned)
+                .averageCaloriesIntake(averageCaloriesIntake)
+                .averagePoopCount(averagePoopCount)
+                .averagePeeCount(averagePeeCount)
+                .build();
     }
     
     /**
      * 총 섭취 칼로리 계산
      */
     private Integer calculateTotalConsumedCalories(Activity activity) {
+        if (activity.getMeals() == null || activity.getMeals().isEmpty()) {
+            return 0;
+        }
         return activity.getMeals().stream()
-                .mapToInt(ActivityMeal::getConsumedCalories)
+                .mapToInt(meal -> meal.getConsumedCalories() != null ? meal.getConsumedCalories() : 0)
                 .sum();
     }
     
@@ -529,98 +571,6 @@ public class ActivityService {
                 .build();
     }
 
-    /**
-     * 기간별 활동 데이터 요약 조회
-     */
-    public ActivitySummaryResponse getActivitySummary(Long userNo, Long petNo, String periodType, String startDateStr, String endDateStr) {
-        LocalDate startDate;
-        LocalDate endDate;
-
-        // periodType에 따른 날짜 범위 계산
-        try {
-            PeriodType periodTypeEnum = PeriodType.valueOf(periodType.toUpperCase());
-            PeriodType.DateRange dateRange = periodTypeEnum.calculateDateRange();
-            startDate = dateRange.getStartDate();
-            endDate = dateRange.getEndDate();
-        } catch (IllegalArgumentException e) {
-            throw new BusinessException(ErrorCode.PERIOD_TYPE_INVALID, "유효하지 않은 기간 타입입니다: " + periodType);
-        }
-
-        // CUSTOM 타입인 경우 startDate, endDate 파라미터 사용
-        if ("CUSTOM".equals(periodType.toUpperCase())) {
-            if (startDateStr == null || endDateStr == null) {
-                throw new BusinessException(ErrorCode.DATE_RANGE_INVALID, "CUSTOM 타입의 경우 startDate와 endDate가 필요합니다.");
-            }
-            startDate = LocalDate.parse(startDateStr);
-            endDate = LocalDate.parse(endDateStr);
-        }
-
-        List<Activity> activities = activityRepository.findByPetNoAndDateRange(petNo, startDate, endDate);
-        
-        // 사용자 권한 확인
-        activities = activities.stream()
-                .filter(activity -> activity.getUserNo().equals(userNo))
-                .collect(Collectors.toList());
-
-        // 요약 데이터 계산
-        int totalDays = activities.size();
-        double totalWalkingDistance = activities.stream()
-                .mapToDouble(activity -> activity.getWalkingDistanceKm() != null ? activity.getWalkingDistanceKm() : 0.0)
-                .sum();
-        double averageWalkingDistance = totalDays > 0 ? totalWalkingDistance / totalDays : 0.0;
-        
-        int totalCaloriesBurned = activities.stream()
-                .mapToInt(activity -> activity.getCaloriesBurned() != null ? activity.getCaloriesBurned() : 0)
-                .sum();
-        int averageCaloriesBurned = totalDays > 0 ? totalCaloriesBurned / totalDays : 0;
-        
-        int totalCaloriesIntake = activities.stream()
-                .mapToInt(this::calculateTotalConsumedCalories)
-                .sum();
-        int averageCaloriesIntake = totalDays > 0 ? totalCaloriesIntake / totalDays : 0;
-        
-        double totalSleepHours = activities.stream()
-                .mapToDouble(activity -> activity.getSleepHours() != null ? activity.getSleepHours() : 0.0)
-                .sum();
-        double averageSleepHours = totalDays > 0 ? totalSleepHours / totalDays : 0.0;
-        
-        int totalPoopCount = activities.stream()
-                .mapToInt(activity -> activity.getPoopCount() != null ? activity.getPoopCount() : 0)
-                .sum();
-        int totalPeeCount = activities.stream()
-                .mapToInt(activity -> activity.getPeeCount() != null ? activity.getPeeCount() : 0)
-                .sum();
-
-        // SummaryStats 생성
-        ActivitySummaryResponse.SummaryStats summaryStats = ActivitySummaryResponse.SummaryStats.builder()
-                .totalActivities(totalDays)
-                .totalWalkingDistance(totalWalkingDistance)
-                .averageWalkingDistance(averageWalkingDistance)
-                .totalCaloriesBurned(totalCaloriesBurned)
-                .averageCaloriesBurned((double) averageCaloriesBurned)
-                .totalCaloriesIntake(totalCaloriesIntake)
-                .averageCaloriesIntake((double) averageCaloriesIntake)
-                .averageSleepHours(averageSleepHours)
-                .totalPoopCount(totalPoopCount)
-                .totalPeeCount(totalPeeCount)
-                .averagePoopCount(totalDays > 0 ? (double) totalPoopCount / totalDays : 0.0)
-                .averagePeeCount(totalDays > 0 ? (double) totalPeeCount / totalDays : 0.0)
-                .build();
-
-        // 활동 데이터를 ActivityResponse로 변환
-        List<ActivityResponse> activityResponses = activities.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
-        return ActivitySummaryResponse.builder()
-                .petNo(petNo)
-                .periodType(periodType)
-                .startDate(startDate)
-                .endDate(endDate)
-                .summaryStats(summaryStats)
-                .activities(activityResponses)
-                .build();
-    }
 
     /**
      * 사용자별 펫 프로필 목록 조회
