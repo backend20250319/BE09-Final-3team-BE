@@ -4,9 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
-
 import site.petful.petservice.dto.FileUploadResponse;
+import site.petful.petservice.dto.InstagramProfileInfo;
 import site.petful.petservice.service.PetService;
+import site.petful.petservice.client.InstagramProfileClient;
 import site.petful.petservice.common.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,7 @@ import java.util.List;
 public class PetController {
 
     private final PetService petService;
+    private final InstagramProfileClient instagramProfileClient;
 
     // 반려동물 등록
     @PostMapping("/pets")
@@ -112,6 +114,51 @@ public class PetController {
             return ResponseEntity.ok(ApiResponse.success(response));
         } else {
             return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
+        }
+    }
+
+    // Instagram 프로필 연결
+    @PostMapping("/pets/{petNo}/instagram/connect")
+    public ResponseEntity<ApiResponse<PetResponse>> connectInstagramProfile(
+            @PathVariable Long petNo,
+            @RequestAttribute("X-User-No") Long userNo,
+            @RequestParam Long instagramProfileId) {
+        try {
+            PetResponse response = petService.connectInstagramProfile(petNo, userNo, instagramProfileId);
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (IllegalArgumentException e) {
+            log.error("Instagram 프로필 연결 실패: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Instagram 프로필 연결 해제
+    @DeleteMapping("/pets/{petNo}/instagram/disconnect")
+    public ResponseEntity<ApiResponse<PetResponse>> disconnectInstagramProfile(
+            @PathVariable Long petNo,
+            @RequestAttribute("X-User-No") Long userNo) {
+        try {
+            PetResponse response = petService.disconnectInstagramProfile(petNo, userNo);
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (IllegalArgumentException e) {
+            log.error("Instagram 프로필 연결 해제 실패: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // 사용자의 Instagram 프로필 목록 조회 (연결 가능한 프로필들)
+    @GetMapping("/instagram/profiles")
+    public ResponseEntity<ApiResponse<List<InstagramProfileInfo>>> getAvailableInstagramProfiles(
+            @RequestAttribute("X-User-No") Long userNo) {
+        try {
+            List<InstagramProfileInfo> profiles = instagramProfileClient.getProfilesByUser(userNo);
+            return ResponseEntity.ok(ApiResponse.success(profiles));
+        } catch (Exception e) {
+            log.error("Instagram 프로필 목록 조회 실패: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Instagram 프로필 목록을 가져올 수 없습니다."));
         }
     }
 

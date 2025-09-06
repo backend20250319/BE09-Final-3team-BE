@@ -6,9 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
 import site.petful.petservice.dto.FileUploadResponse;
+import site.petful.petservice.dto.InstagramProfileInfo;
 import site.petful.petservice.entity.Pet;
 import site.petful.petservice.entity.PetStarStatus;
 import site.petful.petservice.repository.PetRepository;
+import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 import site.petful.petservice.common.ftp.FtpService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -237,7 +239,76 @@ public class PetService {
                 .updatedAt(pet.getUpdatedAt())
                 .build();
         
-        log.debug("PetResponse 생성 완료 - snsUrl: {}", response.getSnsUrl());
+        // Instagram 프로필 정보 추가 (연결된 경우에만)
+        if (pet.getInstagramProfile() != null) {
+            InstagramProfileEntity profile = pet.getInstagramProfile();
+            InstagramProfileInfo profileInfo = InstagramProfileInfo.builder()
+                    .id(profile.getId())
+                    .username(profile.getUsername())
+                    .name(profile.getName())
+                    .profilePictureUrl(profile.getProfilePictureUrl())
+                    .followersCount(profile.getFollowersCount())
+                    .followsCount(profile.getFollowsCount())
+                    .mediaCount(profile.getMediaCount())
+                    .autoDelete(profile.getAutoDelete())
+                    .build();
+            response.setInstagramProfile(profileInfo);
+        }
+        
+        log.debug("PetResponse 생성 완료 - snsUrl: {}, instagramProfile: {}", 
+                  response.getSnsUrl(), response.getInstagramProfile() != null ? "연결됨" : "연결안됨");
         return response;
+    }
+    
+    // Instagram 프로필 연결
+    @Transactional
+    public PetResponse connectInstagramProfile(Long petNo, Long userNo, Long instagramProfileId) {
+        Pet pet = petRepository.findById(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
+
+        // 소유자 확인
+        if (!pet.getUserNo().equals(userNo)) {
+            throw new IllegalArgumentException("해당 반려동물을 수정할 권한이 없습니다.");
+        }
+
+        // 이미 연결된 프로필이 있는지 확인
+        if (pet.getSnsProfileNo() != null) {
+            throw new IllegalArgumentException("이미 Instagram 프로필이 연결되어 있습니다.");
+        }
+
+        // 다른 반려동물이 이미 이 Instagram 프로필을 사용하고 있는지 확인
+        if (petRepository.existsBySnsProfileNo(instagramProfileId)) {
+            throw new IllegalArgumentException("이 Instagram 프로필은 이미 다른 반려동물에 연결되어 있습니다.");
+        }
+
+        pet.setSnsProfileNo(instagramProfileId);
+        Pet updatedPet = petRepository.save(pet);
+        
+        log.info("Pet {}에 Instagram 프로필 {} 연결 완료", petNo, instagramProfileId);
+        return toPetResponse(updatedPet);
+    }
+    
+    // Instagram 프로필 연결 해제
+    @Transactional
+    public PetResponse disconnectInstagramProfile(Long petNo, Long userNo) {
+        Pet pet = petRepository.findById(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
+
+        // 소유자 확인
+        if (!pet.getUserNo().equals(userNo)) {
+            throw new IllegalArgumentException("해당 반려동물을 수정할 권한이 없습니다.");
+        }
+
+        // 연결된 프로필이 있는지 확인
+        if (pet.getSnsProfileNo() == null) {
+            throw new IllegalArgumentException("연결된 Instagram 프로필이 없습니다.");
+        }
+
+        Long disconnectedProfileId = pet.getSnsProfileNo();
+        pet.setSnsProfileNo(null);
+        Pet updatedPet = petRepository.save(pet);
+        
+        log.info("Pet {}에서 Instagram 프로필 {} 연결 해제 완료", petNo, disconnectedProfileId);
+        return toPetResponse(updatedPet);
     }
 }
