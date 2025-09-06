@@ -288,7 +288,6 @@ public class ActivityService {
      * 새로운 식사 정보 생성
      */
     private ActivityMeal createNewMeal(ActivityUpdateRequest.MealUpdateRequest mealRequest) {
-        // 섭취 칼로리 자동 계산
         int consumedCalories = calculateConsumedCalories(
             mealRequest.getTotalCalories(),
             mealRequest.getTotalWeightG(),
