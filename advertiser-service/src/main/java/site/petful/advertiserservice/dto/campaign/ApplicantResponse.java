@@ -11,9 +11,11 @@ import java.time.LocalDateTime;
 @Setter
 public class ApplicantResponse {
 
-    private AdResponse advertisement;
+    private Long applicantNo;
+    private Long adNo;
     private PetResponse pet;
     private String content;
     private ApplicantStatus status;
+    private Boolean isSaved;
     private LocalDateTime createdAt;
 }

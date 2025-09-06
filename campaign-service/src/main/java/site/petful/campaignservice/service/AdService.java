@@ -6,7 +6,7 @@ import site.petful.campaignservice.client.AdvertiserFeignClient;
 import site.petful.campaignservice.client.PetFeignClient;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.dto.advertisement.*;
-import site.petful.campaignservice.dto.PetResponse;
+import site.petful.campaignservice.dto.pet.PetResponse;
 import site.petful.campaignservice.entity.Applicant;
 import site.petful.campaignservice.repository.CampaignRepository;
 

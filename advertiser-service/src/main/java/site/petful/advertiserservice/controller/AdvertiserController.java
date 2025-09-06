@@ -2,6 +2,7 @@ package site.petful.advertiserservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
@@ -25,10 +26,9 @@ public class AdvertiserController {
 
     // 1. 광고주 프로필 정보 조회
     @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<?>> getAdvertiser() {
+    public ResponseEntity<ApiResponse<?>> getAdvertiser(@AuthenticationPrincipal String advertiserNo) {
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
-            AdvertiserResponse response = advertiserService.getAdvertiser(advertiserNo);
+            AdvertiserResponse response = advertiserService.getAdvertiser(Long.valueOf(advertiserNo));
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

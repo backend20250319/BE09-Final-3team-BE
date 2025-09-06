@@ -10,6 +10,7 @@ import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import site.petful.advertiserservice.entity.advertisement.AdStatus;
 import site.petful.advertiserservice.entity.advertisement.Advertisement;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,4 +28,12 @@ public interface AdRepository extends JpaRepository<Advertisement, Long> {
     @Modifying
     @Query("UPDATE Advertisement a SET a.applicants = a.applicants + :incrementBy WHERE a.adNo = :adNo")
     int incrementApplicants(@Param("adNo") Long adNo, @Param("incrementBy") int incrementBy);
+
+    List<Advertisement> findByAnnounceEndAndAdStatus(LocalDate today, AdStatus adStatus);
+
+    List<Advertisement> findByCampaignSelectAndAdStatus(LocalDate today, AdStatus adStatus);
+
+    List<Advertisement> findByCampaignStartAndAdStatus(LocalDate today, AdStatus adStatus);
+
+    List<Advertisement> findByCampaignEndAndAdStatus(LocalDate targetDate, AdStatus adStatus);
 }

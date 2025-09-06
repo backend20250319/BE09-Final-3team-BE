@@ -52,9 +52,8 @@ public class HistoryController {
 
     @GetMapping("/{petNo}/histories/external")
     public ResponseEntity<ApiResponse<List<HistoryResponse>>> getHistoriesExternal(
-            @PathVariable Long petNo,
-            @AuthenticationPrincipal Long userNo) {
-        List<HistoryResponse> responses = historyService.getHistories(petNo, userNo);
+            @PathVariable Long petNo) {
+        List<HistoryResponse> responses = historyService.getHistoriesExternal(petNo);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
@@ -93,16 +92,6 @@ public class HistoryController {
             @PathVariable Long historyNo,
             @RequestAttribute("X-User-No") Long userNo) {
         
-        List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
-        return ResponseEntity.ok(ApiResponse.success(images));
-    }
-
-    @GetMapping("/{petNo}/histories/{historyNo}/images/external")
-    public ResponseEntity<ApiResponse<List<HistoryImageInfo>>> getHistoryImagesExternal(
-            @PathVariable Long petNo,
-            @PathVariable Long historyNo,
-            @AuthenticationPrincipal Long userNo) {
-
         List<HistoryImageInfo> images = historyService.getHistoryImages(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(images));
     }

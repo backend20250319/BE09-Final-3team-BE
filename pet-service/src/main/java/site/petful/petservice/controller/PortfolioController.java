@@ -2,6 +2,7 @@ package site.petful.petservice.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -40,12 +41,20 @@ public class PortfolioController {
     }
 
     @GetMapping("/pets/{petNo}/portfolio/external")
-    public ResponseEntity<ApiResponse<PortfolioResponse>> getPortfolioExternal(
-            @PathVariable Long petNo,
-            @AuthenticationPrincipal Long userNo) {
-        PortfolioResponse response = portfolioService.getPortfolio(petNo, userNo);
-        return ResponseEntity.ok(ApiResponse.success(response));
+    public ResponseEntity<ApiResponse<PortfolioResponse>> getPortfolioExternal(@PathVariable Long petNo) {
+        try {
+            PortfolioResponse response = portfolioService.getPortfolioExternal(petNo);
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("포트폴리오를 찾을 수 없습니다: " + petNo));
+        } catch (Exception e) {
+            // 기타 예외 처리
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("서버 오류가 발생했습니다: " + e.getMessage()));
+        }
     }
+
 
     // 사용자의 모든 포트폴리오 조회
     @GetMapping("/portfolios")

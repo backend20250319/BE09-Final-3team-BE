@@ -40,4 +40,15 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
            "ORDER BY s.startDate ASC")
     List<Schedule> findMedicationSchedulesForAlarm(@Param("userNo") Long userNo,
                                                   @Param("startDate") LocalDateTime startDate);
+
+    // 투약 일정 조회 (JOIN FETCH로 N+1 문제 해결)
+    @Query("SELECT s FROM Schedule s " +
+           "WHERE s.userNo = :userNo " +
+           "AND s.deleted = false " +
+           "AND s.startDate >= :startDate " +
+           "AND s.startDate <= :endDate " +
+           "ORDER BY s.startDate ASC")
+    List<Schedule> findSchedulesWithMedicationDetails(@Param("userNo") Long userNo,
+                                                      @Param("startDate") LocalDateTime startDate,
+                                                      @Param("endDate") LocalDateTime endDate);
 }

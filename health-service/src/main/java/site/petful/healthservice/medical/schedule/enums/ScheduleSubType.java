@@ -44,9 +44,10 @@ public enum ScheduleSubType {
     }
 
     /**
-     * 돌봄 관련 서브타입인지 확인
+     * 돌봄 관련 서브타입인지 확인 (접종 포함)
      */
     public boolean isCareType() {
-        return this == WALK || this == GROOMING || this == BIRTHDAY || this == ETC;
+        return this == WALK || this == GROOMING || this == BIRTHDAY || this == ETC 
+            || this == VACCINE || this == CHECKUP;
     }
 }

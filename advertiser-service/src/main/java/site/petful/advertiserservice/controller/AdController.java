@@ -2,13 +2,13 @@ package site.petful.advertiserservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.common.ErrorCode;
 import site.petful.advertiserservice.dto.advertisement.*;
 import site.petful.advertiserservice.entity.advertisement.AdStatus;
-import site.petful.advertiserservice.security.SecurityUtil;
 import site.petful.advertiserservice.service.AdService;
 
 @RestController
@@ -16,20 +16,18 @@ import site.petful.advertiserservice.service.AdService;
 public class AdController {
 
     private final AdService adService;
-    private final SecurityUtil securityUtil;
 
-    public AdController(AdService adService, SecurityUtil securityUtil) {
+    public AdController(AdService adService) {
         this.adService = adService;
-        this.securityUtil = securityUtil;
     }
 
     // 1. 광고(캠페인) 생성
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createAd(
-            @RequestBody AdRequest request) {
+            @RequestBody AdRequest request,
+            @AuthenticationPrincipal String advertiserNo) {
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
-            AdResponse response = adService.createAd(advertiserNo, request);
+            AdResponse response = adService.createAd(Long.valueOf(advertiserNo), request);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -57,10 +55,10 @@ public class AdController {
 
     // 2-2. 광고주별 광고(캠페인) 전체 조회 (+ adStatus에 따라 필터링 적용)
     @GetMapping("/advertiser")
-    public ResponseEntity<ApiResponse<?>> getAllAdsByAdvertiser(@RequestParam(required = false) AdStatus adStatus) {
+    public ResponseEntity<ApiResponse<?>> getAllAdsByAdvertiser(@RequestParam(required = false) AdStatus adStatus,
+                                                                @AuthenticationPrincipal String advertiserNo) {
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
-            AdsResponse response = adService.getAllAdsByAdvertiser(advertiserNo, adStatus);
+            AdsResponse response = adService.getAllAdsByAdvertiser(Long.valueOf(advertiserNo), adStatus);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             String errorMessage = e.getMessage();

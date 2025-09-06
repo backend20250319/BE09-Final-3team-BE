@@ -2,7 +2,6 @@ package site.petful.campaignservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ApiResponseGenerator;
@@ -67,7 +66,7 @@ public class CampaignController {
         }
     }
 
-    // 3-1. 체험단 추가 내용 수정 - 체험단
+    // 3. 체험단 추가 내용/ adStatus 수정
     @PutMapping("/applicant/{applicantNo}")
     public ResponseEntity<ApiResponse<?>> updateApplicant(
             @PathVariable Long applicantNo,

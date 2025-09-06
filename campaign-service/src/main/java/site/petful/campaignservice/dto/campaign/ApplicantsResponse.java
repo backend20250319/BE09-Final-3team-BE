@@ -3,7 +3,7 @@ package site.petful.campaignservice.dto.campaign;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import site.petful.campaignservice.dto.PetResponse;
+import site.petful.campaignservice.dto.pet.PetResponse;
 import site.petful.campaignservice.entity.ApplicantStatus;
 
 import java.time.LocalDateTime;
@@ -24,6 +24,7 @@ public class ApplicantsResponse {
                         applicant.getPet(),
                         applicant.getContent(),
                         applicant.getStatus(),
+                        applicant.getIsSaved(),
                         applicant.getCreatedAt()))
                 .collect(Collectors.toList());
         return res;
@@ -37,6 +38,7 @@ public class ApplicantsResponse {
         private PetResponse pet;
         private String content;
         private ApplicantStatus status;
+        private Boolean isSaved;
         private LocalDateTime createdAt;
     }
 }

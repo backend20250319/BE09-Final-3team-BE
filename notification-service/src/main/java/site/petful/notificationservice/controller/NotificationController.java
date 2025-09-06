@@ -11,11 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import site.petful.notificationservice.common.ApiResponse;
 import site.petful.notificationservice.common.ApiResponseGenerator;
 import site.petful.notificationservice.common.ErrorCode;
-import site.petful.notificationservice.dto.EventMessage;
 import site.petful.notificationservice.dto.NotificationCountDto;
 import site.petful.notificationservice.dto.NotificationListResponseDto;
-import site.petful.notificationservice.dto.NotificationResponseDto;
-import site.petful.notificationservice.dto.NotificationCountDto;
 import site.petful.notificationservice.entity.Notification;
 import site.petful.notificationservice.service.NotificationService;
 

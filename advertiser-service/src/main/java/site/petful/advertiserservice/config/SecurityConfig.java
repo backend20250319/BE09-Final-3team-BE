@@ -14,7 +14,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import site.petful.advertiserservice.security.JwtAuthenticationFilter;
+import site.petful.advertiserservice.security.HeaderAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -22,7 +22,7 @@ import site.petful.advertiserservice.security.JwtAuthenticationFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final HeaderAuthenticationFilter headerAuthenticationFilter;
 
     // 게이트웨이 리라이트 유무 모두 커버(둘 다 열어둠)
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -65,13 +65,13 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()                  // (선택) 기본 에러 핸들러 공개
                         .requestMatchers("/internal/**").hasAnyRole("USER", "ADVERTISER","ADMIN") // 인증된 사용자만 접근
                         .requestMatchers("/admin/**").hasAnyRole("ADVERTISER", "ADMIN") // 관리자 기능은 ADVERTISER 또는 Admin 권한 필요
-                        .requestMatchers("/advertiser/**").hasAnyRole("ADVERTISER")
+                        //.requestMatchers("/advertiser/**").hasAnyRole("ADVERTISER")
                         .requestMatchers("/advertiser-service/**").hasAnyRole("ADVERTISER") // 게이트웨이 경로 추가
                         .anyRequest().authenticated()
                 )
 
-                // JWT 필터
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                // 헤더기반 인증 필터
+                .addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

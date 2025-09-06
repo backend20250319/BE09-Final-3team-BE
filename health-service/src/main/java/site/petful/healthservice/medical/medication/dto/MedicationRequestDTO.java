@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import site.petful.healthservice.medical.medication.enums.MedicationFrequency;
+import site.petful.healthservice.medical.schedule.enums.ScheduleSubType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -40,6 +41,10 @@ public class MedicationRequestDTO {
     
     @NotNull(message = "시간은 필수입니다.")
     private List<LocalTime> times;
+    
+    private ScheduleSubType subType;  // 영양제/복용약 구분 (기본값: PILL)
+    
+    private Boolean isPrescription;  // 처방전 여부 (기본값: false)
     
     private Integer reminderDaysBefore;  // null이면 기본값(0) 사용
 }

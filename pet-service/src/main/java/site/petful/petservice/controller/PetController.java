@@ -6,13 +6,12 @@ import site.petful.petservice.dto.PetRequest;
 import site.petful.petservice.dto.PetResponse;
 
 import site.petful.petservice.dto.FileUploadResponse;
-
 import site.petful.petservice.service.PetService;
 import site.petful.petservice.common.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-//
+
 import java.util.List;
 
 @Slf4j
@@ -86,7 +85,6 @@ public class PetController {
                     .body(ApiResponse.error(e.getMessage()));
         }
     }
-
     // 펫스타 전체 조회
     @GetMapping("/petstars")
     public ResponseEntity<ApiResponse<List<PetResponse>>> getAllPetStars() {
@@ -116,4 +114,5 @@ public class PetController {
             return ResponseEntity.badRequest().body(ApiResponse.error(response.getMessage()));
         }
     }
+
 }

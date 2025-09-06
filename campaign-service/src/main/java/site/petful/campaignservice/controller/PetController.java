@@ -1,7 +1,6 @@
 package site.petful.campaignservice.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,8 +9,8 @@ import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ApiResponseGenerator;
 import site.petful.campaignservice.dto.HistoryImageInfo;
 import site.petful.campaignservice.dto.HistoryResponse;
-import site.petful.campaignservice.dto.PetResponse;
-import site.petful.campaignservice.dto.PortfolioResponse;
+import site.petful.campaignservice.dto.pet.PetResponse;
+import site.petful.campaignservice.dto.pet.PortfolioResponse;
 import site.petful.campaignservice.security.SecurityUtil;
 import site.petful.campaignservice.service.PetService;
 

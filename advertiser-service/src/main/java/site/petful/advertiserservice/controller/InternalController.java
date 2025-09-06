@@ -23,12 +23,10 @@ public class InternalController {
 
     private final AdService adService;
     private final FileService fileService;
-    private final SecurityUtil securityUtil;
 
-    public InternalController(AdService adService, FileService fileService, SecurityUtil securityUtil) {
+    public InternalController(AdService adService, FileService fileService) {
         this.adService = adService;
         this.fileService = fileService;
-        this.securityUtil = securityUtil;
     }
 
     // 2-1. 광고(캠페인) 단일 조회
