@@ -15,9 +15,7 @@ import site.petful.gatewayservice.util.JwtUtil;
 @Slf4j
 @Component
 public class AuthenticationFilter extends
-
     AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
-
 
     @Override
     public String name() {
@@ -29,9 +27,10 @@ public class AuthenticationFilter extends
 
     // 기본 화이트리스트 - 인증 없이 접근 가능한 경로들
     private static final List<String> DEFAULT_WHITELIST = List.of(
-
        "/api/v1/user-service/auth/login",
         "/api/v1/user-service/auth/signup",
+        "/api/v1/user-service/auth/email/send",
+        "/api/v1/user-service/auth/email/verify",
         "/api/v1/user-service/auth/password/reset",
         "/api/v1/user-service/auth/password/verify",
         "/api/v1/user-service/auth/password/change",
@@ -58,15 +57,21 @@ public class AuthenticationFilter extends
             ServerHttpRequest request = exchange.getRequest();
             String path = request.getPath().value();
 
+            log.info("Processing path: {}", path); // 디버깅 로그 추가
+
             // OPTIONS 요청은 통과
             if (request.getMethod() == HttpMethod.OPTIONS) {
+                log.info("OPTIONS request, skipping authentication");
                 return chain.filter(exchange);
             }
 
             // 화이트리스트 경로는 통과
             if (isWhitelisted(cfg.getWhitelist(), path)) {
+                log.info("Path {} is whitelisted, skipping authentication", path);
                 return chain.filter(exchange);
             }
+
+            log.info("Path {} requires authentication", path);
 
             // Authorization 헤더 검사
             String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
@@ -118,11 +123,20 @@ public class AuthenticationFilter extends
     }
 
     private boolean isWhitelisted(List<String> whitelist, String path) {
-        // 기본 화이트리스트 확인
-        if (DEFAULT_WHITELIST.stream().anyMatch(pattern ->
-
-            path.matches(pattern.replace("**", ".*")))) {
-
+        // 기본 화이트리스트 확인 - 정확한 매칭 또는 startsWith 체크
+        boolean isDefaultWhitelisted = DEFAULT_WHITELIST.stream().anyMatch(pattern -> {
+            if (pattern.endsWith("**")) {
+                // ** 패턴인 경우 startsWith로 체크
+                String prefix = pattern.substring(0, pattern.length() - 2);
+                return path.startsWith(prefix);
+            } else {
+                // 정확한 매칭
+                return path.equals(pattern);
+            }
+        });
+        
+        if (isDefaultWhitelisted) {
+            log.info("Path {} matched DEFAULT_WHITELIST", path);
             return true;
         }
 
@@ -130,8 +144,21 @@ public class AuthenticationFilter extends
         if (whitelist == null) {
             return false;
         }
-        return whitelist.stream().anyMatch(pattern ->
-            path.matches(pattern.replace("**", ".*")));
+
+        boolean isConfigWhitelisted = whitelist.stream().anyMatch(pattern -> {
+            if (pattern.endsWith("**")) {
+                String prefix = pattern.substring(0, pattern.length() - 2);
+                return path.startsWith(prefix);
+            } else {
+                return path.equals(pattern);
+            }
+        });
+        
+        if (isConfigWhitelisted) {
+            log.info("Path {} matched config whitelist", path);
+        }
+        
+        return isConfigWhitelisted;
     }
 
     private reactor.core.publisher.Mono<Void> unauthorized(
@@ -142,7 +169,6 @@ public class AuthenticationFilter extends
     }
 
     public static class Config {
-
         private boolean required = true;
         private List<String> whitelist;
 

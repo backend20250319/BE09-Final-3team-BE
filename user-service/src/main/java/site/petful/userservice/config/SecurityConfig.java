@@ -38,6 +38,8 @@ public class SecurityConfig {
             "/auth/refresh",
             "/auth/validate-token",
             "/auth/signup",
+            "/auth/email/send",
+            "/auth/email/verify",
             "/auth/password/reset",
             "/auth/password/verify",
             "/auth/password/change",
