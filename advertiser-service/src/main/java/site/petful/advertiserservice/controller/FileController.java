@@ -42,14 +42,14 @@ public class FileController {
     }
 
     // 1-2. 광고주 파일 업로드
-    @PostMapping("/advertiser")
+    @PostMapping("/advertiser/{advertiserNo}")
     public ResponseEntity<ApiResponse<?>> uploadFile(
             @RequestPart(value = "file") MultipartFile file,
             @RequestPart(value = "image", required = false) MultipartFile image,
-            @AuthenticationPrincipal String advertiserNo) {
+            @PathVariable Long advertiserNo) {
 
         try {
-            List<FileUploadResponse> response = fileService.uploadFile(file, image, Long.valueOf(advertiserNo));
+            List<FileUploadResponse> response = fileService.uploadFile(file, image, advertiserNo);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
