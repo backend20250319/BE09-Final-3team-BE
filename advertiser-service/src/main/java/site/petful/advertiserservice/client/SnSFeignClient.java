@@ -12,6 +12,6 @@ import java.util.List;
 public interface SnSFeignClient {
 
     // 1. 사용자 instagram 프로필 조회
-    @GetMapping("/{userNo}")
+    @GetMapping("/advertiser/{userNo}")
     ApiResponse<List<InstagramProfileDto>> getProfileExternal(@PathVariable Long userNo);
 }

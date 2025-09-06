@@ -23,15 +23,20 @@ public class PetService {
         return response.getData();
     }
 
-    // 2. 포트폴리오 조회
+    // 2. 반려동물 상세 조회
+    public PetResponse getPet(Long petNo) {
+        ApiResponse<PetResponse> response = petFeignClient.getPet(petNo);
+        return response.getData();
+    }
+
+    // 3. 포트폴리오 조회
     public PortfolioResponse getPortfolio(Long petNo) {
         return petFeignClient.getPortfolioExternal(petNo).getData();
     }
 
-    // 3. 활동이력 조회
+    // 4. 활동이력 조회
     public List<HistoryResponse> getHistory(Long petNo) {
         return petFeignClient.getHistoriesExternal(petNo).getData();
     }
-
 }
 

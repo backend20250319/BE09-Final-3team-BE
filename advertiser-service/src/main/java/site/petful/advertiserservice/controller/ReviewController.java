@@ -23,7 +23,7 @@ public class ReviewController {
     }
 
     // 1. 광고별 체험단 리뷰 조회
-    @GetMapping("/{adNo}")
+    @GetMapping("/ad/{adNo}")
     public ResponseEntity<ApiResponse<?>> getReviewByAdNo(@PathVariable Long adNo) {
         try{
             List<ReviewResponse> response = reviewService.getReviewByAdNo(adNo);
@@ -31,6 +31,18 @@ public class ReviewController {
         } catch (RuntimeException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
+
+    // 1-2. 체험단 개별 리뷰 조회
+    @GetMapping("/{applicantNo}")
+    public ResponseEntity<ApiResponse<?>> getReview(@PathVariable Long applicantNo) {
+        try {
+            ReviewResponse response = reviewService.getReview(applicantNo);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.APPLICANT_NOT_FOUND));
         }
     }
 

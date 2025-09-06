@@ -20,11 +20,15 @@ public interface PetFeignClient {
     @GetMapping("/petstars")
     ApiResponse<List<PetResponse>> getAllPetStars();
 
-    // 2. 포트폴리오 조회
+    // 2. 반려동물 상세 조회
+    @GetMapping("/pets/{petNo}")
+    ApiResponse<PetResponse> getPet(@PathVariable Long petNo);
+
+    // 3. 포트폴리오 조회
     @GetMapping("/pets/{petNo}/portfolio/external")
     ApiResponse<PortfolioResponse> getPortfolioExternal(@PathVariable Long petNo);
 
-    // 3. 활동이력 조회
+    // 4. 활동이력 조회
     @GetMapping("/pets/{petNo}/histories/external")
     ApiResponse<List<HistoryResponse>> getHistoriesExternal(@PathVariable Long petNo);
 
