@@ -38,10 +38,9 @@ public class AdvertiserController {
 
     // 2. 광고주 프로필 정보 수정
     @PutMapping(value = "/profile")
-    public ResponseEntity<ApiResponse<?>> updateAdvertiser(@RequestBody AdvertiserRequest updateRequest) {
+    public ResponseEntity<ApiResponse<?>> updateAdvertiser(@AuthenticationPrincipal String advertiserNo, @RequestBody AdvertiserRequest updateRequest) {
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
-            AdvertiserResponse updatedResponse = advertiserService.updateAdvertiser(advertiserNo, updateRequest);
+            AdvertiserResponse updatedResponse = advertiserService.updateAdvertiser(Long.valueOf(advertiserNo), updateRequest);
             return ResponseEntity.ok(ApiResponseGenerator.success(updatedResponse));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

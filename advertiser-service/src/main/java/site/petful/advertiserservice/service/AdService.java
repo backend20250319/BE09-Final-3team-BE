@@ -130,12 +130,22 @@ public class AdService {
         return AdResponse.from(updatedAd);
     }
 
-    // 4. 광고(캠페인) 삭제
+    // 4. 광고(캠페인) 취소
     public void deleteAd(Long adNo) {
         Advertisement ad = adRepository.findByAdNo(adNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage()));
 
         adRepository.delete(ad);
+    }
+
+    // 4-1. 광고(캠페인) 소프트 삭제 - 광고주
+    public AdResponse  deleteAdByAdvertiser(Long adNo, Boolean isDeleted) {
+        Advertisement ad = adRepository.findByAdNo(adNo)
+                .orElseThrow(() -> new RuntimeException(ErrorCode.AD_NOT_FOUND.getDefaultMessage()));
+
+        ad.setIsDeleted(isDeleted);
+
+        return AdResponse.from(ad);
     }
 
     private void register(Advertisement ad, AdRequest request, Advertiser advertiser) {
@@ -152,6 +162,7 @@ public class AdService {
         ad.setAdStatus(ad.getAdStatus() == null ? AdStatus.PENDING : ad.getAdStatus());
         ad.setAdUrl(request.getAdUrl());
         ad.setAdvertiser(advertiser);
+        ad.setIsDeleted(false);
 
         List<Mission> missions = request.getMission().stream()
                 .map(mr -> {

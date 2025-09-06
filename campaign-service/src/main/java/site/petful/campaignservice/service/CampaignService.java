@@ -49,6 +49,7 @@ public class CampaignService {
         applicant.setContent(request.getContent());
         applicant.setStatus(applicant.getStatus() == null ? ApplicantStatus.APPLIED : applicant.getStatus());
         applicant.setIsSaved(false);
+        applicant.setIsDeleted(false);
         Applicant saved = campaignRepository.save(applicant);
 
         // advertiser의 applicants 1 증가
@@ -145,8 +146,8 @@ public class CampaignService {
         return ApplicantResponse.from(saved, pet);
     }
 
-    // 4. 체험단 신청 취소(삭제)
-    public void deleteApplicant(Long applicantNo) {
+    // 4. 체험단 신청 취소
+    public void cancelApplicant(Long applicantNo) {
 
         Applicant applicant = campaignRepository.findApplicantByApplicantNo(applicantNo)
                 .orElseThrow(() -> new RuntimeException(ErrorCode.APPLICANT_NOT_FOUND.getDefaultMessage()));
@@ -157,4 +158,17 @@ public class CampaignService {
         advertiserFeignClient.updateAdByCampaign(applicant.getAdNo(), -1);
     }
 
+    // 4-2. 체험단 소프트 삭제
+    public ApplicantResponse deleteApplicant(Long applicantNo, Boolean isDeleted) {
+
+        Applicant applicant = campaignRepository.findApplicantByApplicantNo(applicantNo)
+                .orElseThrow(() -> new RuntimeException(ErrorCode.APPLICANT_NOT_FOUND.getDefaultMessage()));
+
+        applicant.setIsDeleted(isDeleted);
+
+        ApiResponse<PetResponse> petResponse = petFeignClient.getPet(applicant.getPetNo());
+        PetResponse pet = petResponse.getData();
+
+        return ApplicantResponse.from(applicant, pet);
+    }
 }

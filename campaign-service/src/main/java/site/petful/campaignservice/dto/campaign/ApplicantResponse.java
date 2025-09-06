@@ -19,6 +19,7 @@ public class ApplicantResponse {
     private ApplicantStatus status;
     private Boolean isSaved;
     private LocalDateTime createdAt;
+    private Boolean isDeleted;
 
     public static ApplicantResponse from(Applicant applicant, PetResponse petResponse) {
         ApplicantResponse res = new ApplicantResponse();
@@ -29,6 +30,7 @@ public class ApplicantResponse {
         res.setStatus(applicant.getStatus());
         res.setIsSaved(applicant.getIsSaved());
         res.setCreatedAt(applicant.getCreatedAt());
+        res.setIsDeleted(applicant.getIsDeleted());
         return res;
     }
 }
