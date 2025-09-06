@@ -10,7 +10,7 @@ import site.petful.petservice.dto.InstagramProfileInfo;
 import site.petful.petservice.entity.Pet;
 import site.petful.petservice.entity.PetStarStatus;
 import site.petful.petservice.repository.PetRepository;
-import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
+import site.petful.petservice.client.InstagramProfileClient;
 import site.petful.petservice.common.ftp.FtpService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +28,7 @@ public class PetService {
 
     private final PetRepository petRepository;
     private final FtpService ftpService;
+    private final InstagramProfileClient instagramProfileClient;
 
     // 반려동물 등록
     @Transactional
@@ -240,19 +241,16 @@ public class PetService {
                 .build();
         
         // Instagram 프로필 정보 추가 (연결된 경우에만)
-        if (pet.getInstagramProfile() != null) {
-            InstagramProfileEntity profile = pet.getInstagramProfile();
-            InstagramProfileInfo profileInfo = InstagramProfileInfo.builder()
-                    .id(profile.getId())
-                    .username(profile.getUsername())
-                    .name(profile.getName())
-                    .profilePictureUrl(profile.getProfilePictureUrl())
-                    .followersCount(profile.getFollowersCount())
-                    .followsCount(profile.getFollowsCount())
-                    .mediaCount(profile.getMediaCount())
-                    .autoDelete(profile.getAutoDelete())
-                    .build();
-            response.setInstagramProfile(profileInfo);
+        if (pet.getSnsProfileNo() != null) {
+            try {
+                InstagramProfileInfo profileInfo = instagramProfileClient.getProfile(pet.getSnsProfileNo());
+                response.setInstagramProfile(profileInfo);
+            } catch (Exception e) {
+                log.warn("Instagram 프로필 정보 조회 실패 - petNo: {}, snsProfileNo: {}, error: {}", 
+                        pet.getPetNo(), pet.getSnsProfileNo(), e.getMessage());
+                // Instagram 프로필 정보 조회 실패 시 null로 설정
+                response.setInstagramProfile(null);
+            }
         }
         
         log.debug("PetResponse 생성 완료 - snsUrl: {}, instagramProfile: {}", 

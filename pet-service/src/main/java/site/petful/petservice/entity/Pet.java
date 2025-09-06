@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import site.petful.snsservice.instagram.profile.entity.InstagramProfileEntity;
 
 import java.time.LocalDateTime;
 
@@ -55,11 +54,6 @@ public class Pet {
 
     @Column(name = "sns_profile_no", nullable = true)
     private Long snsProfileNo;
-    
-    // Instagram 프로필과의 1:1 관계 (선택적)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sns_profile_no", referencedColumnName = "id", insertable = false, updatable = false)
-    private InstagramProfileEntity instagramProfile;
          
     @Column(name = "petstar_status")
     @Enumerated(EnumType.STRING)
