@@ -28,4 +28,7 @@ public class PetResponse {
     private LocalDateTime pendingAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // Instagram 프로필 정보 (연결된 경우에만)
+    private InstagramProfileInfo instagramProfile;
 }
