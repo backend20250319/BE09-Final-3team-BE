@@ -42,7 +42,7 @@ public class InstagramProfileController {
         return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
     }
 
-    @GetMapping("/{userNo}")
+    @GetMapping("/advertiser/{userNo}")
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> getProfileExternal(@NotNull @PathVariable Long userNo) {
         List<InstagramProfileDto> profilesResponseDto = instagramProfileService.getProfiles(userNo);
 

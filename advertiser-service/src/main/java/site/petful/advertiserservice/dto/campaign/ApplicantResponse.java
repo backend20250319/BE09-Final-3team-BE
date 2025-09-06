@@ -18,4 +18,5 @@ public class ApplicantResponse {
     private ApplicantStatus status;
     private Boolean isSaved;
     private LocalDateTime createdAt;
+    private Boolean isDeleted;
 }

@@ -25,7 +25,8 @@ public class ApplicantsResponse {
                         applicant.getContent(),
                         applicant.getStatus(),
                         applicant.getIsSaved(),
-                        applicant.getCreatedAt()))
+                        applicant.getCreatedAt(),
+                        applicant.getIsDeleted()))
                 .collect(Collectors.toList());
         return res;
     }
@@ -40,5 +41,6 @@ public class ApplicantsResponse {
         private ApplicantStatus status;
         private Boolean isSaved;
         private LocalDateTime createdAt;
+        private Boolean isDeleted;
     }
 }
