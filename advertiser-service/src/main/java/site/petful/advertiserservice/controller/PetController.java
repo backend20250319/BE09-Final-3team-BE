@@ -32,14 +32,21 @@ public class PetController {
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 
-    // 2. 포트폴리오 조회
+    // 2. 반려동물 상세 조회
+    @GetMapping("/{petNo}")
+    public ResponseEntity<ApiResponse<PetResponse>> getPet(@PathVariable Long petNo) {
+        PetResponse response = petService.getPet(petNo);
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+
+    // 3. 포트폴리오 조회
     @GetMapping("/portfolio/{petNo}")
     public ResponseEntity<ApiResponse<PortfolioResponse>> getPortfolioExternal(@PathVariable Long petNo) {
         PortfolioResponse response = petService.getPortfolio(petNo);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 
-    // 3. 활동 이력 조회
+    // 4. 활동 이력 조회
     @GetMapping("/history/{petNo}")
     public ResponseEntity<ApiResponse<List<HistoryResponse>>> getHistoryExternal(@PathVariable Long petNo) {
         List<HistoryResponse> response = petService.getHistory(petNo);

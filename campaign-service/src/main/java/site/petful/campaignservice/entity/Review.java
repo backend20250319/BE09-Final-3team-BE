@@ -26,8 +26,8 @@ public class Review {
 
     private String reviewUrl;
 
-    @Column(nullable = false)
-    private Boolean isApproved;
+    @Enumerated(EnumType.STRING)
+    private ReviewStatus isApproved;
 
     @Column(columnDefinition = "TEXT")
     private String reason;

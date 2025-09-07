@@ -31,4 +31,6 @@ public class AdResponse {
     private List<MissionResponse> mission;
     private List<KeywordResponse> keyword;
     private List<RequirementResponse> requirement;
+
+    private Boolean isDeleted;
 }

@@ -50,7 +50,7 @@ public class SecurityConfig {
                     .requestMatchers("/instagram/auth/**", "/instagram/profiles/**",
                         "/instagram/comments/**",
                         "/instagram/insights/**", "/instagram/media/**")
-                    .hasAnyAuthority("User", "Admin")
+                    .hasAnyAuthority("User", "Admin", "ADVERTISER")
                     .anyRequest().authenticated()
             )
             .addFilterBefore(headerAuthenticationFilter(),

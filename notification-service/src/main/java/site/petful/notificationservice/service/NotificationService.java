@@ -90,6 +90,7 @@ public class NotificationService {
     /**
      * 알림 숨김 처리
      */
+    @Transactional
     public void hideNotification(Long notificationId, Long userId) {
         log.info("🙈 [NotificationService] 알림 숨김: notificationId={}, userId={}", notificationId, userId);
 

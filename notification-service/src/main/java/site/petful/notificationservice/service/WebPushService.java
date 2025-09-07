@@ -3,7 +3,6 @@ package site.petful.notificationservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.PushService;
-import nl.martijndwars.webpush.Subscription;
 import org.springframework.stereotype.Service;
 import site.petful.notificationservice.entity.Notification;
 import site.petful.notificationservice.entity.WebPushSubscription;
@@ -31,14 +30,10 @@ public class WebPushService {
     // 비동기 처리를 위한 스레드 풀
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-    /**
+    /*
      * 특정 사용자에게 웹푸시를 발송합니다.
-     * 
-     * @param userId 사용자 ID
-     * @param notification 알림 정보
-     * @return 발송 성공 여부
      */
-    public boolean sendPushToUser(Long userId, site.petful.notificationservice.entity.Notification notification) {
+    public boolean sendPushToUser(Long userId, Notification notification) {
         log.info("📱 [WebPushService] 사용자에게 웹푸시 발송: userId={}, notificationId={}", userId, notification.getId());
 
         try {
@@ -83,10 +78,6 @@ public class WebPushService {
 
     /**
      * 특정 구독에 웹푸시를 발송합니다.
-     * 
-     * @param webPushSubscription 구독 정보
-     * @param notification 알림 정보
-     * @return 발송 성공 여부
      */
     private boolean sendPushToSubscription(WebPushSubscription webPushSubscription, Notification notification) {
         log.info("📱 [WebPushService] 구독에 웹푸시 발송: subscriptionId={}, endpoint={}", 
@@ -108,7 +99,6 @@ public class WebPushService {
                     webPushSubscription.getEndpoint(),
                     keys
             );
-
             // 푸시 페이로드 생성
             String payload = createPushPayload(notification);
 
@@ -148,9 +138,6 @@ public class WebPushService {
 
     /**
      * 푸시 페이로드를 생성합니다.
-     * 
-     * @param notification 알림 정보
-     * @return JSON 형태의 페이로드
      */
     private String createPushPayload(site.petful.notificationservice.entity.Notification notification) {
         // 간단한 JSON 페이로드 생성
