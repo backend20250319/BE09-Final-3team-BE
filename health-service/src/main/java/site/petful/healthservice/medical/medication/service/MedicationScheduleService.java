@@ -364,6 +364,10 @@ public class MedicationScheduleService extends AbstractScheduleService {
      */
     
     public MedicationUpdateDiffDTO updateMedication(Long calNo, MedicationUpdateRequestDTO request, Long userNo) {
+        return updateMedication(calNo, request, userNo, true);
+    }
+    
+    public MedicationUpdateDiffDTO updateMedication(Long calNo, MedicationUpdateRequestDTO request, Long userNo, boolean isEditMode) {
         // 조회 및 소유자 검증
         Schedule entity = findScheduleById(calNo);
         
@@ -381,10 +385,24 @@ public class MedicationScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
         }
 
-        // 시작날짜 검증 (수정 시 시작날짜가 변경되는 경우)
-        if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
-            throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
-                "시작날짜는 당일보다 이전일 수 없습니다.");
+        // 투약 일정 수정 시 조건부 시작날짜 수정 허용
+        if (request.getStartDate() != null) {
+            LocalDate today = LocalDate.now();
+            LocalDate originalStartDate = entity.getStartDate().toLocalDate();
+            
+            if (originalStartDate.isBefore(today)) {
+                // 과거에 시작된 일정은 시작날짜 수정 불가
+                if (!request.getStartDate().equals(originalStartDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                        "과거에 시작된 투약 일정은 시작날짜를 변경할 수 없습니다.");
+                }
+            } else {
+                // 미래에 시작될 일정은 시작날짜 수정 가능 (단, 오늘 이전으로는 불가)
+                if (request.getStartDate().isBefore(today)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                        "시작날짜는 당일보다 이전일 수 없습니다.");
+                }
+            }
         }
 
         // 종료날짜 검증 (수정 시 시작날짜나 기간이 변경되는 경우)

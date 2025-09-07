@@ -87,9 +87,10 @@ public class MedicationController {
     public ResponseEntity<ApiResponse<MedicationUpdateDiffDTO>> updateMedication(
             @AuthenticationPrincipal String userNo,
             @RequestParam("calNo") Long calNo,
+            @RequestParam(defaultValue = "true") boolean isEditMode,
             @RequestBody MedicationUpdateRequestDTO request
     ) {
-        MedicationUpdateDiffDTO response = medicationScheduleService.updateMedication(calNo, request, Long.valueOf(userNo));
+        MedicationUpdateDiffDTO response = medicationScheduleService.updateMedication(calNo, request, Long.valueOf(userNo), isEditMode);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 
