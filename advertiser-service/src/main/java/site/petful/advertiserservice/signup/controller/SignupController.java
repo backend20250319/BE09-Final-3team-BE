@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.common.ErrorCode;
+import site.petful.advertiserservice.common.AdvertiserHeaderUtil;
 import site.petful.advertiserservice.signup.dto.*;
 import site.petful.advertiserservice.signup.service.SignupService;
 
@@ -68,6 +69,31 @@ public class SignupController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, e.getMessage()));
+        }
+    }
+
+    // 4. 광고주 회원탈퇴
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<ApiResponse<?>> withdraw(@Valid @RequestBody WithdrawRequest request) {
+        try {
+            // 헤더에서 광고주 번호 추출
+            Long advertiserNo = AdvertiserHeaderUtil.getCurrentAdvertiserNo();
+            if (advertiserNo == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponseGenerator.fail(ErrorCode.ADVERTISER_NOT_FOUND, "인증 정보가 없습니다. X-User-No 헤더를 확인해주세요."));
+            }
+            
+            WithdrawResponse response = signupService.withdraw(advertiserNo, request);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.ADVERTISER_NOT_FOUND, e.getMessage()));
         }
     }
 }
