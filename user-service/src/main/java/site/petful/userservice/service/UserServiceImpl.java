@@ -80,7 +80,7 @@ public class UserServiceImpl implements UserService {
                 .name(request.getName())
                 .nickname(request.getNickname())
                 .phone(request.getPhone())
-                .userType(request.getUserType() != null ? request.getUserType() : Role.User) // 기본값 설정
+                .userType(request.getUserType() != null ? request.getUserType() : Role.USER) // 기본값 설정
                 .birthDate(request.getBirthDate())
                 .description(request.getDescription())
                 .roadAddress(request.getRoadAddress())

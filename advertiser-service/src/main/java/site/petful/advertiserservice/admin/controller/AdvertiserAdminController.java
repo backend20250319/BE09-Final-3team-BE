@@ -20,7 +20,7 @@ import site.petful.advertiserservice.entity.advertiser.Advertiser;
 
 @RestController
 @RequestMapping("/admin")
-@PreAuthorize("hasAnyRole('ADVERTISER', 'ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdvertiserAdminController {
     private final AdvertiserAdminService advertiserAdminService;
