@@ -60,10 +60,10 @@ public class Activity {
     private Double sleepHours;
     
     @Column(name = "poop_count", nullable = false)
-    private Integer poopCount; // 대변 횟수
+    private Integer poopCount;
     
     @Column(name = "pee_count", nullable = false)
-    private Integer peeCount; // 소변 횟수
+    private Integer peeCount;
     
     @Column(name = "memo", columnDefinition = "TEXT")
     private String memo;
