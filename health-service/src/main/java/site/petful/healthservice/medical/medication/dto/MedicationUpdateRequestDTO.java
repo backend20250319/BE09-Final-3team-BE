@@ -22,8 +22,8 @@ public class MedicationUpdateRequestDTO {
     
     // 일정 정보 (선택적)
     private String frequency;
-    private Integer durationDays;
     private LocalDate startDate;
+    private LocalDate endDate;
     private List<LocalTime> times;
     private ScheduleSubType subType;
     
