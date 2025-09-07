@@ -37,6 +37,9 @@ public class Comment {
     @Column(name="comment_status",nullable = false)
     private CommentStatus commentStatus = CommentStatus.NORMAL;
 
+    @Column(name="update_at",nullable = true)
+    private LocalDateTime updateAt;
+
     @PrePersist
     void prePersist() {
         if (commentStatus == null) commentStatus = CommentStatus.NORMAL;
