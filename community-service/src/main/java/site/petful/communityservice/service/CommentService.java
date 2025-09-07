@@ -16,7 +16,7 @@ import site.petful.communityservice.entity.CommentStatus;
 import site.petful.communityservice.repository.CommentRepository;
 import site.petful.communityservice.repository.PostRepository;
 
-import java.nio.file.AccessDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -246,5 +246,31 @@ public class CommentService {
         }
     }
 
+    /**
+     * 댓글 수정
+     */
+    @Transactional
+    public void updateComment(Long userNo, Long commentId, CommentUpdateRequest request) {
+        log.info("📝 [CommentService] 댓글 수정 요청: userId={}, commentId={}", userNo, commentId);
+
+        // 404: 댓글 없음
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "수정할 댓글이 존재하지 않습니다.")
+                );
+
+        // 403: 권한 없음
+        if (!Objects.equals(comment.getUserId(), userNo)) {
+            throw new AccessDeniedException("댓글을 수정할 권한이 없습니다.");
+        }
+
+        // 댓글 내용 업데이트
+        comment.setContent(request.getContent());
+        comment.setUpdateAt(LocalDateTime.now());
+        
+        commentRepository.save(comment);
+        
+        log.info("✅ [CommentService] 댓글 수정 완료: commentId={}", commentId);
+    }
 
 }
