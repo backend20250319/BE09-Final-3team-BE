@@ -80,16 +80,23 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 "종료날짜는 당일보다 이전일 수 없습니다.");
         }
 
-        // 공통 DTO로 변환하여 상속된 공통 로직 활용
+        // 디버깅 로그 추가
+        log.info("=== 투약 일정 생성 디버깅 ===");
+        log.info("요청된 medicationFrequency: {}", request.getMedicationFrequency());
+        log.info("RecurrenceType: {}", request.getMedicationFrequency().getRecurrenceType());
+        log.info("Interval: {}", request.getMedicationFrequency().getInterval());
+        log.info("Label: {}", request.getMedicationFrequency().getLabel());
+
+    
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
                 .petNo(request.getPetNo())
-                .title(request.getName())  // 약 이름을 title로 사용
+                .title(request.getName())
                 .startDate(request.getStartDate())
                 .endDate(request.getStartDate().plusDays(request.getDurationDays() - 1))
                 .subType(request.getSubType() != null ? request.getSubType() : ScheduleSubType.PILL)  // 요청에서 subType 사용, 없으면 기본값 PILL
                 .times(request.getTimes())
-                .frequency(RecurrenceType.DAILY)
-                .recurrenceInterval(1)
+                .frequency(request.getMedicationFrequency().getRecurrenceType()) 
+                .recurrenceInterval(request.getMedicationFrequency().getInterval()) 
                 .recurrenceEndDate(request.getStartDate().plusDays(request.getDurationDays() - 1))
                 .reminderDaysBefore(request.getReminderDaysBefore())
                 .frequencyText(request.getMedicationFrequency().getLabel())
@@ -277,10 +284,20 @@ public class MedicationScheduleService extends AbstractScheduleService {
                     Integer durationDays = detail != null ? detail.getDurationDays() : null;
                     Boolean isPrescriptionMedication = detail != null ? detail.getIsPrescription() : false;
 
+                    // 디버깅 로그 추가
+                    log.info("=== 투약 일정 조회 디버깅 ===");
+                    log.info("scheduleNo: {}", c.getScheduleNo());
+                    log.info("저장된 frequency: {}", c.getFrequency());
+                    log.info("저장된 recurrenceType: {}", c.getRecurrenceType());
+                    log.info("저장된 recurrenceInterval: {}", c.getRecurrenceInterval());
+
                     MedicationFrequencyService.FrequencyInfo freqInfo = frequencyService.parseFrequency(c.getFrequency());
                     List<LocalTime> slots = c.getTimesAsList() != null && !c.getTimesAsList().isEmpty() 
                         ? c.getTimesAsList() 
                         : defaultSlots(freqInfo.getTimesPerDay());
+                    
+                    String normalizedFrequency = frequencyService.normalizeFrequency(c.getFrequency());
+                    log.info("정규화된 frequency: {}", normalizedFrequency);
                     
                     return MedicationResponseDTO.builder()
                             .scheduleNo(c.getScheduleNo())
@@ -291,7 +308,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
                             .subType(c.getSubType().getLabel())
                             .medicationName(medName)
                             .dosage(dosage)
-                            .frequency(frequencyService.normalizeFrequency(c.getFrequency()))
+                            .frequency(normalizedFrequency)
                             .durationDays(durationDays)
                             .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
                             .times(slots)
