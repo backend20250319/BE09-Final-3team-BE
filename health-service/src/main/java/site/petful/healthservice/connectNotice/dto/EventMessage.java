@@ -33,7 +33,7 @@ public class EventMessage {
         private String name;
     }
 
-    public enum ResourceType { POST, COMMENT, CAMPAIGN, USER, ETC }
+    public enum ResourceType { POST, COMMENT, CAMPAIGN, USER, ETC , SCHEDULE}
 
     @Getter
     @Setter

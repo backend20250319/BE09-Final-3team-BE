@@ -35,6 +35,8 @@ public class AdResponse {
     private List<KeywordResponse> keyword;
     private List<RequirementResponse> requirement;
 
+    private Boolean isDeleted;
+
     public static AdResponse from(Advertisement ad) {
         AdResponse res = new AdResponse();
         res.setAdNo(ad.getAdNo());
@@ -52,6 +54,7 @@ public class AdResponse {
         res.setAdUrl(ad.getAdUrl());
         res.setCreatedAt(ad.getCreatedAt());
         res.setReason(ad.getReason());
+        res.setIsDeleted(ad.getIsDeleted());
 
         if (ad.getMission() != null) {
             res.mission = ad.getMission().stream()

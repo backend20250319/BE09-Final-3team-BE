@@ -10,22 +10,31 @@ import site.petful.healthservice.common.response.ApiResponse;
 import site.petful.healthservice.common.response.ApiResponseGenerator;
 import site.petful.healthservice.medical.medication.dto.*;
 import site.petful.healthservice.medical.medication.service.MedicationScheduleService;
-import site.petful.healthservice.medical.medication.service.MedicationService;
+import site.petful.healthservice.medical.medication.service.MedicationOCRService;
+import site.petful.healthservice.medical.medication.repository.ScheduleMedicationDetailRepository;
+import site.petful.healthservice.medical.medication.entity.ScheduleMedDetail;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.time.LocalDate;
+import lombok.extern.slf4j.Slf4j;
 import site.petful.healthservice.common.exception.BusinessException;
 import site.petful.healthservice.common.response.ErrorCode;
 import site.petful.healthservice.medical.schedule.entity.Schedule;
 
+@Slf4j
 @RestController
 @RequestMapping("/medical/medication")
 @RequiredArgsConstructor
 public class MedicationController {
 
     private final MedicationScheduleService medicationScheduleService;
-    private final MedicationService medicationService;
+    private final MedicationOCRService medicationOCRService;
+    private final ScheduleMedicationDetailRepository medicationDetailRepository;
 
     
     /**
@@ -50,9 +59,11 @@ public class MedicationController {
             @RequestParam(value = "petNo") Long petNo,
             @RequestParam(value = "from", required = false) String from,
             @RequestParam(value = "to", required = false) String to,
-            @RequestParam(value = "subtype", required = false) String subType
+            @RequestParam(value = "subtype", required = false) String subType,
+            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "isPrescription", required = false) Boolean isPrescription
     ) {
-        List<MedicationResponseDTO> result = medicationScheduleService.listMedications(Long.valueOf(userNo), petNo, from, to, subType);
+        List<MedicationResponseDTO> result = medicationScheduleService.listMedications(Long.valueOf(userNo), petNo, from, to, subType, type, isPrescription);
         return ResponseEntity.ok(ApiResponseGenerator.success(result));
     }
 
@@ -113,22 +124,116 @@ public class MedicationController {
      * 투약 관련 메타 정보 조회 (드롭다운용)
      */
     @GetMapping("/meta")
-    public ResponseEntity<ApiResponse<java.util.Map<String, java.util.List<String>>>> getMedicationMeta() {
-        java.util.Map<String, java.util.List<String>> data = medicationScheduleService.getMedicationMeta();
+    public ResponseEntity<ApiResponse<Map<String, List<String>>>> getMedicationMeta() {
+        Map<String, List<String>> data = medicationScheduleService.getMedicationMeta();
         return ResponseEntity.ok(ApiResponseGenerator.success(data));
     }
 
     /**
      * 처방전 OCR 처리 및 일정 자동 등록
      */
-    @PostMapping("/ocr")
-    public ResponseEntity<ApiResponse<PrescriptionParsedDTO>> extractText(
+    @PostMapping(value = "/ocr", produces = "application/json", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> extractText(
             @AuthenticationPrincipal String userNo,
             @RequestParam("file") MultipartFile file,
             @RequestParam("petNo") Long petNo
     ) {
-        PrescriptionParsedDTO result = medicationService.processPrescription(file);
-        List<Schedule> saved = medicationScheduleService.registerMedicationSchedules(result, Long.valueOf(userNo), petNo, LocalDate.now());
-        return ResponseEntity.ok(ApiResponseGenerator.success(result));
+        log.info("=== OCR 요청 수신 ===");
+        log.info("userNo: {}", userNo);
+        log.info("petNo: {}", petNo);
+        log.info("file: {}", file);
+        log.info("file.isEmpty(): {}", file.isEmpty());
+        log.info("file.getOriginalFilename(): {}", file.getOriginalFilename());
+        // 파일 검증
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "파일이 선택되지 않았습니다.");
+        }
+        
+        // 파일 크기 검증 (10MB 제한)
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new BusinessException(ErrorCode.IMAGE_SIZE_TOO_LARGE, "파일 크기는 10MB를 초과할 수 없습니다.");
+        }
+        
+        // 파일 형식 검증
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
+            throw new BusinessException(ErrorCode.IMAGE_FORMAT_NOT_SUPPORTED, "이미지 파일 또는 PDF만 업로드 가능합니다.");
+        }
+        
+        try {
+            // OCR 처리
+            PrescriptionParsedDTO result = medicationOCRService.processPrescription(file);
+            log.info("=== OCR 처리 완료 ===");
+            log.info("파싱된 약물 수: {}", result.getMedications() != null ? result.getMedications().size() : 0);
+            
+            // 일정 등록
+            List<Schedule> saved = medicationScheduleService.registerMedicationSchedules(result, Long.valueOf(userNo), petNo, LocalDate.now());
+            log.info("=== 일정 등록 완료 ===");
+            log.info("생성된 일정 수: {}", saved.size());
+            
+            // 생성된 일정의 isPrescription 확인
+            for (Schedule schedule : saved) {
+                log.info("일정 ID: {}, 제목: {}", schedule.getScheduleNo(), schedule.getTitle());
+            }
+            
+            // 응답 데이터 구성
+            Map<String, Object> response = new HashMap<>();
+            response.put("createdSchedules", saved.size());
+            response.put("message", "처방전이 성공적으로 등록되었습니다.");
+            
+            // 생성된 일정 ID 목록
+            List<Long> scheduleNo = saved.stream()
+                    .map(Schedule::getScheduleNo)
+                    .collect(java.util.stream.Collectors.toList());
+            response.put("scheduleNo", scheduleNo);
+            
+            // 상세한 약물 정보 추가
+            List<Map<String, Object>> medications = new ArrayList<>();
+            for (Schedule schedule : saved) {
+                Map<String, Object> medication = new HashMap<>();
+                medication.put("id", schedule.getScheduleNo());
+                medication.put("name", schedule.getTitle());
+                medication.put("type", schedule.getSubType().name());
+                medication.put("frequency", schedule.getFrequency());
+                medication.put("startDate", schedule.getStartDate().toLocalDate().toString());
+                medication.put("endDate", schedule.getEndDate() != null ? 
+                    schedule.getEndDate().toLocalDate().toString() : null);
+                
+                // 상세 정보 추가 (medicationDetails에서)
+                try {
+                    Optional<ScheduleMedDetail> detailOpt = medicationDetailRepository.findById(schedule.getScheduleNo());
+                    if (detailOpt.isPresent()) {
+                        ScheduleMedDetail detail = detailOpt.get();
+                        medication.put("dosage", detail.getDosage());
+                        medication.put("duration", detail.getDurationDays() != null ? 
+                            detail.getDurationDays() + "일간" : null);
+                    }
+                } catch (Exception e) {
+                    log.warn("약물 상세 정보 조회 실패: {}", e.getMessage());
+                }
+                
+                medications.add(medication);
+            }
+            response.put("medications", medications);
+            
+            // 최종 응답 로그
+            log.info("=== 최종 응답 생성 ===");
+            log.info("응답 데이터: {}", response);
+            
+            ApiResponse<Map<String, Object>> apiResponse = ApiResponseGenerator.success(response);
+            log.info("API 응답 코드: {}", apiResponse.getCode());
+            log.info("API 응답 메시지: {}", apiResponse.getMessage());
+            
+            return ResponseEntity.ok(apiResponse);
+            
+        } catch (Exception e) {
+            log.error("OCR 처리 중 오류 발생: ", e);
+            log.error("오류 타입: {}", e.getClass().getSimpleName());
+            log.error("오류 메시지: {}", e.getMessage());
+            if (e.getCause() != null) {
+                log.error("원인: {}", e.getCause().getMessage());
+            }
+            throw new BusinessException(ErrorCode.OCR_PROCESSING_FAILED, "OCR 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 }
