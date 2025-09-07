@@ -462,11 +462,15 @@ public class MedicationScheduleService extends AbstractScheduleService {
             entity.updateSchedule(medName + " " + dosage, entity.getStartDate(), entity.getEndDate(), entity.getAlarmTime());
         }
 
-        // 기본값 설정
+        // 기본값 설정 - ScheduleMedDetail에서 durationDays 조회
         LocalDate base = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
-        Integer duration = request.getDurationDays() != null ? request.getDurationDays() : 
-            (entity.getStartDate() != null && entity.getEndDate() != null ? 
-                (int) java.time.temporal.ChronoUnit.DAYS.between(entity.getStartDate().toLocalDate(), entity.getEndDate().toLocalDate()) + 1 : 1);
+        Integer duration = request.getDurationDays();
+        
+        // durationDays가 요청에 없으면 ScheduleMedDetail에서 조회
+        if (duration == null) {
+            Optional<ScheduleMedDetail> detailOpt = medicationDetailRepository.findById(entity.getScheduleNo());
+            duration = detailOpt.map(ScheduleMedDetail::getDurationDays).orElse(1);
+        }
         // administration 필드는 더 이상 사용하지 않음
         String freq = request.getFrequency() != null ? request.getFrequency() : entity.getFrequency();
 
@@ -483,6 +487,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
         LocalDate endDay = base.plusDays(Math.max(0, duration - 1));
         LocalDateTime endDt = LocalDateTime.of(endDay, slots.get(slots.size() - 1));
 
+        // 복용기간이 변경된 경우 종료날짜 재계산하여 업데이트
         entity.updateSchedule(entity.getTitle(), startDt, endDt, startDt);
         entity.updateFrequency(freq);
         entity.updateRecurrence(freqInfo.getRecurrenceType(), freqInfo.getInterval(), endDt);
