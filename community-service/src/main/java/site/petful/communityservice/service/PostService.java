@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 import site.petful.communityservice.client.UserClient;
 import site.petful.communityservice.dto.*;
@@ -77,17 +79,37 @@ public class PostService {
         Map<Long, UserBriefDto> userMap = new HashMap<>();
         if (!userIds.isEmpty()) {
             try {
+                // ★ 현재 요청 컨텍스트 확인
+                var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                if (attrs != null) {
+                    var req = attrs.getRequest();
+                    String auth = req.getHeader("Authorization");
+                    String userNo = req.getHeader("X-User-No");
+                    log.info("Current request context - Authorization: {}, X-User-No: {}", 
+                            auth != null ? auth.substring(0, Math.min(20, auth.length())) + "..." : "null", userNo);
+                } else {
+                    log.warn("No request context available for FeignClient call");
+                }
+                
                 // ★ 배치 호출: ApiResponse<List<SimpleProfileResponse>>
+                log.info("Calling userClient.getUsersBrief with userIds: {}", userIds);
                 var resp = userClient.getUsersBrief(new ArrayList<>(userIds));
                 log.info("UserClient batch response: {}", resp);
+                
+                if (resp == null) {
+                    log.warn("UserClient batch response is null");
+                    throw new RuntimeException("UserClient response is null");
+                }
+                
                 List<SimpleProfileResponse> list =
-                        (resp != null && resp.getData() != null) ? resp.getData() : List.of();
+                        (resp.getData() != null) ? resp.getData() : List.of();
                 log.info("UserClient batch list size: {}", list.size());
                 
                 // 각 응답 항목 로깅
                 for (SimpleProfileResponse profile : list) {
-                    log.info("Batch profile: id={}, nickname={}, profileImageUrl={}", 
-                            profile.getId(), profile.getNickname(), profile.getProfileImageUrl());
+                    log.info("Batch profile: id={}, nickname={}, profileImageUrl={}, email={}, phone={}", 
+                            profile.getId(), profile.getNickname(), profile.getProfileImageUrl(), 
+                            profile.getEmail(), profile.getPhone());
                 }
 
                 userMap = list.stream()
@@ -98,7 +120,7 @@ public class PostService {
                 log.info("Successfully fetched {} user profiles via batch call", userMap.size());
 
             } catch (Exception batchFail) {
-                log.warn("getUsersBrief batch failed: {}", batchFail.getMessage());
+                log.error("getUsersBrief batch failed: {}", batchFail.getMessage(), batchFail);
                 // 배치 호출 실패 시 단건 호출로 fallback
                 for (Long id : userIds) {
                     try {
@@ -135,9 +157,10 @@ public class PostService {
             UserBriefDto u = finalUserMap.get(p.getUserId());
             // userMap에 없는 경우 기본값 생성
             if (u == null) {
+                log.warn("User not found in userMap for userId: {}, creating default user info", p.getUserId());
                 u = UserBriefDto.builder()
                         .id(p.getUserId())
-                        .nickname("익명")
+                        .nickname("사용자" + p.getUserId()) // 기본값을 "익명" 대신 "사용자{ID}"로 변경
                         .profileImageUrl(null)
                         .build();
             }
@@ -153,8 +176,8 @@ public class PostService {
             return null;
         }
         
-        log.info("Converting SimpleProfileResponse: id={}, nickname={}, profileImageUrl={}", 
-                p.getId(), p.getNickname(), p.getProfileImageUrl());
+                log.info("Converting SimpleProfileResponse: id={}, nickname={}, profileImageUrl={}, email={}, phone={}",
+                        p.getId(), p.getNickname(), p.getProfileImageUrl(), p.getEmail(), p.getPhone());
         
         // nickname이 null이거나 빈 문자열인 경우 기본값 설정
         String nickname = p.getNickname();

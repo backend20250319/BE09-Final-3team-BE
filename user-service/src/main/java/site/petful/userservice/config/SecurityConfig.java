@@ -43,6 +43,8 @@ public class SecurityConfig {
             "/auth/password/reset",
             "/auth/password/verify",
             "/auth/password/change",
+            "/auth/profile/simple",        // community-service에서 호출하는 엔드포인트
+            "/auth/profile/simple/batch",  // community-service에서 호출하는 배치 엔드포인트
             "/api/auth/login",
             "/api/auth/refresh",
             "/api/auth/validate-token",
