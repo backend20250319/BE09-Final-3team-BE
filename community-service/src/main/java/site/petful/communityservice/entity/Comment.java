@@ -37,7 +37,7 @@ public class Comment {
     @Column(name="comment_status",nullable = false)
     private CommentStatus commentStatus = CommentStatus.NORMAL;
 
-    @PrePersist                               // ✅ insert 직전 보강
+    @PrePersist
     void prePersist() {
         if (commentStatus == null) commentStatus = CommentStatus.NORMAL;
         if(createdAt == null) createdAt = LocalDateTime.now();

@@ -195,7 +195,7 @@ public class PostController {
         } catch (Exception e) {
             log.error("❌ [PostController] 예상치 못한 오류: userId={}, error={}", userNo, e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(ApiResponseGenerator.fail(ErrorCode.SYSTEM_ERROR, (PageResponse<PostItem>) null));
+                    .body(ApiResponseGenerator.fail(ErrorCode. SYSTEM_ERROR, (PageResponse<PostItem>) null));
         }
     }
     //게시글 상세보기

@@ -278,7 +278,7 @@ public class UserServiceImpl implements UserService {
                 .id(user.getUserNo())
                 .nickname(user.getNickname())
                 .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
-                .emil(user.getEmail())
+                .email(user.getEmail())
                 .phone(user.getPhone())
                 .build();
     }
