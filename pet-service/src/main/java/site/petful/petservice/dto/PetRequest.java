@@ -10,12 +10,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PetRequest {
+
     private String name;
     private String type;
     private Long age;
     private String gender;
     private Float weight;
     private String imageUrl;
-    private String snsUrl;
+    private Long snsId;
     private Long snsProfileNo;
+    private String snsUsername;
 }

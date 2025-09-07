@@ -77,4 +77,7 @@ public class Advertisement {
     @OneToMany(mappedBy = "advertisement", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Requirement> requirement = new ArrayList<>();
 
+    @Column(nullable = false)
+    private Boolean isDeleted;
+
 }

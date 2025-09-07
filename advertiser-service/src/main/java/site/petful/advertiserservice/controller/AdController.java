@@ -100,12 +100,26 @@ public class AdController {
         }
     }
 
-    // 4. 광고(캠페인) 삭제
+    // 4. 광고(캠페인) 취소
     @DeleteMapping("/{adNo}")
     public ResponseEntity<ApiResponse<?>>  deleteAd(@PathVariable Long adNo) {
         try{
             adService.deleteAd(adNo);
             return ResponseEntity.ok(ApiResponseGenerator.success());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
+
+    // 4-2. 광고(캠페인) 소프트 삭제 - 광고주
+    @PutMapping("/delete/{adNo}")
+    public ResponseEntity<ApiResponse<?>> deleteAdByAdvertiser(
+            @PathVariable Long adNo,
+            @RequestParam Boolean isDeleted) {
+        try {
+            AdResponse response = adService.deleteAdByAdvertiser(adNo, isDeleted);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));

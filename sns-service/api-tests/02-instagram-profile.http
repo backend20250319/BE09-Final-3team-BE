@@ -28,7 +28,16 @@ Authorization: Bearer {{authToken}}
 #       "follows_count": "7",
 #       "media_count": "5",
 #       "auto_delete": false
-#     }
+#     },{
+##       "id": "17841475913854291",
+##       "username": "petful_influencer",
+##       "name": "펫풀",
+##       "profile_picture_url": "https://example.com/profile.jpg",
+##       "followers_count": "3",
+##       "follows_count": "7",
+##       "media_count": "5",
+##       "auto_delete": false
+##     }
 #   ]
 # }
 

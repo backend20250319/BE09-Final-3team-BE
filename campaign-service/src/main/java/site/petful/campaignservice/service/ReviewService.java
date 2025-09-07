@@ -7,6 +7,7 @@ import site.petful.campaignservice.dto.ReviewRequest;
 import site.petful.campaignservice.dto.ReviewResponse;
 import site.petful.campaignservice.entity.Applicant;
 import site.petful.campaignservice.entity.Review;
+import site.petful.campaignservice.entity.ReviewStatus;
 import site.petful.campaignservice.repository.CampaignRepository;
 import site.petful.campaignservice.repository.ReviewRepository;
 
@@ -26,7 +27,7 @@ public class ReviewService {
         Review review = new Review();
         review.setApplicant(applicant);
         review.setReviewUrl(null);
-        review.setIsApproved(false);
+        review.setIsApproved(ReviewStatus.PENDING);
         review.setReason(null);
         Review saved = reviewRepository.save(review);
 
