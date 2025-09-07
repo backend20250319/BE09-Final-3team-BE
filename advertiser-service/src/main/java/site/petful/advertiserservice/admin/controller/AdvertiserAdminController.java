@@ -20,8 +20,8 @@ import site.petful.advertiserservice.entity.advertiser.Advertiser;
 
 @RestController
 @RequestMapping("/admin")
-@PreAuthorize("hasAnyRole('ADMIN')")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyAuthority('ADMIN')")
 public class AdvertiserAdminController {
     private final AdvertiserAdminService advertiserAdminService;
 
@@ -48,18 +48,18 @@ public class AdvertiserAdminController {
     @PatchMapping("/advertiser/{id}/reject")
     public ApiResponse<Void> reject(
             @AuthenticationPrincipal Long userNo,
-            @PathVariable Long advertiserId,
+            @PathVariable Long id,
             @RequestBody String reason
     ) {
-        advertiserAdminService.rejectAdvertiser(advertiserId, reason);
+        advertiserAdminService.rejectAdvertiser(id, reason);
         return ApiResponseGenerator.success();
     }
     @PatchMapping("/advertiser/{id}/approve")
     public ApiResponse<Void> approve(
             @AuthenticationPrincipal Long userNo,
-            @PathVariable Long advertiserId
+            @PathVariable Long id
     ){
-        advertiserAdminService.approveAdvertiser(advertiserId);
+        advertiserAdminService.approveAdvertiser(id);
         return ApiResponseGenerator.success();
     }
 
