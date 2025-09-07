@@ -17,11 +17,9 @@ import site.petful.advertiserservice.service.AdvertiserService;
 public class AdvertiserController {
 
     private final AdvertiserService advertiserService;
-    private final SecurityUtil securityUtil;
 
-    public AdvertiserController(AdvertiserService advertiserService, SecurityUtil securityUtil) {
+    public AdvertiserController(AdvertiserService advertiserService) {
         this.advertiserService = advertiserService;
-        this.securityUtil = securityUtil;
     }
 
     // 1. 광고주 프로필 정보 조회

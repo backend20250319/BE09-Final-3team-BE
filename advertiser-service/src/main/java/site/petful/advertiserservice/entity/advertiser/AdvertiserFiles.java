@@ -33,7 +33,7 @@ public class AdvertiserFiles {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private FileType type;
 
     @ManyToOne
