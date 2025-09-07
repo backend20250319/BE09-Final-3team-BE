@@ -12,11 +12,12 @@ import site.petful.communityservice.common.ApiResponse;
 import site.petful.communityservice.common.ApiResponseGenerator;
 import site.petful.communityservice.common.ErrorCode;
 import site.petful.communityservice.dto.CommentCreateRequest;
+import site.petful.communityservice.dto.CommentUpdateRequest;
 import site.petful.communityservice.dto.CommentPageDto;
 import site.petful.communityservice.dto.CommentView;
 import site.petful.communityservice.service.CommentService;
 
-import java.nio.file.AccessDeniedException;
+import org.springframework.security.access.AccessDeniedException;
 
 @Slf4j
 @RestController
@@ -177,6 +178,71 @@ public class CommentController {
             log.error("❌ [CommentController] 댓글 삭제 실패: userId={}, commentId={}, error={}", userNo, commentId, e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponseGenerator.fail(ErrorCode.COMMENT_DELETE_FAILED, (Void) null));
+        } catch (Exception e) {
+            log.error("❌ [CommentController] 예상치 못한 오류: userId={}, commentId={}, error={}", userNo, commentId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponseGenerator.fail(ErrorCode.SYSTEM_ERROR, (Void) null));
+        }
+    }
+
+    @PutMapping("/{commentId}")
+    public ResponseEntity<ApiResponse<Void>> update(
+            @AuthenticationPrincipal Long userNo,
+            @AuthenticationPrincipal String userType,
+            @PathVariable Long commentId,
+            @RequestBody CommentUpdateRequest request
+    ) {
+        log.info("📝 [CommentController] 댓글 수정: userId={}, commentId={}", userNo, commentId);
+        
+        // 인증 검증
+        if (userNo == null) {
+            log.warn("⚠️ [CommentController] 인증되지 않은 사용자 요청");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.UNAUTHORIZED, (Void) null));
+        }
+        
+        // 파라미터 유효성 검증
+        if (commentId == null || commentId <= 0) {
+            log.warn("⚠️ [CommentController] 유효하지 않은 댓글 ID: {}", commentId);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_COMMENT_ID, (Void) null));
+        }
+        
+        if (userNo <= 0) {
+            log.warn("⚠️ [CommentController] 유효하지 않은 사용자 ID: {}", userNo);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_USER_ID, (Void) null));
+        }
+        
+        // 요청 데이터 유효성 검증
+        if (request == null) {
+            log.warn("⚠️ [CommentController] 요청 데이터가 null입니다");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, (Void) null));
+        }
+        
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            log.warn("⚠️ [CommentController] 댓글 내용이 비어있습니다");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_CONTENT, (Void) null));
+        }
+        
+        try {
+            commentService.updateComment(userNo, commentId, request);
+            log.info("✅ [CommentController] 댓글 수정 성공: userId={}, commentId={}", userNo, commentId);
+            return ResponseEntity.ok(ApiResponseGenerator.success());
+        } catch (IllegalArgumentException e) {
+            log.error("❌ [CommentController] 잘못된 파라미터: userId={}, commentId={}, error={}", userNo, commentId, e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, (Void) null));
+        } catch (AccessDeniedException e) {
+            log.error("❌ [CommentController] 접근 권한 없음: userId={}, commentId={}, error={}", userNo, commentId, e.getMessage());
+            return ResponseEntity.status(403)
+                    .body(ApiResponseGenerator.fail(ErrorCode.COMMENT_FORBIDDEN, (Void) null));
+        } catch (RuntimeException e) {
+            log.error("❌ [CommentController] 댓글 수정 실패: userId={}, commentId={}, error={}", userNo, commentId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponseGenerator.fail(ErrorCode.SYSTEM_ERROR, (Void) null));
         } catch (Exception e) {
             log.error("❌ [CommentController] 예상치 못한 오류: userId={}, commentId={}, error={}", userNo, commentId, e.getMessage(), e);
             return ResponseEntity.internalServerError()

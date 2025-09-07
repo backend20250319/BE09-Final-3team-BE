@@ -16,7 +16,7 @@ import site.petful.communityservice.common.ErrorCode;
 import site.petful.communityservice.common.PageResponse;
 import site.petful.communityservice.dto.PostItem;
 import site.petful.communityservice.dto.PostCreateRequest;
-
+import site.petful.communityservice.dto.PostUpdateRequest;
 import site.petful.communityservice.dto.PostDetailDto;
 import site.petful.communityservice.entity.PostType;
 import site.petful.communityservice.service.PostService;
@@ -290,6 +290,68 @@ public class PostController {
             log.error("❌ [PostController] 게시글 삭제 실패: userId={}, postId={}, error={}", userNo, postId, e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponseGenerator.fail(ErrorCode.POST_DELETE_FAILED, (Void) null));
+        } catch (Exception e) {
+            log.error("❌ [PostController] 예상치 못한 오류: userId={}, postId={}, error={}", userNo, postId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponseGenerator.fail(ErrorCode.SYSTEM_ERROR, (Void) null));
+        }
+    }
+
+    //게시글 수정
+    @PutMapping("/{postId}")
+    public ResponseEntity<ApiResponse<Void>> updatePost(
+            @AuthenticationPrincipal Long userNo,
+            @PathVariable Long postId,
+            @RequestBody PostUpdateRequest request
+    ) {
+        log.info("📝 [PostController] 게시글 수정 요청: userId={}, postId={}", userNo, postId);
+        
+        // 인증 검증
+        if (userNo == null) {
+            log.warn("⚠️ [PostController] 인증되지 않은 사용자 요청");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.UNAUTHORIZED, (Void) null));
+        }
+        
+        // 사용자 ID 유효성 검증
+        if (userNo <= 0) {
+            log.warn("⚠️ [PostController] 유효하지 않은 사용자 ID: {}", userNo);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_USER_ID, (Void) null));
+        }
+        
+        // 게시글 ID 유효성 검증
+        if (postId == null || postId <= 0) {
+            log.warn("⚠️ [PostController] 유효하지 않은 게시글 ID: {}", postId);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_POST_ID, (Void) null));
+        }
+        
+        // 요청 데이터 유효성 검증
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            log.warn("⚠️ [PostController] 제목이 비어있음");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, (Void) null));
+        }
+        
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            log.warn("⚠️ [PostController] 내용이 비어있음");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, (Void) null));
+        }
+        
+        try {
+            postService.updatePost(userNo, postId, request);
+            log.info("✅ [PostController] 게시글 수정 성공: userId={}, postId={}", userNo, postId);
+            return ResponseEntity.ok(ApiResponseGenerator.success());
+        } catch (IllegalArgumentException e) {
+            log.error("❌ [PostController] 잘못된 파라미터: userId={}, postId={}, error={}", userNo, postId, e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseGenerator.fail(ErrorCode.INVALID_REQUEST, (Void) null));
+        } catch (RuntimeException e) {
+            log.error("❌ [PostController] 게시글 수정 실패: userId={}, postId={}, error={}", userNo, postId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponseGenerator.fail(ErrorCode.SYSTEM_ERROR, (Void) null));
         } catch (Exception e) {
             log.error("❌ [PostController] 예상치 못한 오류: userId={}, postId={}, error={}", userNo, postId, e.getMessage(), e);
             return ResponseEntity.internalServerError()

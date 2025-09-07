@@ -314,4 +314,32 @@ public class PostService {
         postRepository.save(post);
     }
 
+    /**
+     * 게시글 수정
+     */
+    @Transactional
+    public void updatePost(Long userNo, Long postId, PostUpdateRequest request) {
+        log.info("📝 [PostService] 게시글 수정 요청: userId={}, postId={}", userNo, postId);
+
+        // 404: 게시글 없음
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "수정할 게시물이 존재하지 않습니다.")
+                );
+
+        // 403: 권한 없음
+        if (!Objects.equals(post.getUserId(), userNo)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "게시물을 수정할 권한이 없습니다.");
+        }
+
+        // 게시글 정보 업데이트
+        post.setTitle(request.getTitle());
+        post.setContent(request.getContent());
+        post.setType(request.getType());
+        
+        postRepository.save(post);
+        
+        log.info("✅ [PostService] 게시글 수정 완료: postId={}", postId);
+    }
+
 }
