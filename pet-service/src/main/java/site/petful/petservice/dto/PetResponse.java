@@ -1,18 +1,18 @@
 package site.petful.petservice.dto;
 
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import site.petful.petservice.entity.PetStarStatus;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PetResponse {
+
     private Long petNo;
     private Long userNo;
     private String name;
@@ -24,11 +24,12 @@ public class PetResponse {
     private Float weight;
     private Boolean isPetStar;
     private Long snsProfileNo;
+    private String snsUsername;
     private PetStarStatus petStarStatus;
     private LocalDateTime pendingAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
+
     // Instagram 프로필 정보 (연결된 경우에만)
     private InstagramProfileInfo instagramProfile;
 }
