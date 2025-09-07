@@ -79,27 +79,36 @@ public class FileService {
                 .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
 
         // 파일 검증
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new RuntimeException(ErrorCode.FILE_EMPTY.getDefaultMessage());
         }
 
         // 파일 크기 검증 (10MB 제한)
-        if (file.getSize() > 10 * 1024 * 1024 || image.getSize() > 10 * 1024 * 1024) {
+        if (file.getSize() > 10 * 1024 * 1024) {
             throw new RuntimeException(ErrorCode.FILE_SIZE_EXCEEDED.getDefaultMessage());
         }
 
-        // 파일 타입 검증
-        String contentType = image.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new RuntimeException(ErrorCode.FILE_TYPE_IMAGE.getDefaultMessage());
+        if (image != null) {
+            if (image.getSize() > 10 * 1024 * 1024) {
+                throw new RuntimeException(ErrorCode.FILE_SIZE_EXCEEDED.getDefaultMessage());
+            }
+
+            String contentType = image.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new RuntimeException(ErrorCode.FILE_TYPE_IMAGE.getDefaultMessage());
+            }
         }
 
         List<FileUploadResponse> response = new ArrayList<>();
         response.add(uploadAndSaveFile(file, FileType.DOC, advertiser));
-        response.add(uploadAndSaveFile(image, FileType.PROFILE, advertiser));
+
+        if (image != null && !image.isEmpty()) {
+            response.add(uploadAndSaveFile(image, FileType.PROFILE, advertiser));
+        }
 
         return response;
     }
+
 
     // 2-1. 광고 이미지 조회
     @Transactional(readOnly = true)

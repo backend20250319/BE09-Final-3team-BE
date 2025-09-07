@@ -26,7 +26,7 @@ public class SecurityConfig {
 
     // 게이트웨이 리라이트 유무 모두 커버(둘 다 열어둠)
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/advertiser/signup/**", 
+            "/advertiser/signup/**",
             "/advertiser/login", 
             "/advertiser/upload", 
             "/advertiser/refresh-token",
