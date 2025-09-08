@@ -66,7 +66,7 @@ public class InstagramProfileService {
             return InstagramProfileDto.fromEntity(profile);
         }
 
-        InstagramProfileEntity profile = new InstagramProfileEntity(response, userId, false);
+        InstagramProfileEntity profile = new InstagramProfileEntity(response, userId, true);
 
         profile = instagramProfileRepository.save(profile);
 
