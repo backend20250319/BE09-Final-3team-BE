@@ -33,5 +33,5 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     Page<Pet> findByPetStarStatusWithValidUser(@Param("status") PetStarStatus status, Pageable pageable);
     
     // Instagram 프로필이 이미 연결되어 있는지 확인
-    boolean existsBySnsProfileNo(Long snsProfileNo);
+    boolean existsBySnsId(Long snsProfileNo);
 }

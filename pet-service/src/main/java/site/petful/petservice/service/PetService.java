@@ -44,8 +44,7 @@ public class PetService {
             .gender(request.getGender())
             .weight(request.getWeight())
             .imageUrl(request.getImageUrl())
-            .snsId(request.getSnsId())  // snsUrl 설정 추가
-            .snsProfileNo(request.getSnsProfileNo())
+            .snsId(request.getSnsId())
             .snsProfileUsername(request.getSnsUsername())
             .isPetStar(false)
             .petStarStatus(PetStarStatus.NONE)
@@ -95,7 +94,6 @@ public class PetService {
         pet.setImageUrl(request.getImageUrl());
         pet.setSnsId(request.getSnsId());
         pet.setSnsProfileUsername(request.getSnsUsername());
-        pet.setSnsProfileNo(request.getSnsProfileNo());
 
         Pet updatedPet = petRepository.save(pet);
         return toPetResponse(updatedPet);
@@ -228,12 +226,11 @@ public class PetService {
             .name(pet.getName())
             .type(pet.getType())
             .imageUrl(pet.getImageUrl())
-            .snsUrl(String.valueOf(pet.getSnsId()))  // snsUrl 추가
+            .snsId(pet.getSnsId())  // snsUrl 추가
             .age(pet.getAge())
             .gender(pet.getGender())
             .weight(pet.getWeight())
             .isPetStar(pet.getIsPetStar())
-            .snsProfileNo(pet.getSnsProfileNo())
             .snsUsername(pet.getSnsProfileUsername())
             .petStarStatus(pet.getPetStarStatus())
             .pendingAt(pet.getPendingAt())
@@ -241,22 +238,6 @@ public class PetService {
             .updatedAt(pet.getUpdatedAt())
             .build();
 
-        // Instagram 프로필 정보 추가 (연결된 경우에만)
-        if (pet.getSnsProfileNo() != null) {
-            try {
-                InstagramProfileInfo profileInfo = instagramProfileClient.getProfile(
-                    pet.getSnsProfileNo());
-                response.setInstagramProfile(profileInfo);
-            } catch (Exception e) {
-                log.warn("Instagram 프로필 정보 조회 실패 - petNo: {}, snsProfileNo: {}, error: {}",
-                    pet.getPetNo(), pet.getSnsProfileNo(), e.getMessage());
-                // Instagram 프로필 정보 조회 실패 시 null로 설정
-                response.setInstagramProfile(null);
-            }
-        }
-
-        log.debug("PetResponse 생성 완료 - snsUrl: {}, instagramProfile: {}",
-            response.getSnsUrl(), response.getInstagramProfile() != null ? "연결됨" : "연결안됨");
         return response;
     }
 
@@ -271,17 +252,12 @@ public class PetService {
             throw new IllegalArgumentException("해당 반려동물을 수정할 권한이 없습니다.");
         }
 
-        // 이미 연결된 프로필이 있는지 확인
-        if (pet.getSnsProfileNo() != null) {
-            throw new IllegalArgumentException("이미 Instagram 프로필이 연결되어 있습니다.");
-        }
-
         // 다른 반려동물이 이미 이 Instagram 프로필을 사용하고 있는지 확인
-        if (petRepository.existsBySnsProfileNo(instagramProfileId)) {
+        if (petRepository.existsBySnsId(instagramProfileId)) {
             throw new IllegalArgumentException("이 Instagram 프로필은 이미 다른 반려동물에 연결되어 있습니다.");
         }
 
-        pet.setSnsProfileNo(instagramProfileId);
+        pet.setSnsId(instagramProfileId);
         Pet updatedPet = petRepository.save(pet);
 
         log.info("Pet {}에 Instagram 프로필 {} 연결 완료", petNo, instagramProfileId);
@@ -299,13 +275,8 @@ public class PetService {
             throw new IllegalArgumentException("해당 반려동물을 수정할 권한이 없습니다.");
         }
 
-        // 연결된 프로필이 있는지 확인
-        if (pet.getSnsProfileNo() == null) {
-            throw new IllegalArgumentException("연결된 Instagram 프로필이 없습니다.");
-        }
-
-        Long disconnectedProfileId = pet.getSnsProfileNo();
-        pet.setSnsProfileNo(null);
+        Long disconnectedProfileId = pet.getSnsId();
+        pet.setSnsId(null);
         Pet updatedPet = petRepository.save(pet);
 
         log.info("Pet {}에서 Instagram 프로필 {} 연결 해제 완료", petNo, disconnectedProfileId);

@@ -32,7 +32,7 @@ public class PetService {
         List<InstagramMediaDto> allMedias = new ArrayList<>();
 
         for (PetResponse pet : response) {
-            Long instagramId = pet.getSnsProfileNo();
+            Long instagramId = pet.getSnsId();
             log.info("instagramId:{}", instagramId);
             if (instagramId != null) {
                 ApiResponse<List<InstagramMediaDto>> mediaResponse = snSFeignClient.getMedias(instagramId);

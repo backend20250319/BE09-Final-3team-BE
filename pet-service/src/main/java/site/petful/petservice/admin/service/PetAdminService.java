@@ -34,10 +34,10 @@ public class PetAdminService {
         return pets.map(pet -> {
             // userNo가 null이거나 0인 경우
             if (pet.getUserNo() == null || pet.getUserNo() <= 0) {
-                log.warn("유효하지 않은 userNo - petNo: {}, userNo: {}", pet.getSnsProfileNo(), pet.getUserNo());
+                log.warn("유효하지 않은 userNo - petNo: {}, userNo: {}", pet.getSnsId(), pet.getUserNo());
                 return new PetStarResponse(
                         pet.getPetNo(),
-                        pet.getSnsProfileNo(),
+                        pet.getSnsId(),
                         pet.getName(),
                         pet.getAge(),
                         "사용자 정보 없음",
@@ -50,14 +50,14 @@ public class PetAdminService {
             }
 
             try {
-                log.info("사용자 정보 조회 시도 - petNo: {}, userNo: {}", pet.getSnsProfileNo(), pet.getUserNo());
+                log.info("사용자 정보 조회 시도 - petNo: {}, userNo: {}", pet.getSnsId(), pet.getUserNo());
                 ApiResponse<SimpleProfileResponse> data = userClient.getUserBrief(pet.getUserNo());
                 SimpleProfileResponse user = data.getData();
                 log.info("사용자 정보 조회 성공 - userNo: {}, name: {}", user.getId(), user.getNickname());
                 log.info(data.toString());
                 return new PetStarResponse(
                         pet.getPetNo(),
-                        pet.getSnsProfileNo(),
+                        pet.getSnsId(),
                         pet.getName(),
                         pet.getAge(),
                         user.getNickname(),
@@ -69,14 +69,14 @@ public class PetAdminService {
                 );
             } catch (Exception e) {
                 log.error("UserClient 호출 실패 - petNo: {}, userNo: {}, error: {}", 
-                         pet.getSnsProfileNo(), pet.getUserNo(), e.getMessage());
+                         pet.getSnsId(), pet.getUserNo(), e.getMessage());
                 
                 // 404 오류인 경우 (사용자가 존재하지 않음)
                 if (e.getMessage() != null && e.getMessage().contains("404")) {
-                    log.warn("존재하지 않는 사용자 - petNo: {}, userNo: {}", pet.getSnsProfileNo(), pet.getUserNo());
+                    log.warn("존재하지 않는 사용자 - petNo: {}, userNo: {}", pet.getSnsId(), pet.getUserNo());
                     return new PetStarResponse(
                             pet.getPetNo(),
-                            pet.getSnsProfileNo(),
+                            pet.getSnsId(),
                             pet.getName(),
                             pet.getAge(),
                             "사용자 ID " + pet.getUserNo() + " 없음",
@@ -90,10 +90,10 @@ public class PetAdminService {
                 
                 // 기타 오류인 경우 (네트워크 오류 등)
                 log.error("사용자 정보 조회 중 예상치 못한 오류 - petNo: {}, userNo: {}, error: {}", 
-                         pet.getSnsProfileNo(), pet.getUserNo(), e.getMessage());
+                         pet.getSnsId(), pet.getUserNo(), e.getMessage());
                 return new PetStarResponse(
                         pet.getPetNo(),
-                        pet.getSnsProfileNo(),
+                        pet.getSnsId(),
                         pet.getName(),
                         pet.getAge(),
                         "사용자 정보 조회 실패",
