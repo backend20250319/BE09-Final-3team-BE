@@ -7,7 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class PetStarResponse {
     private Long petNo;
-    private Long snsProfileNo;
+    private Long snsId;
     private String petName;
     private Long age;
     private String userName;

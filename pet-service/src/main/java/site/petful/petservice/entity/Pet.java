@@ -59,9 +59,6 @@ public class Pet {
     @Column(name = "user_no", nullable = false)
     private Long userNo;
 
-    @Column(name = "sns_profile_no", nullable = true)
-    private Long snsProfileNo;
-
     @Column(name = "sns_profile_username", nullable = true)
     private String snsProfileUsername;
 
