@@ -79,7 +79,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 프리플라이트 허용
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/error").permitAll()  // (선택) 기본 에러 핸들러 공개
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")  // 임시로 ADMIN 권한 체크 비활성화
                         .anyRequest().authenticated()
                 )
 

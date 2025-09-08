@@ -8,6 +8,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.userservice.admin.dto.AdminLogoutRequest;
@@ -31,25 +33,29 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/users")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('ADMIN')")
 public class UserAdminController {
     private final UserAdminService userAdminService;
     private final AdminAuthService adminAuthService;
 
     @GetMapping("/restrict/all")
     public ResponseEntity<ApiResponse<Page<ReportResponse>>> getReportUsers(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal String userNoStr,
+            Authentication authentication,
             @RequestParam(required = false) ActorType targetType,
             @RequestParam(required = false) ReportStatus status,
-            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
+        Long userNo = Long.parseLong(userNoStr);
+
+        // 권한에서 role 추출 (ROLE_ADMIN → ADMIN 으로 정규화)
+        String userType = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)        // e.g. ROLE_ADMIN
+                .findFirst()
+                .map(a -> a.startsWith("ROLE_") ? a.substring(5) : a)
+                .orElse("USER");
+
         try {
-            log.info("getReportUsers API 호출됨 - user: {}", user);
-
-            Long userNo = user != null ? user.getUserNo() : null;
-            String userType = user != null ? user.getUserType().name() : null;
-
             log.info("사용자 정보 - userNo: {}, userType: {}", userNo, userType);
 
             Page<ReportResponse> page = userAdminService.getAllReports(userNo, userType, targetType, status, pageable);
