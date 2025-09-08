@@ -60,6 +60,7 @@ public class UserAdminService {
             // 기본적으로 BEFORE 상태만 조회
             ReportStatus defaultStatus = ReportStatus.BEFORE;
             
+            // 먼저 기본 조건으로 모든 데이터를 조회
             if(targetType != null && status != null) {
                 log.info("targetType과 status로 조회: {}, {}", targetType, status);
                 logs = reportLogRepository.findByTarget_TypeAndReportStatusOrderByCreatedAtDesc(targetType, status, pageable);
@@ -73,6 +74,7 @@ public class UserAdminService {
                 log.info("BEFORE 상태만 조회");
                 logs = reportLogRepository.findByReportStatusOrderByCreatedAtDesc(defaultStatus, pageable);
             }
+            
             
             log.info("조회된 신고 수: {}", logs.getTotalElements());
             return logs.map(this::toDto);

@@ -18,9 +18,5 @@ public interface ReportLogRepository extends JpaRepository<ReportLog,Long>{
 
     Page<ReportLog> findByTarget_TypeAndReportStatusOrderByCreatedAtDesc(ActorType targetType, ReportStatus status, Pageable pageable);
 
-    Page<ReportLog> findByTarget_TypeOrderByCreatedAtDesc(ActorType targetType, Pageable pageable);
-
     Page<ReportLog> findByReportStatusOrderByCreatedAtDesc(ReportStatus status, Pageable pageable);
-
-    Page<ReportLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }
