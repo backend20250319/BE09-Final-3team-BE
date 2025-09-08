@@ -19,6 +19,8 @@ public class PetResponse {
     private String gender;
     private Float weight;
     private Boolean isPetStar;
+    private Long snsId;
     private Long snsProfileNo;
+    private String snsUsername;
     private PetStarStatus petStarStatus;
 }
