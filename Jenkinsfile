@@ -6,6 +6,8 @@ pipeline {
         MANIFESTS_GITHUB_URL = 'https://github.com/gyongcode/petful-manifest.git'
         GIT_USERNAME = 'gyongcode-jenkins'
         GIT_EMAIL = 'gyongcode@gmail.com'
+
+        DISCORD_WEBHOOK_URL = credentials('discord-webhook-url')
     }
 
     triggers {
@@ -110,11 +112,20 @@ pipeline {
             }
         }
         success {
-            echo 'Pipeline succeeded!'
-            echo 'Successfully built and deployed all backend services'
-        }
-        failure {
-            echo 'Pipeline failed!'
-        }
+                    echo 'Pipeline succeeded!'
+                    bat '''
+                        curl -H "Content-Type: application/json" ^
+                            -d "{\\"content\\":\\"✅ Jenkins Backend Job 성공: %JOB_NAME% #%BUILD_NUMBER%\\"}" ^
+                            %DISCORD_WEBHOOK_URL%
+                    '''
+                }
+                failure {
+                    echo 'Pipeline failed!'
+                    bat '''
+                        curl -H "Content-Type: application/json" ^
+                            -d "{\\"content\\":\\"❌ Jenkins Backend Job 실패: %JOB_NAME% #%BUILD_NUMBER%\\"}" ^
+                            %DISCORD_WEBHOOK_URL%
+                    '''
+                }
     }
 }
