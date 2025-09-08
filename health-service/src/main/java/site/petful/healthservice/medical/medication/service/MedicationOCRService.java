@@ -74,6 +74,8 @@ public class MedicationOCRService {
             log.info("Clova OCR 응답 수신 완료");
             
             // 2단계: OCR 응답 JSON 파싱
+            log.info("=== OCR 응답 JSON ===");
+            log.info("OCR Response: {}", ocrResponseJson);
             return parsePrescription(ocrResponseJson);
         } catch (IOException e) {
             log.error("처방전 처리 중 IO 예외 발생", e);
@@ -209,11 +211,11 @@ public class MedicationOCRService {
                             PrescriptionParsedDTO.MedicationInfo med = tempMedications.get(medicationNumber - 1);
                             
                             // 필드 타입에 따라 정보 설정
-                            if (name.contains("성분명") || name.contains("Field 01") || name.contains("Field 02")) {
+                            if (name.contains("성분명") || name.contains("Field 01") || name.contains("Field 02") || name.contains("Field 03") || name.contains("Field 04") || name.contains("Field 05")) {
                                 med.setDrugName(value);
-                            } else if (name.contains("용량") || name.contains("Field 06") || name.contains("Field 07")) {
+                            } else if (name.contains("용량") || name.contains("Field 06") || name.contains("Field 07") || name.contains("Field 08") || name.contains("Field 09") || name.contains("Field 10")) {
                                 med.setDosage(value);
-                            } else if (name.contains("용법") || name.contains("Field 11") || name.contains("Field 12")) {
+                            } else if (name.contains("용법") || name.contains("Field 11") || name.contains("Field 12") || name.contains("Field 13") || name.contains("Field 14") || name.contains("Field 15")) {
                                 // 줄바꿈 제거 및 텍스트 정리
                                 String cleanedValue = value.replace("\n", " ").trim();
                                 // "경구투"를 "경구투여"로 통일
@@ -228,23 +230,28 @@ public class MedicationOCRService {
                                 normalizedValue = normalizedValue.replaceAll("\\s+", " ").trim();
                                 
                                 med.setAdministration(normalizedValue);
-                            } else if (name.contains("처방일수") || name.contains("Field 16") || name.contains("Field 17")) {
+                            } else if (name.contains("처방일수") || name.contains("Field 16") || name.contains("Field 17") || name.contains("Field 18") || name.contains("Field 19") || name.contains("Field 20")) {
                                 med.setPrescriptionDays(value);
                             }
                         }
                     }
                     
                     // 유효한 약물 정보만 결과에 추가
-                    log.debug("Temp medications size: {}", tempMedications.size());
-                    for (PrescriptionParsedDTO.MedicationInfo med : tempMedications) {
-                        log.debug("Checking medication: drugName={}, dosage={}", med.getDrugName(), med.getDosage());
+                    log.info("=== 약물 파싱 결과 ===");
+                    log.info("Temp medications size: {}", tempMedications.size());
+                    for (int i = 0; i < tempMedications.size(); i++) {
+                        PrescriptionParsedDTO.MedicationInfo med = tempMedications.get(i);
+                        log.info("Medication {}: drugName={}, dosage={}, administration={}, prescriptionDays={}", 
+                                i+1, med.getDrugName(), med.getDosage(), med.getAdministration(), med.getPrescriptionDays());
                         if (med.getDrugName() != null && !med.getDrugName().trim().isEmpty()) {
                             // 복용 빈도 추출 (용법에서 "하루 X회" 부분)
                             String frequency = extractFrequency(med.getAdministration());
                             med.setFrequency(frequency);
                             
                             result.getMedications().add(med);
-                            log.debug("Added medication: {}", med.getDrugName());
+                            log.info("Added medication: {} (frequency: {})", med.getDrugName(), frequency);
+                        } else {
+                            log.info("Skipped medication {}: empty drugName", i+1);
                         }
                     }
                     log.debug("Final result medications size: {}", result.getMedications().size());
@@ -266,18 +273,37 @@ public class MedicationOCRService {
     }
     
     /**
-     * 약물 번호를 추출합니다 (1번, 2번 등)
+     * 약물 번호를 추출합니다 (1번, 2번, 3번, 4번, 5번 등)
      */
     private int extractMedicationNumber(String fieldName) {
-        // "Field 01", "Field 02" 형식 지원
+        // "Field 01" ~ "Field 05" 형식 지원 (성분명)
         if (fieldName.contains("Field 01") || fieldName.contains("1번")) return 1;
         if (fieldName.contains("Field 02") || fieldName.contains("2번")) return 2;
+        if (fieldName.contains("Field 03") || fieldName.contains("3번")) return 3;
+        if (fieldName.contains("Field 04") || fieldName.contains("4번")) return 4;
+        if (fieldName.contains("Field 05") || fieldName.contains("5번")) return 5;
+        
+        // "Field 06" ~ "Field 10" 형식 지원 (용량)
         if (fieldName.contains("Field 06") || fieldName.contains("1번 용량")) return 1;
         if (fieldName.contains("Field 07") || fieldName.contains("2번 용량")) return 2;
+        if (fieldName.contains("Field 08") || fieldName.contains("3번 용량")) return 3;
+        if (fieldName.contains("Field 09") || fieldName.contains("4번 용량")) return 4;
+        if (fieldName.contains("Field 10") || fieldName.contains("5번 용량")) return 5;
+        
+        // "Field 11" ~ "Field 15" 형식 지원 (용법)
         if (fieldName.contains("Field 11") || fieldName.contains("1번 용법")) return 1;
         if (fieldName.contains("Field 12") || fieldName.contains("2번 용법")) return 2;
+        if (fieldName.contains("Field 13") || fieldName.contains("3번 용법")) return 3;
+        if (fieldName.contains("Field 14") || fieldName.contains("4번 용법")) return 4;
+        if (fieldName.contains("Field 15") || fieldName.contains("5번 용법")) return 5;
+        
+        // "Field 16" ~ "Field 20" 형식 지원 (처방일수)
         if (fieldName.contains("Field 16") || fieldName.contains("1번 처방일수")) return 1;
         if (fieldName.contains("Field 17") || fieldName.contains("2번 처방일수")) return 2;
+        if (fieldName.contains("Field 18") || fieldName.contains("3번 처방일수")) return 3;
+        if (fieldName.contains("Field 19") || fieldName.contains("4번 처방일수")) return 4;
+        if (fieldName.contains("Field 20") || fieldName.contains("5번 처방일수")) return 5;
+        
         return 0;
     }
     

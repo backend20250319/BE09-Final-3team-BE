@@ -578,3 +578,5 @@ FodyWeavers.xsd
 
 #my-test-app
 my-test-app/
+
+.vscode/

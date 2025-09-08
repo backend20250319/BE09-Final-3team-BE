@@ -23,13 +23,16 @@ public class MedicationFrequencyService {
      */
     public String normalizeText(String text) {
         if (text == null) return text;
-        return text.replaceAll("\\s+", "")
-                   .replace("한번", "1번")
-                   .replace("두번", "2번")
-                   .replace("세번", "3번")
-                   .replace("1회", "1번")
-                   .replace("2회", "2번")
-                   .replace("3회", "3번");
+        // 1. 모든 공백을 먼저 제거하여 "하루에 세 번" -> "하루에세번"
+        String cleanedText = text.replaceAll("\\s+", ""); 
+        
+        // 2. 한글 숫자-번/회 조합을 아라비아 숫자-번으로 변환
+        return cleanedText.replace("한번", "1번")
+                           .replace("두번", "2번")
+                           .replace("세번", "3번")
+                           .replace("1회", "1번")
+                           .replace("2회", "2번")
+                           .replace("3회", "3번");
     }
     
     /**
@@ -42,14 +45,22 @@ public class MedicationFrequencyService {
             info.recurrenceType = RecurrenceType.DAILY; 
             info.interval = 1; 
             info.timesPerDay = 1; 
+            info.label = MedicationFrequency.DAILY_ONCE.getLabel();
             return info;
         }
         String f = normalizeText(frequency);
         Matcher mDay = DAILY_PATTERN.matcher(f);
         if (mDay.find()) {
-            info.timesPerDay = parseIntSafe(mDay.group(1), 1);
+            int times = parseIntSafe(mDay.group(1), 1);
+            info.timesPerDay = times;
             info.recurrenceType = RecurrenceType.DAILY;
             info.interval = 1;
+            info.label = switch (times) {
+                case 1 -> MedicationFrequency.DAILY_ONCE.getLabel();
+                case 2 -> MedicationFrequency.DAILY_TWICE.getLabel();
+                case 3 -> MedicationFrequency.DAILY_THREE.getLabel();
+                default -> MedicationFrequency.DAILY_ONCE.getLabel();
+            };
             return info;
         }
         Matcher mWeek = WEEKLY_PATTERN.matcher(f);
@@ -57,6 +68,7 @@ public class MedicationFrequencyService {
             info.timesPerDay = 1;
             info.recurrenceType = RecurrenceType.WEEKLY;
             info.interval = 1;
+            info.label = MedicationFrequency.DAILY_ONCE.getLabel(); // 투약에서는 주/월 빈도 제거됨
             return info;
         }
         Matcher mMonth = MONTHLY_PATTERN.matcher(f);
@@ -64,12 +76,14 @@ public class MedicationFrequencyService {
             info.timesPerDay = 1;
             info.recurrenceType = RecurrenceType.MONTHLY;
             info.interval = 1;
+            info.label = MedicationFrequency.DAILY_ONCE.getLabel(); // 투약에서는 주/월 빈도 제거됨
             return info;
         }
         // 기본값
         info.timesPerDay = 1; 
         info.recurrenceType = RecurrenceType.DAILY; 
         info.interval = 1; 
+        info.label = MedicationFrequency.DAILY_ONCE.getLabel();
         return info;
     }
     
@@ -82,29 +96,39 @@ public class MedicationFrequencyService {
         }
         
         String f = normalizeText(frequency);
+        log.info("=== normalizeFrequency 디버깅 ===");
+        log.info("원본 frequency: '{}'", frequency);
+        log.info("정규화된 f: '{}'", f);
+        log.info("DAILY_PATTERN: {}", DAILY_PATTERN.pattern());
         
         // 하루 N번 패턴 매칭
         Matcher mDay = DAILY_PATTERN.matcher(f);
-        if (mDay.find()) {
+        boolean dayMatch = mDay.find();
+        log.info("DAILY 패턴 매칭 결과: {}", dayMatch);
+        if (dayMatch) {
             int times = parseIntSafe(mDay.group(1), 1);
-            return switch (times) {
+            log.info("매칭된 times: {}", times);
+            String result = switch (times) {
                 case 1 -> MedicationFrequency.DAILY_ONCE.getLabel();
                 case 2 -> MedicationFrequency.DAILY_TWICE.getLabel();
-                case 3 -> MedicationFrequency.DAILY_THREE_TIMES.getLabel();
+                case 3 -> MedicationFrequency.DAILY_THREE.getLabel();
                 default -> MedicationFrequency.DAILY_ONCE.getLabel();
             };
+            log.info("최종 결과: {}", result);
+            return result;
         }
         
-        // 주에 N번 패턴 매칭
+        // 주에 N번 패턴 매칭 (투약에서는 주/월 빈도 제거됨)
         if (WEEKLY_PATTERN.matcher(f).find()) {
-            return MedicationFrequency.WEEKLY_ONCE.getLabel();
+            return MedicationFrequency.DAILY_ONCE.getLabel();
         }
         
-        // 월에 N번 패턴 매칭
+        // 월에 N번 패턴 매칭 (투약에서는 주/월 빈도 제거됨)
         if (MONTHLY_PATTERN.matcher(f).find()) {
-            return MedicationFrequency.MONTHLY_ONCE.getLabel();
+            return MedicationFrequency.DAILY_ONCE.getLabel();
         }
         
+        log.info("패턴 매칭 실패, 기본값 반환");
         return MedicationFrequency.DAILY_ONCE.getLabel(); // 기본값
     }
     
@@ -121,9 +145,13 @@ public class MedicationFrequencyService {
         private RecurrenceType recurrenceType = RecurrenceType.DAILY;
         private int interval = 1;
         private int timesPerDay = 1;
+        private String label;
 
         public RecurrenceType getRecurrenceType() { return recurrenceType; }
         public int getInterval() { return interval; }
         public int getTimesPerDay() { return timesPerDay; }
+        public String getLabel() { return label; }
+        
+        public void setLabel(String label) { this.label = label; }
     }
 }

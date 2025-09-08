@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -18,8 +18,8 @@ public class MedicationDetailDTO {
     private String title;           // 약명 + 용량 표기
     private String mainType;        // MEDICATION
     private String subType;         // PILL|SUPPLEMENT
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private LocalTime time;         // 대표 시간(startDate 기준)
     private List<LocalTime> times;  // 하루 N회일 때 전개 시간 목록
     private String frequency;       // 라벨 저장값

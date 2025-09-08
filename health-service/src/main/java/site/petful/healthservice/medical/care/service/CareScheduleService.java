@@ -215,8 +215,8 @@ public class CareScheduleService extends AbstractScheduleService {
                 .map(c -> CareResponseDTO.builder()
                         .scheduleNo(c.getScheduleNo())
                         .title(c.getTitle())
-                        .startDate(c.getStartDate())
-                        .endDate(c.getEndDate())
+                        .startDate(c.getStartDate().toLocalDate())
+                        .endDate(c.getEndDate() != null ? c.getEndDate().toLocalDate() : null)
                         .mainType(c.getMainType().name())
                         .subType(c.getSubType().name())
                         .frequency(c.getFrequency())
@@ -251,8 +251,8 @@ public class CareScheduleService extends AbstractScheduleService {
                 .title(c.getTitle())
                 .mainType(c.getMainType().name())
                 .subType(c.getSubType().name())
-                .startDate(c.getStartDate())
-                .endDate(c.getEndDate())
+                .startDate(c.getStartDate().toLocalDate())
+                .endDate(c.getEndDate() != null ? c.getEndDate().toLocalDate() : null)
                 .times(c.getTimesAsList())
                 .frequency(c.getFrequency())
                 .alarmEnabled(c.getReminderDaysBefore() != null)
@@ -267,6 +267,10 @@ public class CareScheduleService extends AbstractScheduleService {
      * 돌봄 일정 수정 (부분 업데이트)
      */
     public Long updateCareSchedule(Long calNo, CareUpdateRequestDTO request, Long userNo) {
+        return updateCareSchedule(calNo, request, userNo, true);
+    }
+    
+    public Long updateCareSchedule(Long calNo, CareUpdateRequestDTO request, Long userNo, boolean isEditMode) {
         // 조회 및 소유자 검증
         Schedule entity = findScheduleById(calNo);
         
@@ -286,6 +290,30 @@ public class CareScheduleService extends AbstractScheduleService {
         
         // 메인타입 변경 방지 로직 제거 (모든 서브타입이 CARE 메인타입이므로)
 
+        // 수정 시에는 기존 빈도 정보를 사용하거나 요청에서 받은 빈도 사용
+        CareFrequency frequency = request.getCareFrequency() != null ? request.getCareFrequency() : 
+            (entity.getFrequency() != null ? CareFrequency.from(entity.getFrequency()) : CareFrequency.DAILY);
+        
+        // 수정 모드에서 빈도별 날짜 처리
+        if (isEditMode) {
+            switch (frequency) {
+                case WEEKLY:
+                case MONTHLY:
+                    // 매주/매월: 시작날짜와 종료날짜 고정 (수정 불가)
+                    request.setStartDate(entity.getStartDate().toLocalDate());
+                    request.setEndDate(entity.getStartDate().toLocalDate()); // 종료일 = 시작일
+                    break;
+                    
+                case DAILY:
+                case SINGLE_DAY:
+                    // 매일/당일: 시작날짜 변경 시 종료날짜도 동일하게 변경
+                    if (request.getStartDate() != null && !request.getStartDate().equals(entity.getStartDate().toLocalDate())) {
+                        request.setEndDate(request.getStartDate()); // 종료일 = 시작일
+                    }
+                    break;
+            }
+        }
+
         // 시작날짜 검증 (수정 시 시작날짜가 변경되는 경우)
         if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
             throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
@@ -296,11 +324,14 @@ public class CareScheduleService extends AbstractScheduleService {
         LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
         LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : entity.getEndDate().toLocalDate();
         
-        // 수정 시에는 기존 빈도 정보를 사용하거나 요청에서 받은 빈도 사용
-        CareFrequency frequency = request.getCareFrequency() != null ? request.getCareFrequency() : 
-            (entity.getFrequency() != null ? CareFrequency.from(entity.getFrequency()) : CareFrequency.DAILY);
-        
-        LocalDate calculatedEndDate = validateAndCalculateEndDate(startDate, endDate, frequency);
+        LocalDate calculatedEndDate;
+        if (isEditMode) {
+            // 수정 모드에서는 기존 검증 로직을 우회하고 직접 처리
+            calculatedEndDate = handleEditModeDateValidation(startDate, endDate, frequency);
+        } else {
+            // 추가 모드에서는 기존 검증 로직 유지
+            calculatedEndDate = validateAndCalculateEndDate(startDate, endDate, frequency);
+        }
 
         // 일정 업데이트 (계산된 종료일 포함)
         updateCareScheduleFields(entity, request, calculatedEndDate);
@@ -313,7 +344,7 @@ public class CareScheduleService extends AbstractScheduleService {
     private void updateCareScheduleFields(Schedule entity, CareUpdateRequestDTO request, LocalDate calculatedEndDate) {
         // 기본 정보 업데이트
         if (request.getTitle() != null) {
-            entity.updateSchedule(request.getTitle(), entity.getStartDate(), entity.getEndDate(), entity.getAlarmTime());
+            entity.updateSchedule(request.getTitle(), entity.getStartDate(), entity.getEndDate());
         }
         
         if (request.getSubType() != null) {
@@ -334,7 +365,7 @@ public class CareScheduleService extends AbstractScheduleService {
         LocalDateTime startDt = LocalDateTime.of(base, time);
         LocalDateTime endDt = LocalDateTime.of(calculatedEndDate, time);
 
-        entity.updateSchedule(entity.getTitle(), startDt, endDt, startDt);
+        entity.updateSchedule(entity.getTitle(), startDt, endDt);
 
         // 빈도/반복 업데이트
         if (request.getCareFrequency() != null) {
@@ -437,7 +468,7 @@ public class CareScheduleService extends AbstractScheduleService {
                 .map(Enum::name)
                 .toList();
         List<String> frequencies = Arrays.stream(CareFrequency.values())
-                .map(Enum::name)
+                .map(CareFrequency::getLabel)  // enum name 대신 한글 label 반환
                 .toList();
         Map<String, List<String>> data = new HashMap<>();
         data.put("subTypes", subTypes);
@@ -447,6 +478,64 @@ public class CareScheduleService extends AbstractScheduleService {
 
     // ==================== 날짜 검증 메서드 ====================
     
+    /**
+     * 수정 모드에서의 날짜 검증 처리
+     */
+    private LocalDate handleEditModeDateValidation(LocalDate startDate, LocalDate endDate, CareFrequency frequency) {
+        // 시작일이 오늘 이전인지 확인
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                "시작날짜는 당일보다 이전일 수 없습니다.");
+        }
+
+        // 종료일이 시작일보다 이전인지 확인 (종료일이 있는 경우)
+        if (endDate != null && endDate.isBefore(startDate)) {
+            throw new BusinessException(ErrorCode.MEDICAL_END_DATE_BEFORE_START_ERROR, 
+                "종료날짜는 시작날짜보다 이전일 수 없습니다.");
+        }
+
+        // 빈도별 종료일 검증 및 자동 계산
+        switch (frequency) {
+            case DAILY:
+                // 매일: 종료일이 시작일과 같아도 허용
+                if (endDate == null || endDate.equals(startDate)) {
+                    return startDate; // 종료일을 시작일과 동일하게 설정
+                }
+                return endDate;
+
+            case WEEKLY:
+                // 매주: 시작날짜와 종료날짜가 동일해야 함
+                if (endDate != null && !endDate.equals(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "매주 일정은 시작날짜와 종료날짜가 같아야 합니다.");
+                }
+                return startDate;
+
+            case MONTHLY:
+                // 매월: 시작날짜와 종료날짜가 동일해야 함
+                if (endDate != null && !endDate.equals(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "매월 일정은 시작날짜와 종료날짜가 같아야 합니다.");
+                }
+                return startDate;
+
+            case SINGLE_DAY:
+                // 당일: 시작일과 종료일이 동일해야 함
+                if (endDate != null && !endDate.equals(startDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
+                            "당일 일정은 시작일과 종료일이 같아야 합니다.");
+                }
+                return startDate;
+
+            default:
+                // 기본값: 종료일이 시작일보다 이전인지 확인
+                if (endDate == null) {
+                    return startDate;
+                }
+                return endDate;
+        }
+    }
+
     /**
      * 돌봄 일정 날짜 범위 검증 및 종료일 자동 계산
      */
@@ -466,26 +555,24 @@ public class CareScheduleService extends AbstractScheduleService {
         // 빈도별 종료일 검증 및 자동 계산
         switch (frequency) {
             case DAILY:
-                // 매일: 시작일과 종료일 사이의 모든 날에 일정 생성
+                // 매일: 종료일이 시작일과 같아도 허용
                 if (endDate == null) {
-                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                            "매일 일정은 종료일을 반드시 입력해야 합니다.");
+                    return startDate.plusDays(1); // 종료일이 없으면 다음날로 설정
                 }
                 if (endDate.isBefore(startDate)) {
                     throw new BusinessException(ErrorCode.MEDICAL_END_DATE_BEFORE_START_ERROR,
                             "종료날짜는 시작날짜보다 이전일 수 없습니다.");
                 }
                 if (endDate.equals(startDate)) {
-                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                            "매일 일정은 시작일과 종료일이 같을 수 없습니다.");
+                    // 매일 일정의 경우 시작일과 종료일이 같아도 허용
+                    return startDate;
                 }
                 return endDate;
 
             case WEEKLY:
                 // 매주: 시작일부터 종료일까지 7일마다 일정 생성
                 if (endDate == null) {
-                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                            "매주 일정은 종료일을 반드시 입력해야 합니다.");
+                    return startDate; // 종료일이 없으면 시작일과 동일하게 설정
                 }
                 if (endDate.isBefore(startDate)) {
                     throw new BusinessException(ErrorCode.MEDICAL_END_DATE_BEFORE_START_ERROR,
@@ -505,8 +592,7 @@ public class CareScheduleService extends AbstractScheduleService {
             case MONTHLY:
                 // 매월: 시작일과 종료월의 같은 날짜에 일정 생성
                 if (endDate == null) {
-                    throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
-                            "매월 일정은 종료월을 반드시 입력해야 합니다.");
+                    return startDate; // 종료일이 없으면 시작일과 동일하게 설정
                 }
                 if (endDate.isBefore(startDate)) {
                     throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR,
@@ -559,32 +645,15 @@ public class CareScheduleService extends AbstractScheduleService {
                 "SCHEDULE"));
             
             Map<String, Object> attributes = new HashMap<>();
-            attributes.put("scheduleId", schedule.getScheduleNo());
+            attributes.put("scheduleNo", schedule.getScheduleNo());
             attributes.put("title", schedule.getTitle());
             attributes.put("mainType", schedule.getMainType().name());
             attributes.put("subType", schedule.getSubType().name());
             attributes.put("startDate", schedule.getStartDate());
             attributes.put("reminderDaysBefore", schedule.getReminderDaysBefore());
             
-            // durationDays와 times 데이터 추가
-            Integer durationDays = null;
+            // times 데이터 추가 (돌봄/접종은 durationDays 개념 없음)
             List<String> timesList = null;
-            
-            // MEDICATION 타입인 경우 ScheduleMedDetail에서 durationDays 가져오기
-            if (schedule.getMainType() == ScheduleMainType.MEDICATION) {
-                var detailOpt = medicationDetailRepository.findById(schedule.getScheduleNo());
-                if (detailOpt.isPresent()) {
-                    durationDays = detailOpt.get().getDurationDays();
-                }
-            } else {
-                // CARE/VACCINATION 타입인 경우 시작일과 종료일의 차이로 계산
-                if (schedule.getStartDate() != null && schedule.getEndDate() != null) {
-                    durationDays = (int) java.time.temporal.ChronoUnit.DAYS.between(
-                        schedule.getStartDate().toLocalDate(), 
-                        schedule.getEndDate().toLocalDate()
-                    ) + 1; // 시작일 포함
-                }
-            }
             
             // times를 List<String> 형태로 변환
             if (schedule.getTimes() != null && !schedule.getTimes().isEmpty()) {
@@ -593,7 +662,6 @@ public class CareScheduleService extends AbstractScheduleService {
                     .toList();
             }
             
-            attributes.put("durationDays", durationDays);
             attributes.put("times", timesList);
             event.setAttributes(attributes);
             event.setSchemaVersion(1);
@@ -601,8 +669,8 @@ public class CareScheduleService extends AbstractScheduleService {
             // notif.events로 메시지 발행
             rabbitTemplate.convertAndSend("notif.events", "health.schedule", event);
             
-            log.info("스케줄 생성 이벤트 발행 완료: scheduleNo={}, title={}, durationDays={}, times={}", 
-                    schedule.getScheduleNo(), schedule.getTitle(), durationDays, timesList);
+            log.info("스케줄 생성 이벤트 발행 완료: scheduleNo={}, title={}, times={}", 
+                    schedule.getScheduleNo(), schedule.getTitle(), timesList);
         } catch (Exception e) {
             log.error("스케줄 생성 이벤트 발행 실패: scheduleNo={}, error={}", 
                     schedule.getScheduleNo(), e.getMessage(), e);

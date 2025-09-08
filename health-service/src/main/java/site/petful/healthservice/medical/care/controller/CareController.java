@@ -67,9 +67,10 @@ public class CareController {
     public ResponseEntity<ApiResponse<Long>> updateCare(
             @AuthenticationPrincipal String userNo,
             @RequestParam("calNo") Long calNo,
+            @RequestParam(defaultValue = "true") boolean isEditMode,
             @RequestBody CareUpdateRequestDTO request
     ) {
-        Long updatedCalNo = careScheduleService.updateCareSchedule(calNo, request, Long.valueOf(userNo));
+        Long updatedCalNo = careScheduleService.updateCareSchedule(calNo, request, Long.valueOf(userNo), isEditMode);
         return ResponseEntity.ok(ApiResponseGenerator.success(updatedCalNo));
     }
 

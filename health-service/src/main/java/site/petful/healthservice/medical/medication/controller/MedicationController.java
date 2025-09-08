@@ -45,6 +45,16 @@ public class MedicationController {
             @AuthenticationPrincipal String userNo,
             @Valid @RequestBody MedicationRequestDTO request
     ) {
+        log.info("=== 투약 일정 생성 API 호출 ===");
+        log.info("userNo: {}", userNo);
+        log.info("request: {}", request);
+        log.info("medicationFrequency: {}", request.getMedicationFrequency());
+        log.info("times: {}", request.getTimes());
+        log.info("petNo: {}", request.getPetNo());
+        log.info("name: {}", request.getName());
+        log.info("startDate: {}", request.getStartDate());
+        log.info("endDate: {}", request.getEndDate());
+        
         Long calNo = medicationScheduleService.createMedication(Long.valueOf(userNo), request);
         return ResponseEntity.ok(ApiResponseGenerator.success(calNo));
     }
@@ -87,9 +97,17 @@ public class MedicationController {
     public ResponseEntity<ApiResponse<MedicationUpdateDiffDTO>> updateMedication(
             @AuthenticationPrincipal String userNo,
             @RequestParam("calNo") Long calNo,
+            @RequestParam(defaultValue = "true") boolean isEditMode,
             @RequestBody MedicationUpdateRequestDTO request
     ) {
-        MedicationUpdateDiffDTO response = medicationScheduleService.updateMedication(calNo, request, Long.valueOf(userNo));
+        log.info("=== 투약 일정 수정 API 호출 ===");
+        log.info("userNo: {}", userNo);
+        log.info("calNo: {}", calNo);
+        log.info("isEditMode: {}", isEditMode);
+        log.info("request: {}", request);
+        log.info("request.getFrequency(): {}", request.getFrequency());
+        
+        MedicationUpdateDiffDTO response = medicationScheduleService.updateMedication(calNo, request, Long.valueOf(userNo), isEditMode);
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 

@@ -24,7 +24,7 @@ public class ScheduledInstagramSync {
     private final InstagramCommentService commentService;
 
     // 매일 새벽 2시 실행
-//    @Scheduled(cron = "0 0 2 * * *")
+//    @Scheduled(cron = "0 0 2 * * *", zone = "Asia/Seoul")
     public void runSync() {
         log.info("Instagram 게시물 + 댓글 동기화 시작");
         // TODO userNo 가져오기 필요

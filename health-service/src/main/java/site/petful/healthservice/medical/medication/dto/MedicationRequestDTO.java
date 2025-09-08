@@ -31,16 +31,13 @@ public class MedicationRequestDTO {
     @NotNull(message = "시작일은 필수입니다.")
     private LocalDate startDate;
     
-    @NotNull(message = "복용 기간(일)은 필수입니다.")
-    @Min(value = 1, message = "복용 기간은 1일 이상이어야 합니다.")
-    @Max(value = 365, message = "복용 기간은 365일 이하여야 합니다.")
-    private Integer durationDays;
+    @NotNull(message = "종료일은 필수입니다.")
+    private LocalDate endDate;
     
     @NotNull(message = "복용 빈도는 필수입니다.")
     private MedicationFrequency medicationFrequency;
     
-    @NotNull(message = "시간은 필수입니다.")
-    private List<LocalTime> times;
+    private List<LocalTime> times;  // 선택적: 제공되지 않으면 빈도에 따라 기본 시간 사용
     
     private ScheduleSubType subType;  // 영양제/복용약 구분 (기본값: PILL)
     
