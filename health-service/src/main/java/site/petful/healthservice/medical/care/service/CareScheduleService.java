@@ -344,7 +344,7 @@ public class CareScheduleService extends AbstractScheduleService {
     private void updateCareScheduleFields(Schedule entity, CareUpdateRequestDTO request, LocalDate calculatedEndDate) {
         // 기본 정보 업데이트
         if (request.getTitle() != null) {
-            entity.updateSchedule(request.getTitle(), entity.getStartDate(), entity.getEndDate(), entity.getAlarmTime());
+            entity.updateSchedule(request.getTitle(), entity.getStartDate(), entity.getEndDate());
         }
         
         if (request.getSubType() != null) {
@@ -365,7 +365,7 @@ public class CareScheduleService extends AbstractScheduleService {
         LocalDateTime startDt = LocalDateTime.of(base, time);
         LocalDateTime endDt = LocalDateTime.of(calculatedEndDate, time);
 
-        entity.updateSchedule(entity.getTitle(), startDt, endDt, startDt);
+        entity.updateSchedule(entity.getTitle(), startDt, endDt);
 
         // 빈도/반복 업데이트
         if (request.getCareFrequency() != null) {

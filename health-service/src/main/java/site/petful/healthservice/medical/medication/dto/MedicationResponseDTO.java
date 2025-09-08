@@ -18,7 +18,6 @@ public class MedicationResponseDTO {
     private String title;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private LocalDateTime alarmTime;
     private String mainType;
     private String subType;
 

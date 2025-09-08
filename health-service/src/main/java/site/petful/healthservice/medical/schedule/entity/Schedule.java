@@ -45,12 +45,7 @@ public class Schedule {
     @Column(name = "sub_type", nullable = false)
     private ScheduleSubType subType;
 
-    @Column(name = "all_day", nullable = false)
-    @Builder.Default
-    private Boolean allDay = false;
 
-    @Column(name = "alarm_time")
-    private LocalDateTime alarmTime;
 
     @Column(name = "created_at", nullable = false)
     @Builder.Default
@@ -101,12 +96,10 @@ public class Schedule {
     private String times;
 
     // 업데이트 메서드
-    public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate,
-                             LocalDateTime alarmTime) {
+    public void updateSchedule(String title, LocalDateTime startDate, LocalDateTime endDate) {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.alarmTime = alarmTime;
         this.updatedAt = LocalDateTime.now();
     }
 

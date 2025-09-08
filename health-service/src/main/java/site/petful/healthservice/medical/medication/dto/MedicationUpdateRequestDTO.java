@@ -19,6 +19,7 @@ public class MedicationUpdateRequestDTO {
     // 약물 정보 (선택적)
     private String medicationName;
     private String dosage;
+    private Integer durationDays;
     
     // 일정 정보 (선택적)
     private String frequency;

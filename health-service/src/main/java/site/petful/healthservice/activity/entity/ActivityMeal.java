@@ -23,7 +23,7 @@ public class ActivityMeal {
     private Long mealNo;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "activity_id", nullable = false)
+    @JoinColumn(name = "activity_no", nullable = false)
     private Activity activity;
     
     @Column(name = "total_weight_g", nullable = false)

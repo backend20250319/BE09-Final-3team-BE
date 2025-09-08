@@ -482,7 +482,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
             String medName = request.getMedicationName() != null ? request.getMedicationName() : 
                 (entity.getTitle() != null ? entity.getTitle().split(" ")[0] : "");
             String dosage = request.getDosage() != null ? request.getDosage() : "";
-            entity.updateSchedule(medName + " " + dosage, entity.getStartDate(), entity.getEndDate(), entity.getAlarmTime());
+            entity.updateSchedule(medName + " " + dosage, entity.getStartDate(), entity.getEndDate());
         }
 
         // 기본값 설정
@@ -528,7 +528,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
         LocalDateTime endDt = LocalDateTime.of(endDate, slots.get(slots.size() - 1));
 
         // 복용기간이 변경된 경우 종료날짜 재계산하여 업데이트
-        entity.updateSchedule(entity.getTitle(), startDt, endDt, startDt);
+        entity.updateSchedule(entity.getTitle(), startDt, endDt);
         entity.updateFrequency(freq);
         entity.updateRecurrence(freqInfo.getRecurrenceType(), freqInfo.getInterval(), endDt);
 
