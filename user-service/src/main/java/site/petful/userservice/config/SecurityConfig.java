@@ -78,8 +78,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 프리플라이트 허용
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/error").permitAll()                  // (선택) 기본 에러 핸들러 공개
-
+                        .requestMatchers("/error").permitAll()  // (선택) 기본 에러 핸들러 공개
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
 
