@@ -7,10 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
-import site.petful.advertiserservice.dto.campaign.HistoryImageInfo;
-import site.petful.advertiserservice.dto.campaign.HistoryResponse;
-import site.petful.advertiserservice.dto.campaign.PetResponse;
-import site.petful.advertiserservice.dto.campaign.PortfolioResponse;
+import site.petful.advertiserservice.dto.campaign.*;
 import site.petful.advertiserservice.service.PetService;
 
 import java.util.List;
@@ -29,6 +26,13 @@ public class PetController {
     @GetMapping("/petstars")
     public ResponseEntity<ApiResponse<List<PetResponse>>> getAllPetstars() {
         List<PetResponse> response = petService.geAllPetstars();
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
+    }
+
+    // 1-2. 펫스타별 인스타 media 목록 조회
+    @GetMapping("/petstars/media")
+    public ResponseEntity<ApiResponse<List<InstagramMediaDto>>> getAllPetstarsMedia() {
+        List<InstagramMediaDto> response = petService.geAllPetstarsMedia();
         return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 

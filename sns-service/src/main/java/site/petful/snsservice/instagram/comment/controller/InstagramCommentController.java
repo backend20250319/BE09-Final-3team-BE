@@ -123,7 +123,7 @@ public class InstagramCommentController {
         return ResponseEntity.ok(ApiResponseGenerator.success(sentimentRatio));
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<List<InstagramCommentResponseDto>>> syncInstagramComments(
         @RequestParam(name = "user_no") Long userNo,

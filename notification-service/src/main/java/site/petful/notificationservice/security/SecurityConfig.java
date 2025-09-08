@@ -33,7 +33,8 @@ public class SecurityConfig {
                         auth
                                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v3/api-docs/**",
                                         "/swagger-resources/**").permitAll()
-                                .requestMatchers("/noti/**", "/actuator/**").permitAll()
+                                .requestMatchers("/notifications/noti/**", "/actuator/**")
+                                .hasAnyAuthority("ADMIN", "USER","ADVERTISER")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(headerAuthenticationFilter(),

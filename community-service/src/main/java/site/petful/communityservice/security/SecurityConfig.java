@@ -32,7 +32,8 @@ public class SecurityConfig {
                         auth
                                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v3/api-docs/**",
                                         "/swagger-resources/**").permitAll()
-                                .requestMatchers("/community/**", "/actuator/**").permitAll()
+                                .requestMatchers("/community/comments/**","community/posts/", "/actuator/**")
+                                .hasAnyAuthority("ADMIN", "USER")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(headerAuthenticationFilter(),
