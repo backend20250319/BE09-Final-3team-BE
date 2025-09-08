@@ -85,13 +85,41 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 "시작일은 종료일보다 이전이거나 같아야 합니다.");
         }
 
+        // MedicationFrequency를 MedicationFrequencyService로 변환
+        MedicationFrequencyService.FrequencyInfo freqInfo = frequencyService.parseFrequency(
+            request.getMedicationFrequency().getLabel()
+        );
+        
         // 디버깅 로그 추가
         log.info("=== 투약 일정 생성 디버깅 ===");
         log.info("요청된 medicationFrequency: {}", request.getMedicationFrequency());
-        log.info("RecurrenceType: {}", request.getMedicationFrequency().getRecurrenceType());
-        log.info("Interval: {}", request.getMedicationFrequency().getInterval());
-        log.info("Label: {}", request.getMedicationFrequency().getLabel());
+        log.info("변환된 freqInfo: {}", freqInfo);
+        log.info("RecurrenceType: {}", freqInfo.getRecurrenceType());
+        log.info("Interval: {}", freqInfo.getInterval());
+        log.info("Label: {}", freqInfo.getLabel());
+        log.info("TimesPerDay: {}", freqInfo.getTimesPerDay());
+        log.info("요청된 times: {}", request.getTimes());
 
+        // 빈도와 시간 개수 검증 및 기본 시간 설정
+        List<LocalTime> times;
+        if (request.getTimes() != null && !request.getTimes().isEmpty()) {
+            // 시간이 제공된 경우: 빈도와 개수가 일치하는지 검증
+            int expectedTimes = freqInfo.getTimesPerDay();
+            int providedTimes = request.getTimes().size();
+            
+            if (providedTimes != expectedTimes) {
+                log.warn("빈도({})와 시간 개수({})가 일치하지 않음. 기본 시간 사용", expectedTimes, providedTimes);
+                times = defaultSlots(expectedTimes);
+            } else {
+                times = request.getTimes();
+            }
+        } else {
+            // 시간이 제공되지 않은 경우: 기본 시간 사용
+            log.info("시간이 제공되지 않음. 기본 시간 사용");
+            times = defaultSlots(freqInfo.getTimesPerDay());
+        }
+        
+        log.info("최종 사용할 times: {}", times);
     
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
                 .petNo(request.getPetNo())
@@ -99,12 +127,12 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .subType(request.getSubType() != null ? request.getSubType() : ScheduleSubType.PILL)  // 요청에서 subType 사용, 없으면 기본값 PILL
-                .times(request.getTimes())
-                .frequency(request.getMedicationFrequency().getRecurrenceType()) 
-                .recurrenceInterval(request.getMedicationFrequency().getInterval()) 
+                .times(times)
+                .frequency(freqInfo.getRecurrenceType()) 
+                .recurrenceInterval(freqInfo.getInterval()) 
                 .recurrenceEndDate(request.getEndDate())
                 .reminderDaysBefore(request.getReminderDaysBefore())
-                .frequencyText(request.getMedicationFrequency().getLabel())
+                .frequencyText(freqInfo.getLabel())
                 .build();
 
         // 상속된 공통 서비스 사용
@@ -162,24 +190,20 @@ public class MedicationScheduleService extends AbstractScheduleService {
             LocalDate endDay = startDay.plusDays(Math.max(0, durationDays - 1));
             LocalDateTime endDateTime = LocalDateTime.of(endDay, slots.get(slots.size() - 1));
 
-                            // 기본값으로 DAILY 설정
-        RecurrenceType recurrenceType = RecurrenceType.DAILY;
-        int interval = 1;
-        
-        // 공통 DTO로 변환
-        ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
-                .petNo(petNo) // 파라미터로 받은 petNo 사용
-                .title(ocrService.buildTitle(drugName, dosage))
-                .startDate(startDay)
-                .endDate(endDay)
-                .subType(subType != null ? subType : ScheduleSubType.PILL)
-                .times(slots)
-                .frequency(recurrenceType)
-                .recurrenceInterval(interval)
-                .recurrenceEndDate(endDay)
-                .reminderDaysBefore(0)  // 기본값: 당일 알림
-                .frequencyText(frequencyText)
-                .build();
+            // 공통 DTO로 변환
+            ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
+                    .petNo(petNo) // 파라미터로 받은 petNo 사용
+                    .title(ocrService.buildTitle(drugName, dosage))
+                    .startDate(startDay)
+                    .endDate(endDay)
+                    .subType(subType != null ? subType : ScheduleSubType.PILL)
+                    .times(slots)
+                    .frequency(freqInfo.getRecurrenceType())
+                    .recurrenceInterval(freqInfo.getInterval())
+                    .recurrenceEndDate(endDay)
+                    .reminderDaysBefore(0)  // 기본값: 당일 알림
+                    .frequencyText(freqInfo.getLabel())
+                    .build();
 
                     Schedule entity = createScheduleEntity(userNo, commonRequest, ScheduleMainType.MEDICATION);
                     Long savedId = saveSchedule(entity);
@@ -515,8 +539,17 @@ public class MedicationScheduleService extends AbstractScheduleService {
         // administration 필드는 더 이상 사용하지 않음
         String freq = request.getFrequency() != null ? request.getFrequency() : entity.getFrequency();
 
-        // 빈도/시간 재계산
+        // 빈도/시간 재계산 - MedicationFrequencyService를 사용해서 올바르게 변환
         MedicationFrequencyService.FrequencyInfo freqInfo = frequencyService.parseFrequency(freq);
+        
+        // 디버깅 로그 추가
+        log.info("=== 투약 일정 수정 디버깅 ===");
+        log.info("요청된 frequency: '{}'", request.getFrequency());
+        log.info("사용할 frequency: '{}'", freq);
+        log.info("변환된 freqInfo: {}", freqInfo);
+        log.info("RecurrenceType: {}", freqInfo.getRecurrenceType());
+        log.info("Label: {}", freqInfo.getLabel());
+        log.info("TimesPerDay: {}", freqInfo.getTimesPerDay());
         List<LocalTime> slots;
         if (request.getTimes() != null && !request.getTimes().isEmpty()) {
             slots = request.getTimes();  // 사용자가 입력한 시간들 직접 사용
@@ -531,6 +564,9 @@ public class MedicationScheduleService extends AbstractScheduleService {
         entity.updateSchedule(entity.getTitle(), startDt, endDt);
         entity.updateFrequency(freq);
         entity.updateRecurrence(freqInfo.getRecurrenceType(), freqInfo.getInterval(), endDt);
+        
+        // 시간 업데이트 (중요: times 필드 업데이트)
+        entity.updateTimes(slots);
 
         // 서브타입 변경
         if (request.getSubType() != null) {
