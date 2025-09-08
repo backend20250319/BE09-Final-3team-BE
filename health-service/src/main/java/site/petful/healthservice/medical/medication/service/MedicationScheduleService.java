@@ -73,24 +73,36 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 "시작날짜는 당일보다 이전일 수 없습니다.");
         }
 
-        // 종료날짜 검증 (시작일 + 기간 - 1일)
-        LocalDate endDate = request.getStartDate().plusDays(request.getDurationDays() - 1);
-        if (endDate.isBefore(LocalDate.now())) {
+        // 종료날짜 검증
+        if (request.getEndDate().isBefore(LocalDate.now())) {
             throw new BusinessException(ErrorCode.MEDICAL_END_DATE_PAST_ERROR, 
                 "종료날짜는 당일보다 이전일 수 없습니다.");
         }
+        
+        // 시작일과 종료일 순서 검증 (시작일은 종료일보다 이전이거나 같아야 함)
+        if (request.getStartDate().isAfter(request.getEndDate())) {
+            throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
+                "시작일은 종료일보다 이전이거나 같아야 합니다.");
+        }
 
-        // 공통 DTO로 변환하여 상속된 공통 로직 활용
+        // 디버깅 로그 추가
+        log.info("=== 투약 일정 생성 디버깅 ===");
+        log.info("요청된 medicationFrequency: {}", request.getMedicationFrequency());
+        log.info("RecurrenceType: {}", request.getMedicationFrequency().getRecurrenceType());
+        log.info("Interval: {}", request.getMedicationFrequency().getInterval());
+        log.info("Label: {}", request.getMedicationFrequency().getLabel());
+
+    
         ScheduleRequestDTO commonRequest = ScheduleRequestDTO.builder()
                 .petNo(request.getPetNo())
-                .title(request.getName())  // 약 이름을 title로 사용
+                .title(request.getName())
                 .startDate(request.getStartDate())
-                .endDate(request.getStartDate().plusDays(request.getDurationDays() - 1))
+                .endDate(request.getEndDate())
                 .subType(request.getSubType() != null ? request.getSubType() : ScheduleSubType.PILL)  // 요청에서 subType 사용, 없으면 기본값 PILL
                 .times(request.getTimes())
-                .frequency(RecurrenceType.DAILY)
-                .recurrenceInterval(1)
-                .recurrenceEndDate(request.getStartDate().plusDays(request.getDurationDays() - 1))
+                .frequency(request.getMedicationFrequency().getRecurrenceType()) 
+                .recurrenceInterval(request.getMedicationFrequency().getInterval()) 
+                .recurrenceEndDate(request.getEndDate())
                 .reminderDaysBefore(request.getReminderDaysBefore())
                 .frequencyText(request.getMedicationFrequency().getLabel())
                 .build();
@@ -277,21 +289,31 @@ public class MedicationScheduleService extends AbstractScheduleService {
                     Integer durationDays = detail != null ? detail.getDurationDays() : null;
                     Boolean isPrescriptionMedication = detail != null ? detail.getIsPrescription() : false;
 
+                    // 디버깅 로그 추가
+                    log.info("=== 투약 일정 조회 디버깅 ===");
+                    log.info("scheduleNo: {}", c.getScheduleNo());
+                    log.info("저장된 frequency: {}", c.getFrequency());
+                    log.info("저장된 recurrenceType: {}", c.getRecurrenceType());
+                    log.info("저장된 recurrenceInterval: {}", c.getRecurrenceInterval());
+
                     MedicationFrequencyService.FrequencyInfo freqInfo = frequencyService.parseFrequency(c.getFrequency());
                     List<LocalTime> slots = c.getTimesAsList() != null && !c.getTimesAsList().isEmpty() 
                         ? c.getTimesAsList() 
                         : defaultSlots(freqInfo.getTimesPerDay());
                     
+                    String normalizedFrequency = frequencyService.normalizeFrequency(c.getFrequency());
+                    log.info("정규화된 frequency: {}", normalizedFrequency);
+                    
                     return MedicationResponseDTO.builder()
                             .scheduleNo(c.getScheduleNo())
                             .title(c.getTitle())
-                            .startDate(c.getStartDate())
-                            .endDate(c.getEndDate())
+                            .startDate(c.getStartDate().toLocalDate())
+                            .endDate(c.getEndDate() != null ? c.getEndDate().toLocalDate() : null)
                             .mainType(c.getMainType().name())
                             .subType(c.getSubType().getLabel())
                             .medicationName(medName)
                             .dosage(dosage)
-                            .frequency(frequencyService.normalizeFrequency(c.getFrequency()))
+                            .frequency(normalizedFrequency)
                             .durationDays(durationDays)
                             .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
                             .times(slots)
@@ -344,8 +366,8 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .title(c.getTitle())
                 .mainType(c.getMainType().name())
                 .subType(c.getSubType().name())
-                .startDate(c.getStartDate())
-                .endDate(c.getEndDate())
+                .startDate(c.getStartDate().toLocalDate())
+                .endDate(c.getEndDate() != null ? c.getEndDate().toLocalDate() : null)
                 .time(c.getStartDate() != null ? c.getStartDate().toLocalTime() : null)
                 .times(slots)
                 .frequency(c.getFrequency())
@@ -364,6 +386,10 @@ public class MedicationScheduleService extends AbstractScheduleService {
      */
     
     public MedicationUpdateDiffDTO updateMedication(Long calNo, MedicationUpdateRequestDTO request, Long userNo) {
+        return updateMedication(calNo, request, userNo, true);
+    }
+    
+    public MedicationUpdateDiffDTO updateMedication(Long calNo, MedicationUpdateRequestDTO request, Long userNo, boolean isEditMode) {
         // 조회 및 소유자 검증
         Schedule entity = findScheduleById(calNo);
         
@@ -381,23 +407,39 @@ public class MedicationScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_ALREADY_DELETED, "삭제된 일정입니다.");
         }
 
-        // 시작날짜 검증 (수정 시 시작날짜가 변경되는 경우)
-        if (request.getStartDate() != null && request.getStartDate().isBefore(LocalDate.now())) {
-            throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
-                "시작날짜는 당일보다 이전일 수 없습니다.");
+        // 투약 일정 수정 시 조건부 시작날짜 수정 허용
+        if (request.getStartDate() != null) {
+            LocalDate today = LocalDate.now();
+            LocalDate originalStartDate = entity.getStartDate().toLocalDate();
+            
+            if (originalStartDate.isBefore(today)) {
+                // 과거에 시작된 일정은 시작날짜 수정 불가
+                if (!request.getStartDate().equals(originalStartDate)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                        "과거에 시작된 투약 일정은 시작날짜를 변경할 수 없습니다.");
+                }
+            } else {
+                // 미래에 시작될 일정은 시작날짜 수정 가능 (단, 오늘 이전으로는 불가)
+                if (request.getStartDate().isBefore(today)) {
+                    throw new BusinessException(ErrorCode.MEDICAL_START_DATE_PAST_ERROR, 
+                        "시작날짜는 당일보다 이전일 수 없습니다.");
+                }
+            }
         }
 
-        // 종료날짜 검증 (수정 시 시작날짜나 기간이 변경되는 경우)
-        if (request.getStartDate() != null || request.getDurationDays() != null) {
+        // 종료날짜 검증 (수정 시 시작날짜나 종료날짜가 변경되는 경우)
+        if (request.getStartDate() != null || request.getEndDate() != null) {
             LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
-            Integer durationDays = request.getDurationDays() != null ? request.getDurationDays() : 
-                (entity.getStartDate() != null && entity.getEndDate() != null ? 
-                    (int) java.time.temporal.ChronoUnit.DAYS.between(entity.getStartDate().toLocalDate(), entity.getEndDate().toLocalDate()) + 1 : 1);
+            LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : entity.getEndDate().toLocalDate();
             
-            LocalDate endDate = startDate.plusDays(durationDays - 1);
             if (endDate.isBefore(LocalDate.now())) {
                 throw new BusinessException(ErrorCode.MEDICAL_END_DATE_PAST_ERROR, 
                     "종료날짜는 당일보다 이전일 수 없습니다.");
+            }
+            
+            if (startDate.isAfter(endDate)) {
+                throw new BusinessException(ErrorCode.MEDICAL_DATE_RANGE_ERROR, 
+                    "시작일은 종료일보다 이전이거나 같아야 합니다.");
             }
         }
 
@@ -429,7 +471,6 @@ public class MedicationScheduleService extends AbstractScheduleService {
                 .medicationName(detail != null ? detail.getMedicationName() : null)
                 .dosage(detail != null ? detail.getDosage() : null)
                 .frequency(entity.getFrequency())
-                .durationDays(detail != null ? detail.getDurationDays() : null)
                 .subType(entity.getSubType().name())
                 .reminderDaysBefore(reminder)
                 .build();
@@ -441,14 +482,36 @@ public class MedicationScheduleService extends AbstractScheduleService {
             String medName = request.getMedicationName() != null ? request.getMedicationName() : 
                 (entity.getTitle() != null ? entity.getTitle().split(" ")[0] : "");
             String dosage = request.getDosage() != null ? request.getDosage() : "";
-            entity.updateSchedule(medName + " " + dosage, entity.getStartDate(), entity.getEndDate(), entity.getAlarmTime());
+            entity.updateSchedule(medName + " " + dosage, entity.getStartDate(), entity.getEndDate());
         }
 
         // 기본값 설정
         LocalDate base = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
-        Integer duration = request.getDurationDays() != null ? request.getDurationDays() : 
-            (entity.getStartDate() != null && entity.getEndDate() != null ? 
-                (int) java.time.temporal.ChronoUnit.DAYS.between(entity.getStartDate().toLocalDate(), entity.getEndDate().toLocalDate()) + 1 : 1);
+        LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : entity.getEndDate().toLocalDate();
+        
+        // 처방전 OCR 투약 일정의 경우: 복용기간이나 시작날짜 변경 시 종료날짜 자동 계산
+        Optional<ScheduleMedDetail> detailOpt = medicationDetailRepository.findById(entity.getScheduleNo());
+        if (detailOpt.isPresent()) {
+            ScheduleMedDetail detail = detailOpt.get();
+            
+            // durationDays 업데이트
+            if (request.getDurationDays() != null) {
+                detail.setDurationDays(request.getDurationDays());
+                medicationDetailRepository.save(detail);
+            }
+            
+            // 복용기간이나 시작날짜가 변경된 경우 종료날짜 자동 계산
+            if (request.getDurationDays() != null || request.getStartDate() != null) {
+                LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : entity.getStartDate().toLocalDate();
+                Integer durationDays = request.getDurationDays() != null ? request.getDurationDays() : detail.getDurationDays();
+                endDate = startDate.plusDays(durationDays - 1);
+                
+                log.info("=== 처방전 OCR 투약 일정 종료날짜 자동 계산 ===");
+                log.info("시작날짜: {}", startDate);
+                log.info("복용기간: {}일", durationDays);
+                log.info("계산된 종료날짜: {}", endDate);
+            }
+        }
         // administration 필드는 더 이상 사용하지 않음
         String freq = request.getFrequency() != null ? request.getFrequency() : entity.getFrequency();
 
@@ -462,10 +525,10 @@ public class MedicationScheduleService extends AbstractScheduleService {
         }
 
         LocalDateTime startDt = LocalDateTime.of(base, slots.get(0));
-        LocalDate endDay = base.plusDays(Math.max(0, duration - 1));
-        LocalDateTime endDt = LocalDateTime.of(endDay, slots.get(slots.size() - 1));
+        LocalDateTime endDt = LocalDateTime.of(endDate, slots.get(slots.size() - 1));
 
-        entity.updateSchedule(entity.getTitle(), startDt, endDt, startDt);
+        // 복용기간이 변경된 경우 종료날짜 재계산하여 업데이트
+        entity.updateSchedule(entity.getTitle(), startDt, endDt);
         entity.updateFrequency(freq);
         entity.updateRecurrence(freqInfo.getRecurrenceType(), freqInfo.getInterval(), endDt);
 
@@ -474,9 +537,20 @@ public class MedicationScheduleService extends AbstractScheduleService {
             entity.updateSubType(request.getSubType());
         }
 
-        // 알림 변경
+        // 알림 변경 (처방전인 경우 알림 시기 변경 제한)
         if (request.getReminderDaysBefore() != null) {
-            entity.updateReminders(request.getReminderDaysBefore());
+            Boolean isPrescription = detailOpt.map(ScheduleMedDetail::getIsPrescription).orElse(false);
+            
+            if (Boolean.TRUE.equals(isPrescription)) {
+                // 처방전인 경우: 알림 시기 변경 불가 (당일 알림으로 고정)
+                log.warn("처방전으로 등록된 약의 알림 시기 변경 시도 - scheduleNo={}, 요청된 시기: {}일전", 
+                    entity.getScheduleNo(), request.getReminderDaysBefore());
+                // 처방전은 당일 알림(0일전)으로 고정
+                entity.updateReminders(0);
+            } else {
+                // 일반 약인 경우: 알림 시기 변경 허용
+                entity.updateReminders(request.getReminderDaysBefore());
+            }
         }
 
         // 엔티티 저장
@@ -492,7 +566,7 @@ public class MedicationScheduleService extends AbstractScheduleService {
             ScheduleMedDetail detail = detailOpt.get();
             if (request.getMedicationName() != null) detail.setMedicationName(request.getMedicationName());
             if (request.getDosage() != null) detail.setDosage(request.getDosage());
-            if (request.getDurationDays() != null) detail.setDurationDays(request.getDurationDays());
+            // durationDays는 처방전 OCR 투약 일정에서만 사용 (위에서 이미 처리됨)
             medicationDetailRepository.save(detail);
         }
     }
@@ -514,26 +588,30 @@ public class MedicationScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "삭제된 일정입니다.");
         }
 
-        // 처방전인 경우 알림 시기 변경 제한
+        // 처방전인 경우 알림 시기 변경은 제한하지만 on/off는 허용
         Optional<ScheduleMedDetail> detailOpt = medicationDetailRepository.findById(calNo);
         Boolean isPrescription = detailOpt.map(ScheduleMedDetail::getIsPrescription).orElse(false);
-        if (Boolean.TRUE.equals(isPrescription)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "처방전으로 등록된 약은 알림 시기를 변경할 수 없습니다.");
-        }
 
         // 현재 알림 상태 확인
         boolean currentAlarmEnabled = entity.getReminderDaysBefore() != null;
         boolean newAlarmState = !currentAlarmEnabled;
         
         if (newAlarmState) {
-            // 알림 활성화: 마지막 알림 시기가 있으면 복원, 없으면 기본값(1일전) 설정
-            Integer lastReminderDays = entity.getLastReminderDaysBefore();
-            if (lastReminderDays != null) {
-                entity.updateReminders(lastReminderDays);
-                log.info("알림 활성화: 마지막 설정값({}일전) 복원 - scheduleNo={}", lastReminderDays, calNo);
+            // 알림 활성화
+            if (Boolean.TRUE.equals(isPrescription)) {
+                // 처방전인 경우: 당일 알림으로 고정 (0일전)
+                entity.updateReminders(0);
+                log.info("처방전 알림 활성화: 당일 알림으로 설정 - scheduleNo={}", calNo);
             } else {
-                entity.updateReminders(1); // 기본값: 1일 전 알림
-                log.info("알림 활성화: 기본값(1일전)으로 설정 - scheduleNo={}", calNo);
+                // 일반 약인 경우: 마지막 알림 시기가 있으면 복원, 없으면 기본값(1일전) 설정
+                Integer lastReminderDays = entity.getLastReminderDaysBefore();
+                if (lastReminderDays != null) {
+                    entity.updateReminders(lastReminderDays);
+                    log.info("알림 활성화: 마지막 설정값({}일전) 복원 - scheduleNo={}", lastReminderDays, calNo);
+                } else {
+                    entity.updateReminders(1); // 기본값: 1일 전 알림
+                    log.info("알림 활성화: 기본값(1일전)으로 설정 - scheduleNo={}", calNo);
+                }
             }
         } else {
             // 알림 비활성화: reminderDaysBefore를 null로 설정 (lastReminderDaysBefore는 유지)

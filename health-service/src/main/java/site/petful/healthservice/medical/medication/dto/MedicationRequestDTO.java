@@ -31,10 +31,8 @@ public class MedicationRequestDTO {
     @NotNull(message = "시작일은 필수입니다.")
     private LocalDate startDate;
     
-    @NotNull(message = "복용 기간(일)은 필수입니다.")
-    @Min(value = 1, message = "복용 기간은 1일 이상이어야 합니다.")
-    @Max(value = 365, message = "복용 기간은 365일 이하여야 합니다.")
-    private Integer durationDays;
+    @NotNull(message = "종료일은 필수입니다.")
+    private LocalDate endDate;
     
     @NotNull(message = "복용 빈도는 필수입니다.")
     private MedicationFrequency medicationFrequency;
