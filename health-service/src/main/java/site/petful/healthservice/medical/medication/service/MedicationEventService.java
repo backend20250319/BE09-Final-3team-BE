@@ -40,7 +40,7 @@ public class MedicationEventService {
                 "SCHEDULE"));
             
             Map<String, Object> attributes = new HashMap<>();
-            attributes.put("scheduleId", schedule.getScheduleNo());
+            attributes.put("scheduleNo", schedule.getScheduleNo());
             attributes.put("title", schedule.getTitle());
             attributes.put("mainType", schedule.getMainType().name());
             attributes.put("subType", schedule.getSubType().name());
@@ -51,19 +51,11 @@ public class MedicationEventService {
             Integer durationDays = null;
             List<String> timesList = null;
             
-            // MEDICATION 타입인 경우 ScheduleMedDetail에서 durationDays 가져오기
+                // MEDICATION 타입인 경우에만 ScheduleMedDetail에서 durationDays 가져오기
             if (schedule.getMainType() == ScheduleMainType.MEDICATION) {
                 var detailOpt = medicationDetailRepository.findById(schedule.getScheduleNo());
                 if (detailOpt.isPresent()) {
                     durationDays = detailOpt.get().getDurationDays();
-                }
-            } else {
-                // CARE/VACCINATION 타입인 경우 시작일과 종료일의 차이로 계산
-                if (schedule.getStartDate() != null && schedule.getEndDate() != null) {
-                    durationDays = (int) java.time.temporal.ChronoUnit.DAYS.between(
-                        schedule.getStartDate().toLocalDate(), 
-                        schedule.getEndDate().toLocalDate()
-                    ) + 1; // 시작일 포함
                 }
             }
             

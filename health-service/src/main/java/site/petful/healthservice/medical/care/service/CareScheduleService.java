@@ -468,7 +468,7 @@ public class CareScheduleService extends AbstractScheduleService {
                 .map(Enum::name)
                 .toList();
         List<String> frequencies = Arrays.stream(CareFrequency.values())
-                .map(Enum::name)
+                .map(CareFrequency::getLabel)  // enum name 대신 한글 label 반환
                 .toList();
         Map<String, List<String>> data = new HashMap<>();
         data.put("subTypes", subTypes);
@@ -645,32 +645,15 @@ public class CareScheduleService extends AbstractScheduleService {
                 "SCHEDULE"));
             
             Map<String, Object> attributes = new HashMap<>();
-            attributes.put("scheduleId", schedule.getScheduleNo());
+            attributes.put("scheduleNo", schedule.getScheduleNo());
             attributes.put("title", schedule.getTitle());
             attributes.put("mainType", schedule.getMainType().name());
             attributes.put("subType", schedule.getSubType().name());
             attributes.put("startDate", schedule.getStartDate());
             attributes.put("reminderDaysBefore", schedule.getReminderDaysBefore());
             
-            // durationDays와 times 데이터 추가
-            Integer durationDays = null;
+            // times 데이터 추가 (돌봄/접종은 durationDays 개념 없음)
             List<String> timesList = null;
-            
-            // MEDICATION 타입인 경우 ScheduleMedDetail에서 durationDays 가져오기
-            if (schedule.getMainType() == ScheduleMainType.MEDICATION) {
-                var detailOpt = medicationDetailRepository.findById(schedule.getScheduleNo());
-                if (detailOpt.isPresent()) {
-                    durationDays = detailOpt.get().getDurationDays();
-                }
-            } else {
-                // CARE/VACCINATION 타입인 경우 시작일과 종료일의 차이로 계산
-                if (schedule.getStartDate() != null && schedule.getEndDate() != null) {
-                    durationDays = (int) java.time.temporal.ChronoUnit.DAYS.between(
-                        schedule.getStartDate().toLocalDate(), 
-                        schedule.getEndDate().toLocalDate()
-                    ) + 1; // 시작일 포함
-                }
-            }
             
             // times를 List<String> 형태로 변환
             if (schedule.getTimes() != null && !schedule.getTimes().isEmpty()) {
@@ -679,7 +662,6 @@ public class CareScheduleService extends AbstractScheduleService {
                     .toList();
             }
             
-            attributes.put("durationDays", durationDays);
             attributes.put("times", timesList);
             event.setAttributes(attributes);
             event.setSchemaVersion(1);
@@ -687,8 +669,8 @@ public class CareScheduleService extends AbstractScheduleService {
             // notif.events로 메시지 발행
             rabbitTemplate.convertAndSend("notif.events", "health.schedule", event);
             
-            log.info("스케줄 생성 이벤트 발행 완료: scheduleNo={}, title={}, durationDays={}, times={}", 
-                    schedule.getScheduleNo(), schedule.getTitle(), durationDays, timesList);
+            log.info("스케줄 생성 이벤트 발행 완료: scheduleNo={}, title={}, times={}", 
+                    schedule.getScheduleNo(), schedule.getTitle(), timesList);
         } catch (Exception e) {
             log.error("스케줄 생성 이벤트 발행 실패: scheduleNo={}, error={}", 
                     schedule.getScheduleNo(), e.getMessage(), e);
