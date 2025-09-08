@@ -61,7 +61,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 프리플라이트 허용
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/error").permitAll()                  // (선택) 기본 에러 핸들러 공개
-                        .requestMatchers("/internal/**").hasAnyRole("USER", "ADVERTISER","ADMIN") // 인증된 사용자만 접근
+                        .requestMatchers("/internal/**").permitAll() // 내부 서비스 간 통신 허용
                         .requestMatchers("/admin/**").permitAll()// 관리자 기능은 ADMIN 권한 필요
                         //.requestMatchers("/advertiser/**").hasAnyRole("ADVERTISER")
                         .requestMatchers("/advertiser-service/**").hasAnyRole("ADVERTISER") // 게이트웨이 경로 추가

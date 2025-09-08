@@ -15,9 +15,13 @@ import site.petful.advertiserservice.common.ApiResponseGenerator;
 import site.petful.advertiserservice.dto.advertisement.AdAdminResponse;
 import site.petful.advertiserservice.dto.advertisement.AdResponse;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserAdminResponse;
+import site.petful.advertiserservice.admin.dto.AdvertiserWithFilesResponse;
 import site.petful.advertiserservice.dto.advertiser.AdvertiserResponse;
 import site.petful.advertiserservice.entity.advertiser.Advertiser;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 
+@Slf4j
 @RestController
 @RequestMapping("/admin")
 @RequiredArgsConstructor
@@ -36,12 +40,15 @@ public class AdvertiserAdminController {
     }
 
     @GetMapping("/advertiser/all")
-    public ApiResponse<Page<AdvertiserAdminResponse>> getAll(
+    public ApiResponse<Page<AdvertiserWithFilesResponse>> getAll(
             @AuthenticationPrincipal Long userNo,
             @PageableDefault(size = 4, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ){
-        return ApiResponseGenerator.success(advertiserAdminService.getAllAdvertiser(pageable));
+        log.info("🔍 [AdvertiserAdminController] 미승인 광고주 목록 조회 요청");
+        Page<AdvertiserWithFilesResponse> result = advertiserAdminService.getAllAdvertiser(pageable);
+        log.info("✅ [AdvertiserAdminController] 미승인 광고주 목록 조회 성공: 총 {}개", result.getTotalElements());
+        return ApiResponseGenerator.success(result);
     }
 
 

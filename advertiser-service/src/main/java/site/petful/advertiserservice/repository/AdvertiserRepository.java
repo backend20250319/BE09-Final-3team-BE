@@ -19,4 +19,6 @@ public interface AdvertiserRepository extends JpaRepository<Advertiser, Long> {
     Optional<Advertiser> findByUserId(String userId);
 
     Page<Advertiser> findByIsApprovedFalseAndReasonIsNotNull(Pageable pageable);
+    
+    Page<Advertiser> findByIsApprovedFalseAndReasonIsNull(Pageable pageable);
 }
