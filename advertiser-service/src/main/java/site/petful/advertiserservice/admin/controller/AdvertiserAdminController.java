@@ -8,6 +8,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.admin.service.AdvertiserAdminService;
 import site.petful.advertiserservice.common.ApiResponse;
@@ -28,7 +29,7 @@ import org.springframework.http.ResponseEntity;
 @PreAuthorize("hasAnyAuthority('ADMIN')")
 public class AdvertiserAdminController {
     private final AdvertiserAdminService advertiserAdminService;
-
+    @Transactional
     @PostMapping("/advertiser/{id}/restrict")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ApiResponse<Void> restrict(
@@ -52,6 +53,7 @@ public class AdvertiserAdminController {
     }
 
 
+    @Transactional
     @PatchMapping("/advertiser/{id}/reject")
     public ApiResponse<Void> reject(
             @AuthenticationPrincipal Long userNo,
@@ -61,6 +63,7 @@ public class AdvertiserAdminController {
         advertiserAdminService.rejectAdvertiser(id, reason);
         return ApiResponseGenerator.success();
     }
+    @Transactional
     @PatchMapping("/advertiser/{id}/approve")
     public ApiResponse<Void> approve(
             @AuthenticationPrincipal Long userNo,
@@ -80,6 +83,7 @@ public class AdvertiserAdminController {
         return ApiResponseGenerator.success(advertiserAdminService.getAllCampaign(pageable));
     }
 
+    @Transactional
     @PatchMapping("/ad/{adId}/delete")
     public ApiResponse<Void> deleteCampaign(
             @AuthenticationPrincipal Long userNo,
@@ -99,6 +103,7 @@ public class AdvertiserAdminController {
         return ApiResponseGenerator.success(advertiserAdminService.getPendingAds(pageable));
     }
 
+    @Transactional
     @PatchMapping("/ad/{adId}/approve")
     public ApiResponse<Void> approveCampaign(
             @AuthenticationPrincipal Long userNo,
@@ -108,6 +113,7 @@ public class AdvertiserAdminController {
         return ApiResponseGenerator.success();
     }
 
+    @Transactional
     @PatchMapping("/ad/{adId}/reject")
     public ApiResponse<Void> rejectCampaign(
             @AuthenticationPrincipal Long userNo,
