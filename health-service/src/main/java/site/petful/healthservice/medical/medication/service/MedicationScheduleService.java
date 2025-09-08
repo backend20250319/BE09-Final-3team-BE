@@ -537,9 +537,20 @@ public class MedicationScheduleService extends AbstractScheduleService {
             entity.updateSubType(request.getSubType());
         }
 
-        // 알림 변경
+        // 알림 변경 (처방전인 경우 알림 시기 변경 제한)
         if (request.getReminderDaysBefore() != null) {
-            entity.updateReminders(request.getReminderDaysBefore());
+            Boolean isPrescription = detailOpt.map(ScheduleMedDetail::getIsPrescription).orElse(false);
+            
+            if (Boolean.TRUE.equals(isPrescription)) {
+                // 처방전인 경우: 알림 시기 변경 불가 (당일 알림으로 고정)
+                log.warn("처방전으로 등록된 약의 알림 시기 변경 시도 - scheduleNo={}, 요청된 시기: {}일전", 
+                    entity.getScheduleNo(), request.getReminderDaysBefore());
+                // 처방전은 당일 알림(0일전)으로 고정
+                entity.updateReminders(0);
+            } else {
+                // 일반 약인 경우: 알림 시기 변경 허용
+                entity.updateReminders(request.getReminderDaysBefore());
+            }
         }
 
         // 엔티티 저장
@@ -577,26 +588,30 @@ public class MedicationScheduleService extends AbstractScheduleService {
             throw new BusinessException(ErrorCode.SCHEDULE_TYPE_MISMATCH, "삭제된 일정입니다.");
         }
 
-        // 처방전인 경우 알림 시기 변경 제한
+        // 처방전인 경우 알림 시기 변경은 제한하지만 on/off는 허용
         Optional<ScheduleMedDetail> detailOpt = medicationDetailRepository.findById(calNo);
         Boolean isPrescription = detailOpt.map(ScheduleMedDetail::getIsPrescription).orElse(false);
-        if (Boolean.TRUE.equals(isPrescription)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "처방전으로 등록된 약은 알림 시기를 변경할 수 없습니다.");
-        }
 
         // 현재 알림 상태 확인
         boolean currentAlarmEnabled = entity.getReminderDaysBefore() != null;
         boolean newAlarmState = !currentAlarmEnabled;
         
         if (newAlarmState) {
-            // 알림 활성화: 마지막 알림 시기가 있으면 복원, 없으면 기본값(1일전) 설정
-            Integer lastReminderDays = entity.getLastReminderDaysBefore();
-            if (lastReminderDays != null) {
-                entity.updateReminders(lastReminderDays);
-                log.info("알림 활성화: 마지막 설정값({}일전) 복원 - scheduleNo={}", lastReminderDays, calNo);
+            // 알림 활성화
+            if (Boolean.TRUE.equals(isPrescription)) {
+                // 처방전인 경우: 당일 알림으로 고정 (0일전)
+                entity.updateReminders(0);
+                log.info("처방전 알림 활성화: 당일 알림으로 설정 - scheduleNo={}", calNo);
             } else {
-                entity.updateReminders(1); // 기본값: 1일 전 알림
-                log.info("알림 활성화: 기본값(1일전)으로 설정 - scheduleNo={}", calNo);
+                // 일반 약인 경우: 마지막 알림 시기가 있으면 복원, 없으면 기본값(1일전) 설정
+                Integer lastReminderDays = entity.getLastReminderDaysBefore();
+                if (lastReminderDays != null) {
+                    entity.updateReminders(lastReminderDays);
+                    log.info("알림 활성화: 마지막 설정값({}일전) 복원 - scheduleNo={}", lastReminderDays, calNo);
+                } else {
+                    entity.updateReminders(1); // 기본값: 1일 전 알림
+                    log.info("알림 활성화: 기본값(1일전)으로 설정 - scheduleNo={}", calNo);
+                }
             }
         } else {
             // 알림 비활성화: reminderDaysBefore를 null로 설정 (lastReminderDaysBefore는 유지)

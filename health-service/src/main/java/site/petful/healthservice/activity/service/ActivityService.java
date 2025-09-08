@@ -38,9 +38,7 @@ public class ActivityService {
     @Transactional
     public Long createActivity(Long userNo, ActivityRequest request) {
 
-        
 
-        
         // 같은 날짜에 이미 활동 데이터가 있는지 확인
         if (activityRepository.existsByPetNoAndActivityDate(request.getPetNo(), request.getActivityDate())) {
             throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "해당 날짜에 이미 활동 데이터가 존재합니다. 하루에 하나의 활동 기록만 가능합니다.");
