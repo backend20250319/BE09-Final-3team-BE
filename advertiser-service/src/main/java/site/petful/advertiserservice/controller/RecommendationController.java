@@ -1,9 +1,6 @@
 package site.petful.advertiserservice.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import site.petful.advertiserservice.service.RecommendationService;
 
@@ -17,8 +14,9 @@ public class RecommendationController {
     }
 
     // 펫스타 추천
-    @GetMapping("/petStars")
-    public Mono<String> getPetStars(@RequestHeader("Authorization") String authorizationHeader) {
-        return recommendationService.getPetStars(authorizationHeader);
+    @PostMapping("/petStars/{adNo}")
+    public Mono<String> getPetStars(@RequestHeader("Authorization") String authorizationHeader,
+                                    @PathVariable Long adNo) {
+        return recommendationService.getPetStars(authorizationHeader, adNo);
     }
 }
