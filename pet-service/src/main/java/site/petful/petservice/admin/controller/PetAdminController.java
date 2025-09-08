@@ -18,13 +18,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/pet")
-@PreAuthorize("hasRole('Admin')")
+@PreAuthorize("hasRole('ADMIN')")
 public class PetAdminController {
     private final PetAdminService petAdminService;
 
     // PetStar 목록 조회 (관리자용)
     @GetMapping("/applications")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<PetStarResponse>>> getPetStarApplications(
             @AuthenticationPrincipal Long userNo,
             @PageableDefault(size = 10, sort = "pendingAt", direction = Sort.Direction.DESC)
@@ -42,7 +42,7 @@ public class PetAdminController {
 
     // PetStar 승인 (관리자용)
     @PatchMapping("/{petNo}/approve")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> approvePetStar(
             @AuthenticationPrincipal Long userNo,
             @PathVariable Long petNo) {
@@ -53,7 +53,7 @@ public class PetAdminController {
 
     // PetStar 거절 (관리자용)
     @PatchMapping("/{petNo}/reject")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> rejectPetStar(
             @AuthenticationPrincipal Long userNo,
             @RequestBody String reason,
