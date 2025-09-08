@@ -125,4 +125,5 @@ public class HistoryController {
         historyService.deleteHistory(petNo, historyNo, userNo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
 }
