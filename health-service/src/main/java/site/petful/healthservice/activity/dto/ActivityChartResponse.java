@@ -14,7 +14,7 @@ import java.util.List;
 public class ActivityChartResponse {
     
     private List<ChartData> chartData;
-    private String periodType; // DAY, WEEK, MONTH, YEAR
+    private SummaryStats summaryStats;
     
     @Getter
     @Builder
@@ -38,5 +38,26 @@ public class ActivityChartResponse {
         
         // 수면 시간
         private Double sleepHours;
+    }
+    
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SummaryStats {
+        private Integer totalDays; // 총 활동 일수
+        private Double totalWalkingDistance; // 총 산책 거리 (km)
+        private Integer totalCaloriesBurned; // 총 소모 칼로리
+        private Integer totalCaloriesIntake; // 총 섭취 칼로리
+        private Double averageSleepHours; // 평균 수면 시간
+        private Integer totalPoopCount; // 총 대변 횟수
+        private Integer totalPeeCount; // 총 소변 횟수
+        
+        // 평균값들
+        private Double averageWalkingDistance; // 평균 산책 거리
+        private Double averageCaloriesBurned; // 평균 소모 칼로리
+        private Double averageCaloriesIntake; // 평균 섭취 칼로리
+        private Double averagePoopCount; // 평균 대변 횟수
+        private Double averagePeeCount; // 평균 소변 횟수
     }
 }

@@ -91,6 +91,17 @@ public class PortfolioService {
         return toPortfolioResponse(portfolio);
     }
 
+    public PortfolioResponse getPortfolioExternal(Long petNo) {
+
+        Portfolio portfolio = portfolioRepository.findByPetNo(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("포트폴리오를 찾을 수 없습니다: " + petNo));
+
+        Pet pet = petRepository.findById(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
+
+        return toPortfolioResponse(portfolio);
+    }
+
     // 사용자의 모든 포트폴리오 조회
     public List<PortfolioResponse> getPortfoliosByUser(Long userNo) {
         List<Portfolio> portfolios = portfolioRepository.findByUserNo(userNo);
@@ -174,6 +185,4 @@ public class PortfolioService {
                 .updatedAt(portfolio.getUpdatedAt())
                 .build();
     }
-
-
 }

@@ -121,13 +121,14 @@ public class PetAdminService {
 
     // PetStar 거절 (관리자용)
     @Transactional
-    public void rejectPetStar(Long petNo) {
+    public void rejectPetStar(Long petNo, String reason) {
         Pet pet = petRepository.findById(petNo)
                 .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
 
         if (pet.getPetStarStatus() != PetStarStatus.PENDING) {
             throw new IllegalArgumentException("승인 대기 중인 PetStar 신청이 아닙니다.");
         }
+        pet.setRejectReason(reason);
 
         pet.setPetStarStatus(PetStarStatus.REJECTED);
         petRepository.save(pet);

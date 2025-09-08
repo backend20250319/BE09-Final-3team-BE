@@ -20,8 +20,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import site.petful.userservice.security.CustomUserDetailsService;
-import site.petful.userservice.security.JwtAuthenticationFilter;
-import site.petful.userservice.security.HeaderBasedAuthenticationFilter;
+import site.petful.userservice.security.HeaderAuthenticationFilter;
 
 
 
@@ -31,8 +30,7 @@ import site.petful.userservice.security.HeaderBasedAuthenticationFilter;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final HeaderBasedAuthenticationFilter headerBasedAuthFilter;
+    private final HeaderAuthenticationFilter headerBasedAuthFilter;
 
     // 공개 엔드포인트 (인증 불필요)
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -40,9 +38,13 @@ public class SecurityConfig {
             "/auth/refresh",
             "/auth/validate-token",
             "/auth/signup",
+            "/auth/email/send",
+            "/auth/email/verify",
             "/auth/password/reset",
             "/auth/password/verify",
             "/auth/password/change",
+            "/auth/profile/simple",        // community-service에서 호출하는 엔드포인트
+            "/auth/profile/simple/batch",  // community-service에서 호출하는 배치 엔드포인트
             "/api/auth/login",
             "/api/auth/refresh",
             "/api/auth/validate-token",
@@ -83,8 +85,8 @@ public class SecurityConfig {
 
                 // 커스텀 인증 프로바이더 + JWT 필터 + 헤더 기반 인증 필터
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(headerBasedAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthFilter, HeaderBasedAuthenticationFilter.class);
+                .addFilterBefore(headerBasedAuthFilter, UsernamePasswordAuthenticationFilter.class);
+//                .addFilterBefore(jwtAuthFilter, HeaderBasedAuthenticationFilter.class);
 
         return http.build();
     }

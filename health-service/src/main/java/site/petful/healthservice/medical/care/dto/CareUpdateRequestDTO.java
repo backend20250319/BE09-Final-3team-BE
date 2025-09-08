@@ -16,7 +16,7 @@ import java.util.List;
 public class CareUpdateRequestDTO {
     private String title;                 // 일정 이름 (옵션)
     private ScheduleSubType subType;      // WALK/GROOMING/BIRTHDAY/ETC (옵션)
-    private CareFrequency frequency;      // 빈도 (옵션)
+    private CareFrequency careFrequency;  // 빈도 (옵션)
     private LocalDate startDate;          // 시작일 (옵션)
     private LocalDate endDate;            // 종료일 (옵션)
     private List<LocalTime> times;       // 일정 시간들 (옵션)

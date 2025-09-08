@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -15,7 +17,7 @@ import java.util.Map;
 public class EventMessage {
 
     private String eventId;
-    private String type;            // ex) notification.comment.created
+    private String type;
     private Instant occurredAt;
     private Actor actor;
     private Target target;
@@ -31,7 +33,7 @@ public class EventMessage {
         private String name;
     }
 
-    public enum ResourceType { POST, COMMENT, CAMPAIGN, USER, ETC }
+    public enum ResourceType { POST, COMMENT, CAMPAIGN, USER, ETC , SCHEDULE}
 
     @Getter
     @Setter

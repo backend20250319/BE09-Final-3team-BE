@@ -1,6 +1,15 @@
 package site.petful.petservice.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,12 +18,10 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "Pet")
 @Data
-@Builder        
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
@@ -34,8 +41,8 @@ public class Pet {
     @Column(name = "image_url", length = 255, nullable = true)
     private String imageUrl;
 
-    @Column(name = "sns_url", length = 500, nullable = true)
-    private String snsUrl;
+    @Column(name = "sns_id", nullable = true)
+    private Long snsId;
 
     @Column(name = "age", nullable = false)
     private Long age;
@@ -54,7 +61,10 @@ public class Pet {
 
     @Column(name = "sns_profile_no", nullable = true)
     private Long snsProfileNo;
-         
+
+    @Column(name = "sns_profile_username", nullable = true)
+    private String snsProfileUsername;
+
     @Column(name = "petstar_status")
     @Enumerated(EnumType.STRING)
     private PetStarStatus petStarStatus = PetStarStatus.NONE;
@@ -69,4 +79,7 @@ public class Pet {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "reject_reason")
+    private String rejectReason;
 }

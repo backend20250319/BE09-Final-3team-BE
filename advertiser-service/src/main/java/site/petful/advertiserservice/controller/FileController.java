@@ -2,6 +2,7 @@ package site.petful.advertiserservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import site.petful.advertiserservice.common.ApiResponse;
@@ -19,11 +20,9 @@ import java.util.List;
 @RequestMapping("/file")
 public class FileController {
 
-    private final SecurityUtil securityUtil;
     private final FileService fileService;
 
-    public FileController(SecurityUtil securityUtil, FileService fileService) {
-        this.securityUtil = securityUtil;
+    public FileController(FileService fileService) {
         this.fileService = fileService;
     }
 
@@ -43,13 +42,13 @@ public class FileController {
     }
 
     // 1-2. 광고주 파일 업로드
-    @PostMapping("/advertiser")
+    @PostMapping("/advertiser/{advertiserNo}")
     public ResponseEntity<ApiResponse<?>> uploadFile(
             @RequestPart(value = "file") MultipartFile file,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @PathVariable Long advertiserNo) {
 
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
             List<FileUploadResponse> response = fileService.uploadFile(file, image, advertiserNo);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
@@ -72,10 +71,9 @@ public class FileController {
 
     // 2-2. 광고주 파일 조회
     @GetMapping("/advertiser")
-    public ResponseEntity<ApiResponse<?>> getFileByAdvertiserNo() {
+    public ResponseEntity<ApiResponse<?>> getFileByAdvertiserNo(@AuthenticationPrincipal String advertiserNo) {
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
-            List<FileUploadResponse> response = fileService.getFileByAdvertiserNo(advertiserNo);
+            List<FileUploadResponse> response = fileService.getFileByAdvertiserNo(Long.valueOf(advertiserNo));
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -104,11 +102,11 @@ public class FileController {
     public ResponseEntity<ApiResponse<?>> updateFile(
             @RequestPart(value = "file", required = false) MultipartFile newFile,
             @RequestPart(value = "image", required = false) MultipartFile newImage,
-            @RequestPart(value = "fileMeta", required = false) FileMetaUpdateRequest request) {
+            @RequestPart(value = "fileMeta", required = false) FileMetaUpdateRequest request,
+            @AuthenticationPrincipal String advertiserNo) {
 
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
-            List<FileUploadResponse> response = fileService.updateFile(advertiserNo, newFile, newImage, request);
+            List<FileUploadResponse> response = fileService.updateFile(Long.valueOf(advertiserNo), newFile, newImage, request);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

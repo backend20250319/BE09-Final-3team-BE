@@ -204,6 +204,6 @@ public class InstagramCommentService {
         double neutralRatio = (double) neutralCount / totalCount * 100;
         double negativeRatio = (double) negativeCount / totalCount * 100;
 
-        return new CommentSentimentRatioResponseDto(positiveRatio, neutralRatio, negativeRatio);
+        return new CommentSentimentRatioResponseDto(positiveRatio, negativeRatio, neutralRatio);
     }
 }

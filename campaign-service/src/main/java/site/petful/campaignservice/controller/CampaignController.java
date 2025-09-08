@@ -2,7 +2,6 @@ package site.petful.campaignservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.campaignservice.common.ApiResponse;
 import site.petful.campaignservice.common.ApiResponseGenerator;
@@ -67,7 +66,7 @@ public class CampaignController {
         }
     }
 
-    // 3-1. 체험단 추가 내용 수정 - 체험단
+    // 3. 체험단 추가 내용/ adStatus 수정
     @PutMapping("/applicant/{applicantNo}")
     public ResponseEntity<ApiResponse<?>> updateApplicant(
             @PathVariable Long applicantNo,
@@ -80,15 +79,30 @@ public class CampaignController {
         }
     }
 
-    // 4. 체험단 신청 취소(삭제)
+    // 4. 체험단 신청 취소
     @DeleteMapping("/{applicantNo}")
-    public ResponseEntity<ApiResponse<?>> deleteApplicant(@PathVariable Long applicantNo){
+    public ResponseEntity<ApiResponse<?>> cancelApplicant(@PathVariable Long applicantNo){
         try {
-            campaignService.deleteApplicant(applicantNo);
+            campaignService.cancelApplicant(applicantNo);
             return ResponseEntity.ok(ApiResponseGenerator.success());
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
         }
     }
+
+    // 4-2. 체험단 소프트 삭제
+    @PutMapping("/delete/{applicantNo}")
+    public ResponseEntity<ApiResponse<?>> deleteApplicant(
+            @PathVariable Long applicantNo,
+            @RequestParam Boolean isDeleted) {
+        try {
+            ApplicantResponse response = campaignService.deleteApplicant(applicantNo, isDeleted);
+            return ResponseEntity.ok(ApiResponseGenerator.success(response));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+        }
+    }
+
 }

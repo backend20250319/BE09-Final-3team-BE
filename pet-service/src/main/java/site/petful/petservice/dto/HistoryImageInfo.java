@@ -17,3 +17,4 @@ public class HistoryImageInfo {
     private Long historyNo;       // 활동 이력 번호
 }
 
+

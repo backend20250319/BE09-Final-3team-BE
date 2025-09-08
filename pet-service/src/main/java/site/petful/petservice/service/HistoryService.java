@@ -95,9 +95,23 @@ public class HistoryService {
                 .collect(Collectors.toList());
     }
 
+    public List<HistoryResponse> getHistoriesExternal(Long petNo) {
+        // 펫 존재 여부 및 소유권 확인
+        Pet pet = petRepository.findById(petNo)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다: " + petNo));
+
+        List<History> histories = historyRepository.findByPetNo(petNo);
+        return histories.stream()
+                .map(this::toHistoryResponse)
+                .collect(Collectors.toList());
+    }
+
     // 활동이력 수정
     @Transactional
     public HistoryResponse updateHistory(Long petNo, Long historyNo, Long userNo, HistoryRequest request) {
+        log.debug("활동이력 수정 시작 - petNo: {}, historyNo: {}, userNo: {}, request: {}", 
+                 petNo, historyNo, userNo, request);
+        
         History history = historyRepository.findById(historyNo)
                 .orElseThrow(() -> new IllegalArgumentException("활동이력을 찾을 수 없습니다: " + historyNo));
 
@@ -113,13 +127,31 @@ public class HistoryService {
             throw new IllegalArgumentException("해당 활동이력을 수정할 권한이 없습니다.");
         }
 
+        // 수정 전 값 로깅
+        log.debug("수정 전 활동이력 - title: {}, content: {}, start: {}, end: {}", 
+                 history.getTitle(), history.getContent(), history.getHistoryStart(), history.getHistoryEnd());
+
         // 활동이력 정보 업데이트
-        history.setHistoryStart(request.getHistoryStart());
-        history.setHistoryEnd(request.getHistoryEnd());
-        history.setTitle(request.getTitle() != null ? request.getTitle() : "활동 이력");
-        history.setContent(request.getContent());
+        if (request.getHistoryStart() != null) {
+            history.setHistoryStart(request.getHistoryStart());
+        }
+        if (request.getHistoryEnd() != null) {
+            history.setHistoryEnd(request.getHistoryEnd());
+        }
+        if (request.getTitle() != null && !request.getTitle().trim().isEmpty()) {
+            history.setTitle(request.getTitle());
+        }
+        if (request.getContent() != null && !request.getContent().trim().isEmpty()) {
+            history.setContent(request.getContent());
+        }
+
+        // 수정 후 값 로깅
+        log.debug("수정 후 활동이력 - title: {}, content: {}, start: {}, end: {}", 
+                 history.getTitle(), history.getContent(), history.getHistoryStart(), history.getHistoryEnd());
 
         History updatedHistory = historyRepository.save(history);
+        log.debug("활동이력 수정 완료 - historyNo: {}", updatedHistory.getHistoryNo());
+        
         return toHistoryResponse(updatedHistory);
     }
 

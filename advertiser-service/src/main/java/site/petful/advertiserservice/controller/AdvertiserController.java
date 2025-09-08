@@ -2,6 +2,7 @@ package site.petful.advertiserservice.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.common.ApiResponse;
 import site.petful.advertiserservice.common.ApiResponseGenerator;
@@ -16,19 +17,16 @@ import site.petful.advertiserservice.service.AdvertiserService;
 public class AdvertiserController {
 
     private final AdvertiserService advertiserService;
-    private final SecurityUtil securityUtil;
 
-    public AdvertiserController(AdvertiserService advertiserService, SecurityUtil securityUtil) {
+    public AdvertiserController(AdvertiserService advertiserService) {
         this.advertiserService = advertiserService;
-        this.securityUtil = securityUtil;
     }
 
     // 1. 광고주 프로필 정보 조회
     @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<?>> getAdvertiser() {
+    public ResponseEntity<ApiResponse<?>> getAdvertiser(@AuthenticationPrincipal String advertiserNo) {
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
-            AdvertiserResponse response = advertiserService.getAdvertiser(advertiserNo);
+            AdvertiserResponse response = advertiserService.getAdvertiser(Long.valueOf(advertiserNo));
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -38,10 +36,9 @@ public class AdvertiserController {
 
     // 2. 광고주 프로필 정보 수정
     @PutMapping(value = "/profile")
-    public ResponseEntity<ApiResponse<?>> updateAdvertiser(@RequestBody AdvertiserRequest updateRequest) {
+    public ResponseEntity<ApiResponse<?>> updateAdvertiser(@AuthenticationPrincipal String advertiserNo, @RequestBody AdvertiserRequest updateRequest) {
         try {
-            Long advertiserNo = securityUtil.getCurrentAdvertiserNo();
-            AdvertiserResponse updatedResponse = advertiserService.updateAdvertiser(advertiserNo, updateRequest);
+            AdvertiserResponse updatedResponse = advertiserService.updateAdvertiser(Long.valueOf(advertiserNo), updateRequest);
             return ResponseEntity.ok(ApiResponseGenerator.success(updatedResponse));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

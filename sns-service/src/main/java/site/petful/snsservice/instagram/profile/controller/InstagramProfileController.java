@@ -42,6 +42,13 @@ public class InstagramProfileController {
         return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
     }
 
+    @GetMapping("/advertiser/{userNo}")
+    public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> getProfileExternal(@NotNull @PathVariable Long userNo) {
+        List<InstagramProfileDto> profilesResponseDto = instagramProfileService.getProfiles(userNo);
+
+        return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
+    }
+
     @GetMapping("/{instagramId}")
     public ResponseEntity<ApiResponse<InstagramProfileDto>> getProfile(
         @NotNull @PathVariable Long instagramId) {
@@ -51,7 +58,6 @@ public class InstagramProfileController {
 
         return ResponseEntity.ok(ApiResponseGenerator.success(profileResponseDto));
     }
-
 
     @PreAuthorize("hasAuthority('Admin')")
     @PostMapping("/sync")

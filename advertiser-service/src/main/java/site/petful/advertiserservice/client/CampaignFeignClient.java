@@ -3,23 +3,19 @@ package site.petful.advertiserservice.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import site.petful.advertiserservice.common.ApiResponse;
-import site.petful.advertiserservice.config.FeignConfig;
-import site.petful.advertiserservice.dto.campaign.ApplicantResponse;
-import site.petful.advertiserservice.dto.campaign.ApplicantsResponse;
-import site.petful.advertiserservice.dto.campaign.ReviewRequest;
-import site.petful.advertiserservice.dto.campaign.ReviewResponse;
-import site.petful.advertiserservice.entity.ApplicantStatus;
+import site.petful.advertiserservice.config.ServiceFeignConfig;
+import site.petful.advertiserservice.dto.campaign.*;
 
-@FeignClient(name = "campaign-service", path = "/internal", configuration= FeignConfig.class)
+@FeignClient(name = "campaign-service", path = "/internal", configuration = ServiceFeignConfig.class)
 public interface CampaignFeignClient {
 
     // 1. 광고별 체험단 전체 조회 - 광고주
     @GetMapping("/{adNo}")
     ApiResponse<ApplicantsResponse> getApplicants(@PathVariable("adNo") Long adNo);
 
-    // 2. 체험단 applicantStatus 수정 - 광고주
-    @PutMapping("/advertiser/{applicantNo}")
-    ApiResponse<ApplicantResponse> updateApplicantByAdvertiser(@PathVariable Long applicantNo, @RequestParam ApplicantStatus status);
+    // 2. 체험단 applicantStatus 수정
+    @PutMapping("/applicant/{applicantNo}")
+    ApiResponse<ApplicantResponse> updateApplicant(@PathVariable Long applicantNo, @RequestBody ApplicantRequest request);
 
     /* 리뷰 API */
     // 3. 리뷰 생성

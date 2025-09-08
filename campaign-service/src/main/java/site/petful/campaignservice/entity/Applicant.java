@@ -30,6 +30,9 @@ public class Applicant {
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
+    private Boolean isSaved;
+
+    @Column(nullable = false)
     private Long adNo;
 
     @Column(nullable = false)
@@ -37,4 +40,7 @@ public class Applicant {
 
     @OneToOne(mappedBy = "applicant", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Review review;
+
+    @Column(nullable = false)
+    private Boolean isDeleted;
 }

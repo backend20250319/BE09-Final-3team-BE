@@ -278,7 +278,7 @@ public class UserServiceImpl implements UserService {
                 .id(user.getUserNo())
                 .nickname(user.getNickname())
                 .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
-                .emil(user.getEmail())
+                .email(user.getEmail())
                 .phone(user.getPhone())
                 .build();
     }
@@ -574,6 +574,47 @@ public class UserServiceImpl implements UserService {
             log.info("신고가 접수되었습니다. 신고자: {}, 대상: {}, 사유: {}", 
                     reporterName, request.getTargetName(), request.getReason());
             
+        } catch (Exception e) {
+            log.error("신고 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw new RuntimeException("신고 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void reportUserByAdvertiser(Long advertiserNo, ReportRequest request) {
+        try {
+            log.info("신고 요청 시작 - 신고 대상: {}, 사유: {}",
+                    request.getTargetName(), request.getReason());
+
+            // 신고 대상 사용자 조회 (targetName으로 검색)
+            User targetUser = userRepository.findByNickname(request.getTargetName())
+                    .orElse(userRepository.findByName(request.getTargetName())
+                            .orElse(null));
+
+            if (targetUser == null) {
+                log.error("신고 대상을 찾을 수 없습니다: {}", request.getTargetName());
+                throw new RuntimeException("신고 대상을 찾을 수 없습니다: " + request.getTargetName());
+            }
+
+            log.info("신고 대상 조회 성공: {}", targetUser.getEmail());
+
+            // ReportLog 생성
+            ReportLog reportLog = new ReportLog();
+            reportLog.setReason(request.getReason());
+            reportLog.setReporter(new ActorRef(ActorType.ADVERTISER, advertiserNo));
+            reportLog.setTarget(new ActorRef(ActorType.USER, targetUser.getUserNo()));
+            reportLog.setReportStatus(ReportStatus.BEFORE);
+            reportLog.setCreatedAt(LocalDateTime.now());
+
+            log.info("ReportLog 객체 생성 완료");
+
+            // 저장
+            reportLogRepository.save(reportLog);
+
+            log.info("신고가 접수되었습니다. 신고 대상: {}, 사유: {}",
+                    request.getTargetName(), request.getReason());
+
         } catch (Exception e) {
             log.error("신고 처리 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("신고 처리 중 오류가 발생했습니다: " + e.getMessage(), e);

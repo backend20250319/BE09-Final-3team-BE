@@ -25,6 +25,7 @@ public class MedicationDetailDTO {
     private String frequency;       // 라벨 저장값
     private Boolean alarmEnabled;
     private Integer reminderDaysBefore;
+    private Integer lastReminderDaysBefore;  // 마지막으로 설정했던 알림 시기
 
     // 상세(Detail)
     private String medicationName;

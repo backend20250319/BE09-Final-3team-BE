@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import site.petful.campaignservice.entity.Review;
+import site.petful.campaignservice.entity.ReviewStatus;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +14,7 @@ public class ReviewResponse {
 
     private Long applicantNo;
     private String reviewUrl;
-    private Boolean isApproved;
+    private ReviewStatus isApproved;
     private String reason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
