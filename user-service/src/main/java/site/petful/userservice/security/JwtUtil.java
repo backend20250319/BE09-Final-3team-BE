@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 @Component
+@Slf4j
 public class JwtUtil {
 
     private static final String CLAIM_TYP = "typ";
@@ -70,6 +72,8 @@ public class JwtUtil {
 
     /** User 객체로부터 Access 토큰 생성 (래퍼) */
     public String generateAccessToken(User user) {
+        log.info("[JWT] Access 토큰 생성 - userNo: {}, userType: {}", 
+                user.getUserNo(), user.getUserType().name());
         return generateAccessToken(
                 user.getEmail(),
                 user.getUserNo(),

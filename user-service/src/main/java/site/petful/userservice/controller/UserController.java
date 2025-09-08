@@ -18,6 +18,10 @@ import site.petful.userservice.dto.*;
 import site.petful.userservice.dto.PasswordChangeRequest;
 import site.petful.userservice.dto.PasswordResetRequest;
 import site.petful.userservice.dto.PasswordResetResponse;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
 import site.petful.userservice.dto.VerificationConfirmRequest;
 import site.petful.userservice.dto.VerificationConfirmResponse;
 import site.petful.userservice.dto.FileUploadResponse;
@@ -64,6 +68,8 @@ public class UserController {
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+        log.info("[LOGIN] 로그인 시도 - email: {}", request.getEmail());
+        
         // 인증
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -73,11 +79,14 @@ public class UserController {
         // 유저 조회 후 Access/Refresh 발급
         site.petful.userservice.entity.User user = userService.findByEmail(username);
 
-        log.debug("로그인 사용자 정보 email={}, name={}, nickname={}, userNo={}",
-                user.getEmail(), user.getName(), user.getNickname(), user.getUserNo());
+        log.info("[LOGIN] 로그인 성공 - email={}, name={}, nickname={}, userNo={}, userType={}",
+                user.getEmail(), user.getName(), user.getNickname(), user.getUserNo(), user.getUserType());
 
         String access = authService.issueAccess(user);     // userNo/userType 포함
         String refresh = authService.issueRefresh(username);
+        
+        log.info("[LOGIN] 토큰 발급 완료 - accessToken 길이: {}, refreshToken 길이: {}", 
+                access.length(), refresh.length());
 
         long now = System.currentTimeMillis();
         long accessExpiresAt = now + Duration.ofMinutes(authService.accessTtlMinutes()).toMillis();
@@ -481,6 +490,28 @@ public class UserController {
                     new ApiResponse<>(ErrorCode.INVALID_REQUEST, e.getMessage(), null)
             );
         }
+    }
+
+    // 헤더 디버깅용 엔드포인트
+    @GetMapping("/debug/headers")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> debugHeaders(HttpServletRequest request) {
+        Map<String, String> headers = new HashMap<>();
+        
+        // 모든 헤더 수집
+        request.getHeaderNames().asIterator().forEachRemaining(headerName -> 
+            headers.put(headerName, request.getHeader(headerName)));
+        
+        // 특별히 중요한 헤더들 강조
+        Map<String, String> importantHeaders = new HashMap<>();
+        importantHeaders.put("X-User-No", request.getHeader("X-User-No"));
+        importantHeaders.put("X-User-Type", request.getHeader("X-User-Type"));
+        importantHeaders.put("Authorization", request.getHeader("Authorization"));
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("allHeaders", headers);
+        response.put("importantHeaders", importantHeaders);
+        
+        return ResponseEntity.ok(ApiResponseGenerator.success(response));
     }
 
 }
