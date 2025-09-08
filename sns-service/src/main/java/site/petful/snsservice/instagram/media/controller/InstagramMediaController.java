@@ -26,7 +26,7 @@ public class InstagramMediaController {
     private final InstagramMediaService instagramMediaService;
     private final InstagramTokenService instagramTokenService;
 
-    @PreAuthorize("hasAuthority('Admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<List<InstagramMediaDto>>> syncMedias(
         @RequestParam(name = "user_no") Long userNo,

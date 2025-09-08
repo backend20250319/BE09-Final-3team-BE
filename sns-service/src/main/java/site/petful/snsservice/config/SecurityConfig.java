@@ -45,12 +45,12 @@ public class SecurityConfig {
                         "/swagger-resources/**").permitAll()
 
                     .requestMatchers("/batch/instagram/**", "/clova/**")
-                    .hasAuthority("Admin")
+                    .hasAuthority("ADMIN")
 
                     .requestMatchers("/instagram/auth/**", "/instagram/profiles/**",
                         "/instagram/comments/**",
                         "/instagram/insights/**", "/instagram/media/**")
-                    .hasAnyAuthority("User", "Admin", "ADVERTISER")
+                    .hasAnyAuthority("USER", "ADMIN", "ADVERTISER")
                     .anyRequest().authenticated()
             )
             .addFilterBefore(headerAuthenticationFilter(),

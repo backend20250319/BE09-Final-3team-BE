@@ -27,7 +27,7 @@ public class InstagramInsightController {
     private final InstagramFollowerHistoryService instagramFollowerHistoryService;
     private final InstagramTokenService instagramTokenService;
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<Void>> syncInsights(
         @RequestParam("user_no") Long userNo,

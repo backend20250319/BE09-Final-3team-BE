@@ -43,7 +43,8 @@ public class InstagramProfileController {
     }
 
     @GetMapping("/advertiser/{userNo}")
-    public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> getProfileExternal(@NotNull @PathVariable Long userNo) {
+    public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> getProfileExternal(
+        @NotNull @PathVariable Long userNo) {
         List<InstagramProfileDto> profilesResponseDto = instagramProfileService.getProfiles(userNo);
 
         return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
@@ -59,7 +60,7 @@ public class InstagramProfileController {
         return ResponseEntity.ok(ApiResponseGenerator.success(profileResponseDto));
     }
 
-    @PreAuthorize("hasAuthority('Admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<List<InstagramProfileDto>>> syncProfiles(
         @RequestParam(name = "user_no") Long userNo) {
@@ -75,7 +76,7 @@ public class InstagramProfileController {
     }
 
 
-    @PreAuthorize("hasAuthority('User')")
+    @PreAuthorize("hasAuthority('USER')")
     @PutMapping("/auto-delete")
     public ResponseEntity<ApiResponse<Void>> autoDeleteComments(
         @AuthenticationPrincipal String userNo,
