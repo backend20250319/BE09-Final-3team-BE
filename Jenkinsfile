@@ -112,19 +112,19 @@ pipeline {
         success {
             echo 'Pipeline succeeded!'
             echo 'Successfully built and deployed all backend services'
-            sh '''
-                  curl -H "Content-Type: application/json" \
-                    -d '{"content":"✅ Jenkins Backend Job 성공: ${JOB_NAME} #${BUILD_NUMBER}"}' \
-                    https://discord.com/api/webhooks/1414418036793938040/0MKgCC_IZICWO4mBWRINcHamWZfijFXGuxuhhGqsclBnouE8SvWPazg_aPmwYfU096sPhttps://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN
-                  '''
+            bat '''
+                curl -H "Content-Type: application/json" \
+                  -d '{"content":"✅ Jenkins Backend Job 성공: ${JOB_NAME} #${BUILD_NUMBER}"}' \
+                  https://discord.com/api/webhooks/1414418036793938040/0MKgCC_IZICWO4mBWRINcHamWZfijFXGuxuhhGqsclBnouE8SvWPazg_aPmwYfU096sPhttps://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN
+                '''
         }
         failure {
             echo 'Pipeline failed!'
-            sh '''
-                              curl -H "Content-Type: application/json" \
-                                -d '{"content":"❌ Jenkins Backend Job 실패: ${JOB_NAME} #${BUILD_NUMBER}"}' \
-                                https://discord.com/api/webhooks/1414418036793938040/0MKgCC_IZICWO4mBWRINcHamWZfijFXGuxuhhGqsclBnouE8SvWPazg_aPmwYfU096sPhttps://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN
-                              '''
+            bat '''
+                curl -H "Content-Type: application/json" \
+                  -d '{"content":"❌ Jenkins Backend Job 실패: ${JOB_NAME} #${BUILD_NUMBER}"}' \
+                  https://discord.com/api/webhooks/1414418036793938040/0MKgCC_IZICWO4mBWRINcHamWZfijFXGuxuhhGqsclBnouE8SvWPazg_aPmwYfU096sPhttps://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN
+                '''
         }
     }
 }
