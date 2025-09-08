@@ -40,8 +40,6 @@ public abstract class AbstractScheduleService {
                 .endDate(endDt)
                 .mainType(mainType)
                 .subType(request.getSubType())
-                .allDay(false)
-                .alarmTime(startDt)
                 .userNo(userNo)
                 .petNo(request.getPetNo())
                 .recurrenceType(request.getFrequency())
@@ -98,7 +96,7 @@ public abstract class AbstractScheduleService {
         LocalDateTime startDt = LocalDateTime.of(start, time);
         LocalDateTime endDt = LocalDateTime.of(end, time);
 
-        schedule.updateSchedule(request.getTitle(), startDt, endDt, startDt);
+        schedule.updateSchedule(request.getTitle(), startDt, endDt);
         schedule.updateRecurrence(request.getFrequency(), request.getRecurrenceInterval(), endDt);
         schedule.updateReminders(request.getReminderDaysBefore());
         schedule.updateTimes(request.getTimes());

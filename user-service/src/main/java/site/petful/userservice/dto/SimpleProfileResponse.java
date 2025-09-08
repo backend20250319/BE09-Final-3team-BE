@@ -13,7 +13,7 @@ public class SimpleProfileResponse {
     private Long id;
     private String nickname;
     private String profileImageUrl;
-    private String emil;
+    private String email;  // emil -> email로 수정
     private String phone;
     
 }

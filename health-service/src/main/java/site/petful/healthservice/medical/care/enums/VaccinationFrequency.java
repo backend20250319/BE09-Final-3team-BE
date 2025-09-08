@@ -8,7 +8,6 @@ import site.petful.healthservice.medical.schedule.enums.RecurrenceType;
 @Getter
 public enum VaccinationFrequency {
     YEARLY_ONCE("연 1회", RecurrenceType.YEARLY, 1),
-    HALF_YEARLY_ONCE("반년 1회", RecurrenceType.CUSTOM, 6),
     MONTHLY_ONCE("월 1회", RecurrenceType.MONTHLY, 1),
     WEEKLY_ONCE("주 1회", RecurrenceType.WEEKLY, 1);
 

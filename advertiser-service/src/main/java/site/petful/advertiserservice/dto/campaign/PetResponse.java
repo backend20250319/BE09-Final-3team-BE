@@ -14,11 +14,11 @@ public class PetResponse {
     private String name;
     private String type;
     private String imageUrl;
-    private String snsUrl;
     private Long age;
     private String gender;
     private Float weight;
     private Boolean isPetStar;
-    private Long snsProfileNo;
+    private Long snsId;
+    private String snsUsername;
     private PetStarStatus petStarStatus;
 }

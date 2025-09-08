@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -18,8 +18,8 @@ public class CareDetailDTO {
     private String title;
     private String mainType;
     private String subType;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private List<LocalTime> times;
     private String frequency; 
     private Boolean alarmEnabled;

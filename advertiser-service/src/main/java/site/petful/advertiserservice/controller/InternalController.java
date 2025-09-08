@@ -1,5 +1,6 @@
 package site.petful.advertiserservice.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import site.petful.advertiserservice.service.FileService;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/internal")
 public class InternalController {
@@ -95,12 +97,15 @@ public class InternalController {
     // 2-2. 광고주 파일 조회
     @GetMapping("/advertiser/{advertiserNo}")
     public ResponseEntity<ApiResponse<?>> getFileByAdvertiserNo(@PathVariable Long advertiserNo) {
+        log.info("🔍 [InternalController] 광고주 파일 조회 요청: advertiserNo={}", advertiserNo);
         try {
             List<FileUploadResponse> response = fileService.getFileByAdvertiserNo(advertiserNo);
+            log.info("✅ [InternalController] 파일 조회 성공: advertiserNo={}, fileCount={}", advertiserNo, response.size());
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (RuntimeException e) {
+            log.error("❌ [InternalController] 파일 조회 실패: advertiserNo={}, error={}", advertiserNo, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponseGenerator.fail(ErrorCode.AD_NOT_FOUND));
+                    .body(ApiResponseGenerator.fail(ErrorCode.ADVERTISER_NOT_FOUND));
         }
     }
 }

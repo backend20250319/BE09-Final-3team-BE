@@ -21,9 +21,9 @@ public enum FrequencyConversion {
     
     // 정규식 패턴들
     public static final String DIGIT_PATTERN = "(\\d+)";
-    public static final String DAILY_FREQUENCY_PATTERN = "하루(\\d+)번";
-    public static final String WEEKLY_FREQUENCY_PATTERN = "주에(\\d+)번";
-    public static final String MONTHLY_FREQUENCY_PATTERN = "월에(\\d+)번";
+    public static final String DAILY_FREQUENCY_PATTERN = "하루(\\d+)(?:번|회)";
+    public static final String WEEKLY_FREQUENCY_PATTERN = "주(?:에)?(\\d+)(?:번|회)";
+    public static final String MONTHLY_FREQUENCY_PATTERN = "월(?:에)?(\\d+)(?:번|회)";
 
     /**
      * 변환할 문자열을 찾아서 변환된 문자열을 반환

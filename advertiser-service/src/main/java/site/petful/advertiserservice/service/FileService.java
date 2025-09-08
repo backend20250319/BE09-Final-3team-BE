@@ -1,6 +1,7 @@
 package site.petful.advertiserservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -9,6 +10,7 @@ import site.petful.advertiserservice.common.ftp.FtpService;
 import site.petful.advertiserservice.dto.advertisement.ImageUploadResponse;
 import site.petful.advertiserservice.dto.advertiser.FileMetaUpdateRequest;
 import site.petful.advertiserservice.dto.advertiser.FileUploadResponse;
+import site.petful.advertiserservice.dto.advertiser.AdvertiserWithFilesResponse;
 import site.petful.advertiserservice.entity.advertisement.AdFiles;
 import site.petful.advertiserservice.entity.advertisement.Advertisement;
 import site.petful.advertiserservice.entity.advertiser.Advertiser;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -79,27 +82,36 @@ public class FileService {
                 .orElseThrow(() -> new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage()));
 
         // 파일 검증
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new RuntimeException(ErrorCode.FILE_EMPTY.getDefaultMessage());
         }
 
         // 파일 크기 검증 (10MB 제한)
-        if (file.getSize() > 10 * 1024 * 1024 || image.getSize() > 10 * 1024 * 1024) {
+        if (file.getSize() > 10 * 1024 * 1024) {
             throw new RuntimeException(ErrorCode.FILE_SIZE_EXCEEDED.getDefaultMessage());
         }
 
-        // 파일 타입 검증
-        String contentType = image.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new RuntimeException(ErrorCode.FILE_TYPE_IMAGE.getDefaultMessage());
+        if (image != null) {
+            if (image.getSize() > 10 * 1024 * 1024) {
+                throw new RuntimeException(ErrorCode.FILE_SIZE_EXCEEDED.getDefaultMessage());
+            }
+
+            String contentType = image.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new RuntimeException(ErrorCode.FILE_TYPE_IMAGE.getDefaultMessage());
+            }
         }
 
         List<FileUploadResponse> response = new ArrayList<>();
         response.add(uploadAndSaveFile(file, FileType.DOC, advertiser));
-        response.add(uploadAndSaveFile(image, FileType.PROFILE, advertiser));
+
+        if (image != null && !image.isEmpty()) {
+            response.add(uploadAndSaveFile(image, FileType.PROFILE, advertiser));
+        }
 
         return response;
     }
+
 
     // 2-1. 광고 이미지 조회
     @Transactional(readOnly = true)
@@ -127,6 +139,36 @@ public class FileService {
         return files.stream()
                 .map(FileUploadResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    // 광고주 정보와 파일을 함께 조회하는 메서드
+    @Transactional(readOnly = true)
+    public AdvertiserWithFilesResponse getAdvertiserWithFiles(Long advertiserNo) {
+        log.info("🔍 [FileService] 광고주 정보 및 파일 조회 시작: advertiserNo={}", advertiserNo);
+        
+        // 광고주 정보 조회
+        Advertiser advertiser = advertiserRepository.findByAdvertiserNo(advertiserNo)
+                .orElseThrow(() -> {
+                    log.error("❌ [FileService] 광고주를 찾을 수 없음: advertiserNo={}", advertiserNo);
+                    return new RuntimeException(ErrorCode.ADVERTISER_NOT_FOUND.getDefaultMessage());
+                });
+        log.info("✅ [FileService] 광고주 존재 확인: advertiserNo={}, name={}", advertiserNo, advertiser.getName());
+
+        // 파일 조회
+        List<AdvertiserFiles> files = fileRepository.findByAdvertiser_AdvertiserNo(advertiserNo)
+                .orElse(new ArrayList<>());
+        log.info("📁 [FileService] 조회된 파일 수: advertiserNo={}, fileCount={}", advertiserNo, files.size());
+        
+        for (AdvertiserFiles file : files) {
+            log.info("📄 [FileService] 파일 정보: fileNo={}, type={}, originalName={}, filePath={}", 
+                    file.getFileNo(), file.getType(), file.getOriginalName(), file.getFilePath());
+        }
+
+        AdvertiserWithFilesResponse response = AdvertiserWithFilesResponse.from(advertiser, files);
+        log.info("✅ [FileService] 광고주 정보 및 파일 조회 완료: advertiserNo={}, profileUrl={}, documentUrl={}", 
+                advertiserNo, response.getProfileImageUrl(), response.getDocumentUrl());
+        
+        return response;
     }
 
     // 3-1. 광고 이미지 수정 (이미지 삭제 및 새 이미지 업로드로 처리)
