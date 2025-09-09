@@ -59,7 +59,7 @@ public class AdAdminResponse {
         res.setApplicants(ad.getApplicants());
         res.setMembers(ad.getMembers());
         res.setAdStatus(ad.getAdStatus());
-        res.setAdUrl(ad.getAdUrl());
+        // adUrl은 서비스에서 AdFiles를 통해 설정
         res.setCreatedAt(ad.getCreatedAt());
         res.setReason(ad.getReason());
 
@@ -85,8 +85,7 @@ public class AdAdminResponse {
         if (ad.getAdvertiser() != null) {
             res.setAdvertiserName(ad.getAdvertiser().getName());
             res.setAdvertiserWebsite(ad.getAdvertiser().getWebsite());
-            // 로고는 기본값으로 설정 (실제 로고 필드가 있다면 해당 필드 사용)
-            res.setAdvertiserLogo("/brand-logo.jpg");
+            // advertiserLogo는 서비스에서 AdvertiserFiles를 통해 설정
         }
 
         return res;

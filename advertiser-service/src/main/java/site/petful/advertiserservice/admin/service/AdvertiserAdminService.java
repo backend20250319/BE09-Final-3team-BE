@@ -7,8 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.petful.advertiserservice.dto.advertisement.AdAdminResponse;
-import site.petful.advertiserservice.dto.advertisement.AdResponse;
-import site.petful.advertiserservice.dto.advertiser.AdvertiserAdminResponse;
 import site.petful.advertiserservice.admin.dto.AdvertiserWithFilesResponse;
 import site.petful.advertiserservice.entity.advertiser.Advertiser;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,7 +15,9 @@ import site.petful.advertiserservice.entity.advertisement.Advertisement;
 import site.petful.advertiserservice.repository.AdRepository;
 import site.petful.advertiserservice.repository.AdvertiserRepository;
 import site.petful.advertiserservice.repository.FileRepository;
+import site.petful.advertiserservice.repository.ImageRepository;
 import site.petful.advertiserservice.entity.advertiser.AdvertiserFiles;
+import site.petful.advertiserservice.entity.advertisement.AdFiles;
 import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +29,7 @@ public class AdvertiserAdminService {
     private final AdvertiserRepository advertiserRepository;
     private final AdRepository adRepository;
     private final FileRepository fileRepository;
+    private final ImageRepository imageRepository;
     // 광고주 제한
     public void restrictAdvertiser(Long id) {
         Advertiser restrictAdvertiser = advertiserRepository.findById(id)
@@ -73,7 +74,28 @@ public class AdvertiserAdminService {
     }
 
     public Page<AdAdminResponse> getAllCampaign(Pageable pageable) {
-        return adRepository.findByAdStatus(AdStatus.TRIAL, pageable).map(AdAdminResponse::from);
+        return adRepository.findByAdStatus(AdStatus.TRIAL, pageable).map(ad -> {
+            AdAdminResponse response = AdAdminResponse.from(ad);
+            
+            // 캠페인 이미지 설정 (AdFiles에서)
+            AdFiles adFile = imageRepository.findByAdvertisement_AdNo(ad.getAdNo()).orElse(null);
+            if (adFile != null) {
+                response.setAdUrl(adFile.getFilePath());
+            }
+            
+            // 광고주 프로필 이미지 설정
+            if (ad.getAdvertiser() != null) {
+                List<AdvertiserFiles> files = fileRepository.findByAdvertiser_AdvertiserNo(ad.getAdvertiser().getAdvertiserNo()).orElse(new ArrayList<>());
+                AdvertiserFiles profileFile = files.stream()
+                        .filter(file -> file.getType().name().equals("PROFILE"))
+                        .findFirst()
+                        .orElse(null);
+                if (profileFile != null) {
+                    response.setAdvertiserLogo(profileFile.getFilePath());
+                }
+            }
+            return response;
+        });
     }
 
     @Transactional
@@ -89,7 +111,28 @@ public class AdvertiserAdminService {
     }
 
     public Page<AdAdminResponse> getPendingAds(Pageable pageable) {
-       return adRepository.findByAdStatus(AdStatus.PENDING, pageable).map(AdAdminResponse::from);
+       return adRepository.findByAdStatus(AdStatus.PENDING, pageable).map(ad -> {
+           AdAdminResponse response = AdAdminResponse.from(ad);
+           
+           // 캠페인 이미지 설정 (AdFiles에서)
+           AdFiles adFile = imageRepository.findByAdvertisement_AdNo(ad.getAdNo()).orElse(null);
+           if (adFile != null) {
+               response.setAdUrl(adFile.getFilePath());
+           }
+           
+           // 광고주 프로필 이미지 설정
+           if (ad.getAdvertiser() != null) {
+               List<AdvertiserFiles> files = fileRepository.findByAdvertiser_AdvertiserNo(ad.getAdvertiser().getAdvertiserNo()).orElse(new ArrayList<>());
+               AdvertiserFiles profileFile = files.stream()
+                       .filter(file -> file.getType().name().equals("PROFILE"))
+                       .findFirst()
+                       .orElse(null);
+               if (profileFile != null) {
+                   response.setAdvertiserLogo(profileFile.getFilePath());
+               }
+           }
+           return response;
+       });
     }
 
     public void approve(Long adId) {
