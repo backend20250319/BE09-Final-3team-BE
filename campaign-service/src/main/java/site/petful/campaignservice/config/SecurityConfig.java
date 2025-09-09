@@ -28,7 +28,11 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/actuator/**"
+            "/actuator/**",
+            "/ad/adStatus",
+            "/ad/image/**",
+            "/ad/file/**",
+            "/instagram/influencer/**"
     };
 
     @Bean
@@ -53,7 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 프리플라이트 허용
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/internal/**").hasAnyAuthority("User", "ADVERTISER", "SERVICE")
+                        .requestMatchers("/internal/**").hasAnyAuthority("USER", "ADVERTISER", "SERVICE")
                         .anyRequest().authenticated()
                 )
 
