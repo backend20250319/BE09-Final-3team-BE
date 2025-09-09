@@ -147,7 +147,8 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<NotificationCountDto>> getUnreadNotificationCount(
             @AuthenticationPrincipal Long userNo) {
         
-        log.info("🔢 [NotificationController] 읽지 않은 알림 개수 조회: userId={}", userNo);
+        // 로그 레벨을 줄임 (디버그 레벨로 변경)
+        log.debug("🔢 [NotificationController] 읽지 않은 알림 개수 조회: userId={}", userNo);
 
         // 인증 검증
         if (userNo == null) {
@@ -166,7 +167,8 @@ public class NotificationController {
         try {
             long unreadCount = notificationService.getUnreadNotificationCount(userNo);
             NotificationCountDto response = NotificationCountDto.of(unreadCount);
-            log.info("✅ [NotificationController] 읽지 않은 알림 개수 조회 성공: userId={}, count={}", userNo, unreadCount);
+            // 성공 로그도 디버그 레벨로 변경
+            log.debug("✅ [NotificationController] 읽지 않은 알림 개수 조회 성공: userId={}, count={}", userNo, unreadCount);
             return ResponseEntity.ok(ApiResponseGenerator.success(response));
         } catch (IllegalArgumentException e) {
             log.error("❌ [NotificationController] 잘못된 파라미터: userId={}, error={}", userNo, e.getMessage());

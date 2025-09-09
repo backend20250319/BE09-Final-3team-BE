@@ -72,6 +72,13 @@ public class WebPushSubscriptionService {
         List<WebPushSubscription> subscriptions = subscriptionRepository.findByUserIdAndIsActiveTrue(userId);
         log.info("✅ [WebPushSubscriptionService] 활성화된 구독 {}개 조회: userId={}", subscriptions.size(), userId);
         
+        // 디버깅을 위해 각 구독의 상세 정보 로그
+        for (WebPushSubscription subscription : subscriptions) {
+            log.info("📋 [WebPushSubscriptionService] 활성 구독 상세: subscriptionId={}, endpoint={}, isActive={}, createdAt={}, updatedAt={}", 
+                    subscription.getId(), subscription.getEndpoint(), subscription.getIsActive(), 
+                    subscription.getCreatedAt(), subscription.getUpdatedAt());
+        }
+        
         return subscriptions;
     }
 
@@ -175,5 +182,35 @@ public class WebPushSubscriptionService {
             subscriptionRepository.save(subscription);
             log.debug("🕐 [WebPushSubscriptionService] 푸시 발송 시간 업데이트: subscriptionId={}", subscriptionId);
         }
+    }
+    
+    /**
+     * 사용자의 모든 구독을 강제로 비활성화합니다.
+     * (긴급 상황용)
+     * 
+     * @param userId 사용자 ID
+     * @return 비활성화된 구독 개수
+     */
+    @Transactional
+    public int forceDeactivateAllSubscriptions(Long userId) {
+        log.warn("🚨 [WebPushSubscriptionService] 사용자의 모든 구독 강제 비활성화: userId={}", userId);
+        
+        List<WebPushSubscription> allSubscriptions = subscriptionRepository.findByUserId(userId);
+        int deactivatedCount = 0;
+        
+        for (WebPushSubscription subscription : allSubscriptions) {
+            if (subscription.getIsActive()) {
+                subscription.deactivate();
+                subscriptionRepository.save(subscription);
+                deactivatedCount++;
+                log.info("🚨 [WebPushSubscriptionService] 구독 강제 비활성화: subscriptionId={}, userId={}", 
+                        subscription.getId(), userId);
+            }
+        }
+        
+        log.warn("🚨 [WebPushSubscriptionService] 강제 비활성화 완료: userId={}, deactivatedCount={}", 
+                userId, deactivatedCount);
+        
+        return deactivatedCount;
     }
 }
