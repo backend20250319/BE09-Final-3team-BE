@@ -29,4 +29,12 @@ public class InstagramController {
 
         return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
     }
+
+    // 2. 사용자 instagram 프로필 조회 by snsId
+    @GetMapping("/influencer/{snsId}")
+    public ResponseEntity<ApiResponse<InstagramProfileDto>> getProfileBySnSId(@PathVariable Long snsId) {
+        InstagramProfileDto profilesResponseDto = instagramService.getProfileBySnSId(snsId);
+
+        return ResponseEntity.ok(ApiResponseGenerator.success(profilesResponseDto));
+    }
 }
