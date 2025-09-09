@@ -64,7 +64,7 @@ async def fetch_pet_media(client, sns_id, token):
 @app.post("/hello")
 async def hello(ad: AdResponse, request: Request):
     token = request.headers.get("Authorization")
-
+    print("요청 들어옴")
     async with httpx.AsyncClient(timeout=httpx.Timeout(settings.HTTP_TIMEOUT)) as client:
         pet_res = await client.get(
             f"{settings.PET_SERVICE_URL}/api/v1/pet-service/petstars",
