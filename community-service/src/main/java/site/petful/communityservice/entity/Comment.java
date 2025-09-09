@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "Comment")
@@ -43,6 +44,6 @@ public class Comment {
     @PrePersist
     void prePersist() {
         if (commentStatus == null) commentStatus = CommentStatus.NORMAL;
-        if(createdAt == null) createdAt = LocalDateTime.now();
+        if(createdAt == null) createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
     }
 }

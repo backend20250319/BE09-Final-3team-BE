@@ -3,11 +3,13 @@ package site.petful.notificationservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.PushService;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Service;
 import site.petful.notificationservice.entity.Notification;
 import site.petful.notificationservice.entity.WebPushSubscription;
 import site.petful.notificationservice.webpush.VapidProps;
 
+import java.security.Security;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +31,14 @@ public class WebPushService {
     
     // 비동기 처리를 위한 스레드 풀
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
+    
+    // BouncyCastle 프로바이더 등록 (정적 초기화)
+    static {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(new BouncyCastleProvider());
+            log.info("🔐 [WebPushService] BouncyCastle 프로바이더 등록 완료");
+        }
+    }
 
     /*
      * 특정 사용자에게 웹푸시를 발송합니다.
@@ -46,6 +56,12 @@ public class WebPushService {
             }
 
             log.info("📱 [WebPushService] {}개의 구독에 웹푸시 발송: userId={}", subscriptions.size(), userId);
+            
+            // 디버깅을 위해 구독 상세 정보 로그
+            for (WebPushSubscription subscription : subscriptions) {
+                log.info("📱 [WebPushService] 발송 대상 구독: subscriptionId={}, endpoint={}, isActive={}, createdAt={}", 
+                        subscription.getId(), subscription.getEndpoint(), subscription.getIsActive(), subscription.getCreatedAt());
+            }
 
             // 모든 구독에 비동기로 푸시 발송
             List<CompletableFuture<Boolean>> futures = subscriptions.stream()

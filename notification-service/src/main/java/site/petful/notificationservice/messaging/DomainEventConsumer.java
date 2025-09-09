@@ -34,11 +34,7 @@ public class DomainEventConsumer {
                 // 1. 즉시 등록 알림 생성
                 EventMessage enrollMessage = createEnrollMessage(message);
                 Notification enrollNotification = notificationService.createImmediateNotification(enrollMessage);
-                if (enrollNotification != null) {
-                    log.info("✅ [NotificationConsumer] 등록 알림 생성: notificationId={}", enrollNotification.getId());
-                } else {
-                    log.info("📱 [NotificationConsumer] 웹푸시 구독이 없어 등록 알림 생성 건너뜀");
-                }
+                log.info("✅ [NotificationConsumer] 등록 알림 생성: notificationId={}", enrollNotification.getId());
                 
                 // 2. 스케줄 정보 파싱
                 Map<String, Object> attributes = message.getAttributes();
@@ -109,11 +105,7 @@ public class DomainEventConsumer {
             } else {
                 // 기타 메시지는 즉시 알림 생성
                 Notification savedNotification = notificationService.createImmediateNotification(message);
-                if (savedNotification != null) {
-                    log.info("✅ [NotificationConsumer] 즉시 알림 저장 성공: notificationId={}", savedNotification.getId());
-                } else {
-                    log.info("📱 [NotificationConsumer] 웹푸시 구독이 없어 알림 생성 건너뜀: eventId={}", message.getEventId());
-                }
+                log.info("✅ [NotificationConsumer] 즉시 알림 저장 성공: notificationId={}", savedNotification.getId());
             }
         } catch (Exception e) {
             log.error("❌ [NotificationConsumer] 알림 저장 실패: eventId={}, error={}", message.getEventId(), e.getMessage(), e);
@@ -150,12 +142,8 @@ public class DomainEventConsumer {
             // 5. 알림 저장
             Notification notification = notificationService.createImmediateNotification(notificationMessage);
             
-            if (notification != null) {
-                log.info("✅ [NotificationConsumer] 체험단 선정 알림 생성 성공: userId={}, applicantNo={}, notificationId={}",
-                        userId, applicantNo, notification.getId());
-            } else {
-                log.info("📱 [NotificationConsumer] 웹푸시 구독이 없어 체험단 선정 알림 생성 건너뜀: userId={}", userId);
-            }
+            log.info("✅ [NotificationConsumer] 체험단 선정 알림 생성 성공: userId={}, applicantNo={}, notificationId={}",
+                    userId, applicantNo, notification.getId());
                     
         } catch (Exception e) {
             log.error("❌ [NotificationConsumer] 체험단 선정 알림 처리 실패: eventId={}, error={}",
@@ -254,12 +242,8 @@ public class DomainEventConsumer {
                 EventMessage reserveMessage = createReserveMessage(originalMessage, scheduleTitle, scheduledTime, message);
                 Notification reserveNotification = notificationService.createScheduledNotification(reserveMessage, scheduledTime);
                 
-                if (reserveNotification != null) {
-                    log.info("✅ [NotificationConsumer] 당일 알림 생성: notificationId={}, scheduledTime={}, message={}", 
-                            reserveNotification.getId(), scheduledTime, message);
-                } else {
-                    log.info("📱 [NotificationConsumer] 웹푸시 구독이 없어 당일 알림 생성 건너뜀: scheduledTime={}", scheduledTime);
-                }
+                log.info("✅ [NotificationConsumer] 당일 알림 생성: notificationId={}, scheduledTime={}, message={}", 
+                        reserveNotification.getId(), scheduledTime, message);
             }
         }
     }
@@ -296,12 +280,8 @@ public class DomainEventConsumer {
             EventMessage reserveMessage = createReserveMessage(originalMessage, scheduleTitle, scheduledTime, message);
             Notification reserveNotification = notificationService.createScheduledNotification(reserveMessage, scheduledTime);
             
-            if (reserveNotification != null) {
-                log.info("✅ [NotificationConsumer] 사전 알림 생성 (자정): notificationId={}, scheduledTime={}, message={}", 
-                        reserveNotification.getId(), scheduledTime, message);
-            } else {
-                log.info("📱 [NotificationConsumer] 웹푸시 구독이 없어 사전 알림 생성 건너뜀: scheduledTime={}", scheduledTime);
-            }
+            log.info("✅ [NotificationConsumer] 사전 알림 생성 (자정): notificationId={}, scheduledTime={}, message={}", 
+                    reserveNotification.getId(), scheduledTime, message);
         }
     }
     
