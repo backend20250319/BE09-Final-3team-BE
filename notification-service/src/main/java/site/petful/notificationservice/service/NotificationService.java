@@ -376,7 +376,6 @@ public class NotificationService {
                         "/posts/" + eventMessage.getTarget().get(0).getResourceId()
                     );
                 }
-
             case "notification.post.liked":
                 try {
                     // actor.id를 통해 nickname 조회
