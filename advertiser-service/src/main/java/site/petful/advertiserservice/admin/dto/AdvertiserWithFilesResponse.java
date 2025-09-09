@@ -50,6 +50,10 @@ public class AdvertiserWithFilesResponse {
                 // filePath가 이미 전체 URL이므로 그대로 사용
                 response.setProfileImageUrl(profileFile.getFilePath());
                 response.setProfileOriginalName(profileFile.getOriginalName());
+            } else {
+                // 프로필 파일이 없는 경우
+                response.setProfileImageUrl("NO_FILE");
+                response.setProfileOriginalName("프로필 파일 없음");
             }
             
             // 문서 찾기
@@ -62,7 +66,17 @@ public class AdvertiserWithFilesResponse {
                 // filePath가 이미 전체 URL이므로 그대로 사용
                 response.setDocumentUrl(documentFile.getFilePath());
                 response.setDocumentOriginalName(documentFile.getOriginalName());
+            } else {
+                // 문서 파일이 없는 경우
+                response.setDocumentUrl("NO_FILE");
+                response.setDocumentOriginalName("문서 파일 없음");
             }
+        } else {
+            // 파일 목록이 비어있는 경우
+            response.setProfileImageUrl("NO_FILE");
+            response.setProfileOriginalName("프로필 파일 없음");
+            response.setDocumentUrl("NO_FILE");
+            response.setDocumentOriginalName("문서 파일 없음");
         }
         
         return response;
