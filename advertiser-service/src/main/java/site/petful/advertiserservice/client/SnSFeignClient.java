@@ -23,4 +23,8 @@ public interface SnSFeignClient {
     @GetMapping("/medias")
     ApiResponse<List<InstagramMediaDto>> getMedias(@NotNull @RequestParam(name = "instagram_id") Long instagramId);
 
+    // 3. 사용자 instagram 프로필 조회 by snsId
+    @GetMapping("/profiles/{instagramId}")
+    ApiResponse<InstagramProfileDto> getProfileBySnsId(@NotNull @PathVariable Long instagramId);
+
 }
