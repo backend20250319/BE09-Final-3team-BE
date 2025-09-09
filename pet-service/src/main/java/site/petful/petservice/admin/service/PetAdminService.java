@@ -45,7 +45,9 @@ public class PetAdminService {
                         "사용자 정보 없음",
                         pet.getType(),
                         pet.getGender(),
-                        pet.getSnsProfileUsername()
+                        pet.getSnsProfileUsername(),
+                        pet.getImageUrl(),
+                        null
                 );
             }
 
@@ -65,7 +67,9 @@ public class PetAdminService {
                         user.getEmil(),
                         pet.getType(),
                         pet.getGender(),
-                        pet.getSnsProfileUsername()
+                        pet.getSnsProfileUsername(),
+                        pet.getImageUrl(),
+                        user.getProfileImageUrl()
                 );
             } catch (Exception e) {
                 log.error("UserClient 호출 실패 - petNo: {}, userNo: {}, error: {}", 
@@ -84,7 +88,9 @@ public class PetAdminService {
                             "사용자 ID " + pet.getUserNo() + " 없음",
                             pet.getType(),
                             pet.getGender(),
-                            pet.getSnsProfileUsername()
+                            pet.getSnsProfileUsername(),
+                            pet.getImageUrl(),
+                            null
                     );
                 }
                 
@@ -101,7 +107,9 @@ public class PetAdminService {
                         "사용자 정보 조회 실패",
                         pet.getType(),
                         pet.getGender(),
-                        pet.getSnsProfileUsername()
+                        pet.getSnsProfileUsername(),
+                        pet.getImageUrl(),
+                        null
                 );
             }
         });
