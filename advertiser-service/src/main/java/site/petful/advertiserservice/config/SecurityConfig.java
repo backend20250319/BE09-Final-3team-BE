@@ -65,6 +65,7 @@ public class SecurityConfig {
                         .requestMatchers("/internal/**").permitAll() // 내부 서비스 간 통신 허용
                         .requestMatchers("/admin/**").permitAll()// 관리자 기능은 ADMIN 권한 필요
                         //.requestMatchers("/advertiser/**").hasAnyRole("ADVERTISER")
+                        .requestMatchers("/recommend/**").permitAll()
                         .requestMatchers("/advertiser-service/**").hasAnyRole("ADVERTISER") // 게이트웨이 경로 추가
                         .anyRequest().authenticated()
                 )
