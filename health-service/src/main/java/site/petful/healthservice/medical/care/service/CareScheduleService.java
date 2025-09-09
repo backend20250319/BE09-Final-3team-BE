@@ -557,7 +557,7 @@ public class CareScheduleService extends AbstractScheduleService {
             case DAILY:
                 // 매일: 종료일이 시작일과 같아도 허용
                 if (endDate == null) {
-                    return startDate.plusDays(1); // 종료일이 없으면 다음날로 설정
+                    return startDate; // 종료일이 없으면 당일로 설정
                 }
                 if (endDate.isBefore(startDate)) {
                     throw new BusinessException(ErrorCode.MEDICAL_END_DATE_BEFORE_START_ERROR,
