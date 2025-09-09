@@ -27,6 +27,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationDeliveryService notificationDeliveryService;
+    private final WebPushSubscriptionService webPushSubscriptionService;
 
     private final UserClient userClient;
     /**
@@ -145,16 +146,25 @@ public class NotificationService {
         log.info("📝 [NotificationService] 즉시 알림 생성: eventId={}, type={}",
                 eventMessage.getEventId(), eventMessage.getType());
 
-        // 이벤트 타입에 따른 알림 내용 생성
-        NotificationContent content = createNotificationContent(eventMessage);
-
-        // 알림 엔티티 생성 - Target이 List이므로 첫 번째 요소 사용
+        // Target이 List이므로 첫 번째 요소 사용
         if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
             throw new IllegalArgumentException("EventMessage의 Target이 null이거나 비어있습니다.");
         }
         EventMessage.Target target = eventMessage.getTarget().get(0);
+        Long userId = Long.valueOf(target.getUserId());
+
+        // 웹푸시 구독 상태 확인 - 구독이 없으면 알림 생성하지 않음
+        if (!hasActiveWebPushSubscription(userId)) {
+            log.info("📱 [NotificationService] 웹푸시 구독이 없어 알림 생성 건너뜀: userId={}", userId);
+            return null;
+        }
+
+        // 이벤트 타입에 따른 알림 내용 생성
+        NotificationContent content = createNotificationContent(eventMessage);
+
+        // 알림 엔티티 생성
         Notification notification = Notification.of(
-                Long.valueOf(target.getUserId()),
+                userId,
                 eventMessage.getType(),
                 content.getTitle(),
                 content.getContent(),
@@ -195,6 +205,19 @@ public class NotificationService {
         log.info("📅 [NotificationService] 예약 알림 생성: eventId={}, type={}, timeStr={}",
                 eventMessage.getEventId(), eventMessage.getType(), timeStr);
 
+        // Target이 List이므로 첫 번째 요소 사용
+        if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
+            throw new IllegalArgumentException("EventMessage의 Target이 null이거나 비어있습니다.");
+        }
+        EventMessage.Target target = eventMessage.getTarget().get(0);
+        Long userId = Long.valueOf(target.getUserId());
+
+        // 웹푸시 구독 상태 확인 - 구독이 없으면 알림 생성하지 않음
+        if (!hasActiveWebPushSubscription(userId)) {
+            log.info("📱 [NotificationService] 웹푸시 구독이 없어 예약 알림 생성 건너뜀: userId={}", userId);
+            return null;
+        }
+
         // timeStr이 null이거나 빈 문자열인 경우 처리
         if (timeStr == null || timeStr.trim().isEmpty()) {
             log.warn("⚠️ [NotificationService] timeStr이 null이거나 빈 문자열입니다. 즉시 알림으로 생성합니다. timeStr={}", timeStr);
@@ -226,13 +249,9 @@ public class NotificationService {
         // 이벤트 타입에 따른 알림 내용 생성
         NotificationContent content = createNotificationContent(eventMessage);
 
-        // 예약 알림 엔티티 생성 - Target이 List이므로 첫 번째 요소 사용
-        if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
-            throw new IllegalArgumentException("EventMessage의 Target이 null이거나 비어있습니다.");
-        }
-        EventMessage.Target target = eventMessage.getTarget().get(0);
+        // 예약 알림 엔티티 생성
         Notification notification = Notification.scheduled(
-                Long.valueOf(target.getUserId()),
+                userId,
                 eventMessage.getType(),
                 content.getTitle(),
                 content.getContent(),
@@ -256,6 +275,19 @@ public class NotificationService {
         log.info("📅 [NotificationService] 예약 알림 생성 (LocalDateTime): eventId={}, type={}, scheduledTime={}",
                 eventMessage.getEventId(), eventMessage.getType(), scheduledTime);
 
+        // Target이 List이므로 첫 번째 요소 사용
+        if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
+            throw new IllegalArgumentException("EventMessage의 Target이 null이거나 비어있습니다.");
+        }
+        EventMessage.Target target = eventMessage.getTarget().get(0);
+        Long userId = Long.valueOf(target.getUserId());
+
+        // 웹푸시 구독 상태 확인 - 구독이 없으면 알림 생성하지 않음
+        if (!hasActiveWebPushSubscription(userId)) {
+            log.info("📱 [NotificationService] 웹푸시 구독이 없어 예약 알림 생성 건너뜀: userId={}", userId);
+            return null;
+        }
+
         if (scheduledTime == null) {
             log.warn("⚠️ [NotificationService] scheduledTime이 null입니다. 즉시 알림으로 생성합니다.");
             return createImmediateNotification(eventMessage);
@@ -273,13 +305,8 @@ public class NotificationService {
         // 예약 알림 엔티티 생성
         log.info("🔍 [NotificationService] 엔티티 생성 전 scheduledTime: {}", scheduledTime);
 
-        // Target이 List이므로 첫 번째 요소 사용
-        if (eventMessage.getTarget() == null || eventMessage.getTarget().isEmpty()) {
-            throw new IllegalArgumentException("EventMessage의 Target이 null이거나 비어있습니다.");
-        }
-        EventMessage.Target target = eventMessage.getTarget().get(0);
         Notification notification = Notification.scheduled(
-                Long.valueOf(target.getUserId()),
+                userId,
                 eventMessage.getType(),
                 content.getTitle(),
                 content.getContent(),
@@ -321,18 +348,64 @@ public class NotificationService {
         // 이벤트 타입별로 다른 알림 내용 생성
         switch (type) {
             case "notification.comment.created":
-                return new NotificationContent(
-                    "새로운 댓글",
-                    actorName + "님이 댓글을 작성했습니다.",
-                    "/posts/" + eventMessage.getTarget().get(0).getResourceId()
-                );
+                try {
+                    // actor.id를 통해 nickname 조회
+                    if (eventMessage.getActor() != null && eventMessage.getActor().getId() != null) {
+                        ApiResponse<SimpleProfileResponse> response = userClient.getUserBrief(eventMessage.getActor().getId());
+                        String nickName = response.getData().getNickname();
+                        return new NotificationContent(
+                            "새로운 댓글",
+                            nickName + "님이 댓글을 작성했습니다.",
+                            "/posts/" + eventMessage.getTarget().get(0).getResourceId()
+                        );
+                    } else {
+                        // actor 정보가 없는 경우 기본 메시지 사용
+                        return new NotificationContent(
+                            "새로운 댓글",
+                            "누군가 댓글을 작성했습니다.",
+                            "/posts/" + eventMessage.getTarget().get(0).getResourceId()
+                        );
+                    }
+                } catch (Exception e) {
+                    log.error("❌ [NotificationService] 댓글 작성자 nickname 조회 실패: actorId={}, error={}",
+                            eventMessage.getActor() != null ? eventMessage.getActor().getId() : "null", e.getMessage());
+                    // 조회 실패 시 기본 메시지 사용
+                    return new NotificationContent(
+                        "새로운 댓글",
+                        "누군가 댓글을 작성했습니다.",
+                        "/posts/" + eventMessage.getTarget().get(0).getResourceId()
+                    );
+                }
 
             case "notification.post.liked":
-                return new NotificationContent(
-                    "좋아요",
-                    actorName + "님이 게시글을 좋아합니다.",
-                    "/posts/liked/" + eventMessage.getTarget().get(0).getResourceId()
-                );
+                try {
+                    // actor.id를 통해 nickname 조회
+                    if (eventMessage.getActor() != null && eventMessage.getActor().getId() != null) {
+                        ApiResponse<SimpleProfileResponse> response = userClient.getUserBrief(eventMessage.getActor().getId());
+                        String nickName = response.getData().getNickname();
+                        return new NotificationContent(
+                            "좋아요",
+                            nickName + "님이 게시글을 좋아합니다.",
+                            "/posts/liked/" + eventMessage.getTarget().get(0).getResourceId()
+                        );
+                    } else {
+                        // actor 정보가 없는 경우 기본 메시지 사용
+                        return new NotificationContent(
+                            "좋아요",
+                            "누군가 게시글을 좋아합니다.",
+                            "/posts/liked/" + eventMessage.getTarget().get(0).getResourceId()
+                        );
+                    }
+                } catch (Exception e) {
+                    log.error("❌ [NotificationService] 좋아요 사용자 nickname 조회 실패: actorId={}, error={}",
+                            eventMessage.getActor() != null ? eventMessage.getActor().getId() : "null", e.getMessage());
+                    // 조회 실패 시 기본 메시지 사용
+                    return new NotificationContent(
+                        "좋아요",
+                        "누군가 게시글을 좋아합니다.",
+                        "/posts/liked/" + eventMessage.getTarget().get(0).getResourceId()
+                    );
+                }
 
             case "notification.campaign.new":
                 return new NotificationContent(
@@ -408,5 +481,25 @@ public class NotificationService {
         public String getTitle() { return title; }
         public String getContent() { return content; }
         public String getLinkUrl() { return linkUrl; }
+    }
+
+    /**
+     * 사용자의 활성화된 웹푸시 구독이 있는지 확인합니다.
+     * 
+     * @param userId 사용자 ID
+     * @return 활성화된 구독 존재 여부
+     */
+    private boolean hasActiveWebPushSubscription(Long userId) {
+        try {
+            long subscriptionCount = webPushSubscriptionService.getSubscriptionCount(userId);
+            boolean hasSubscription = subscriptionCount > 0;
+            log.debug("📱 [NotificationService] 웹푸시 구독 상태 확인: userId={}, count={}, hasSubscription={}", 
+                    userId, subscriptionCount, hasSubscription);
+            return hasSubscription;
+        } catch (Exception e) {
+            log.error("❌ [NotificationService] 웹푸시 구독 상태 확인 실패: userId={}, error={}", userId, e.getMessage(), e);
+            // 오류 발생 시 안전하게 구독이 있다고 가정하여 알림을 생성
+            return true;
+        }
     }
 }
