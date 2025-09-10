@@ -167,17 +167,6 @@ public class MedicationController {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "파일이 선택되지 않았습니다.");
         }
         
-        // 파일 크기 검증 (10MB 제한)
-        if (file.getSize() > 10 * 1024 * 1024) {
-            throw new BusinessException(ErrorCode.IMAGE_SIZE_TOO_LARGE, "파일 크기는 10MB를 초과할 수 없습니다.");
-        }
-        
-        // 파일 형식 검증
-        String contentType = file.getContentType();
-        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
-            throw new BusinessException(ErrorCode.IMAGE_FORMAT_NOT_SUPPORTED, "이미지 파일 또는 PDF만 업로드 가능합니다.");
-        }
-        
         try {
             // OCR 처리
             PrescriptionParsedDTO result = medicationOCRService.processPrescription(file);
