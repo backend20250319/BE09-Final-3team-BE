@@ -18,6 +18,7 @@ import site.petful.communityservice.repository.PostRepository;
 
 import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -77,7 +78,7 @@ public class CommentService {
                         .postId(postId)
                         .parentId(parentId)
                         .content(content)
-                        .createdAt(LocalDateTime.now())        // @PrePersist 있으면 생략 가능
+                        .createdAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))        // @PrePersist 있으면 생략 가능
                         .commentStatus(CommentStatus.NORMAL)    // 필수: NULL 방지
                         .build()
         );
@@ -266,7 +267,7 @@ public class CommentService {
 
         // 댓글 내용 업데이트
         comment.setContent(request.getContent());
-        comment.setUpdateAt(LocalDateTime.now());
+        comment.setUpdateAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
         
         commentRepository.save(comment);
         

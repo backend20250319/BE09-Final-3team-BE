@@ -16,4 +16,6 @@ public class PetStarResponse {
     private String petType;
     private String petGender;
     private String snsProfileUsername;
+    private String petImageUrl;
+    private String userProfileImageUrl;
 }

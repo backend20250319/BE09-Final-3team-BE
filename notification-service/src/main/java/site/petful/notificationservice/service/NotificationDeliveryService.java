@@ -25,22 +25,19 @@ public class NotificationDeliveryService {
                 notification.getId(), notification.getUserId(), notification.getType());
 
         try {
-            // 웹 푸시 알림 발송 시도 (실패해도 알림 자체는 성공으로 처리)
+            // 웹 푸시 알림 발송 시도
             boolean webPushSent = sendWebPushNotification(notification);
             
-            // 웹푸시 발송 실패해도 알림 자체는 성공으로 처리
-            // (웹푸시 구독이 없거나 발송 실패해도 알림은 정상적으로 생성됨)
-            boolean success = true;
-            
+            // 웹푸시 발송 실패 시 알림도 실패로 처리 (구독이 없으면 알림 생성 안함)
             if (webPushSent) {
                 log.info("✅ [NotificationDeliveryService] 알림 발송 성공 (웹푸시 포함): notificationId={}, webPush={}", 
                         notification.getId(), webPushSent);
+                return true;
             } else {
-                log.info("✅ [NotificationDeliveryService] 알림 발송 성공 (웹푸시 제외): notificationId={}, webPush={}", 
+                log.warn("⚠️ [NotificationDeliveryService] 웹푸시 발송 실패로 인한 알림 발송 실패: notificationId={}, webPush={}", 
                         notification.getId(), webPushSent);
+                return false;
             }
-            
-            return success;
             
         } catch (Exception e) {
             log.error("❌ [NotificationDeliveryService] 알림 발송 중 오류: notificationId={}, error={}", 

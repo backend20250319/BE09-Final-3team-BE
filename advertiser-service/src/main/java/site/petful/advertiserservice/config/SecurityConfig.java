@@ -37,7 +37,11 @@ public class SecurityConfig {
             "/advertiser/password/reset/request",
             "/advertiser/password/reset/verify",
             "/advertiser/password/reset",
-            "/recommend/petStars"
+            "/recommend/petStars",
+            "/pet/petstars",
+            "/pet/portfolio/**",
+            "/internal/adStatus/grouped",
+            "/file/**",
     };
 
     @Bean

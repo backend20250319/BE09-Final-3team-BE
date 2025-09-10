@@ -13,11 +13,13 @@ import site.petful.notificationservice.common.ApiResponse;
 import site.petful.notificationservice.dto.EventMessage;
 import site.petful.notificationservice.dto.SimpleProfileResponse;
 import site.petful.notificationservice.entity.Notification;
+import site.petful.notificationservice.entity.WebPushSubscription;
 import site.petful.notificationservice.repository.NotificationRepository;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -62,7 +64,8 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public long getUnreadNotificationCount(Long userId) {
-        log.info("🔢 [NotificationService] 읽지 않은 알림 개수 조회: userId={}", userId);
+        // 로그 레벨을 줄임 (디버그 레벨로 변경)
+        log.debug("🔢 [NotificationService] 읽지 않은 알림 개수 조회: userId={}", userId);
 
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID가 null입니다.");
@@ -158,6 +161,9 @@ public class NotificationService {
             log.info("📱 [NotificationService] 웹푸시 구독이 없어 알림 생성 건너뜀: userId={}", userId);
             return null;
         }
+        
+        // 추가 안전장치: 구독 상태를 한 번 더 확인
+        log.warn("⚠️ [NotificationService] 구독이 있다고 판단되어 알림 생성 진행: userId={}, eventType={}", userId, eventMessage.getType());
 
         // 이벤트 타입에 따른 알림 내용 생성
         NotificationContent content = createNotificationContent(eventMessage);
@@ -490,15 +496,26 @@ public class NotificationService {
      */
     private boolean hasActiveWebPushSubscription(Long userId) {
         try {
-            long subscriptionCount = webPushSubscriptionService.getSubscriptionCount(userId);
-            boolean hasSubscription = subscriptionCount > 0;
-            log.debug("📱 [NotificationService] 웹푸시 구독 상태 확인: userId={}, count={}, hasSubscription={}", 
-                    userId, subscriptionCount, hasSubscription);
+            // 실제 활성화된 구독 목록을 조회하여 더 정확한 확인
+            List<WebPushSubscription> activeSubscriptions = webPushSubscriptionService.getActiveSubscriptions(userId);
+            boolean hasSubscription = !activeSubscriptions.isEmpty();
+            
+            log.info("📱 [NotificationService] 웹푸시 구독 상태 확인: userId={}, activeSubscriptions={}, hasSubscription={}", 
+                    userId, activeSubscriptions.size(), hasSubscription);
+            
+            // 디버깅을 위해 구독 상세 정보도 로그
+            if (!activeSubscriptions.isEmpty()) {
+                for (WebPushSubscription subscription : activeSubscriptions) {
+                    log.info("📱 [NotificationService] 활성 구독 상세: subscriptionId={}, endpoint={}, isActive={}", 
+                            subscription.getId(), subscription.getEndpoint(), subscription.getIsActive());
+                }
+            }
+            
             return hasSubscription;
         } catch (Exception e) {
             log.error("❌ [NotificationService] 웹푸시 구독 상태 확인 실패: userId={}, error={}", userId, e.getMessage(), e);
-            // 오류 발생 시 안전하게 구독이 있다고 가정하여 알림을 생성
-            return true;
+            // 오류 발생 시 구독이 없다고 가정하여 알림을 생성하지 않음 (안전한 기본값)
+            return false;
         }
     }
 }
