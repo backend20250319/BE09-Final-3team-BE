@@ -27,6 +27,7 @@ public class AdAdminResponse {
     private Integer members;
     private AdStatus adStatus;
     private String adUrl;
+    private String adImageUrl;
     private LocalDateTime createdAt;
     private String reason;
     
@@ -59,7 +60,8 @@ public class AdAdminResponse {
         res.setApplicants(ad.getApplicants());
         res.setMembers(ad.getMembers());
         res.setAdStatus(ad.getAdStatus());
-        // adUrl은 서비스에서 AdFiles를 통해 설정
+        res.setAdUrl(ad.getAdUrl());
+        // adImageUrl은 서비스에서 AdFiles를 통해 설정
         res.setCreatedAt(ad.getCreatedAt());
         res.setReason(ad.getReason());
 
