@@ -42,7 +42,15 @@ public class AuthenticationFilter extends
         "/api/v1/advertiser-service/advertiser/login",
         "/api/v1/advertiser-service/advertiser/password/reset/request",
         "/api/v1/advertiser-service/advertiser/password/reset/verify",
-        "/api/v1/advertiser-service/recommend/petStars"
+        "/api/v1/advertiser-service/recommend/petStars",
+        "/api/v1/advertiser-service/pet/petstars",
+        "/api/v1/advertiser-service/pet/portfolio/**",
+        "/api/v1/advertiser-service/instagram/influencer/**",
+        "/api/v1/advertiser-service/internal/adStatus/grouped",
+        "/api/v1/advertiser-service/file/**",
+        "/api/v1/campaign-service/ad/adStatus",
+        "/api/v1/campaign-service/ad/image/**",
+        "/api/v1/campaign-service/ad/file/**"
 
     );
 
