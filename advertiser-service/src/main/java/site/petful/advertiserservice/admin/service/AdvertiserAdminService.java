@@ -80,7 +80,7 @@ public class AdvertiserAdminService {
             // 캠페인 이미지 설정 (AdFiles에서)
             AdFiles adFile = imageRepository.findByAdvertisement_AdNo(ad.getAdNo()).orElse(null);
             if (adFile != null) {
-                response.setAdUrl(adFile.getFilePath());
+                response.setAdImageUrl(adFile.getFilePath());
             }
             
             // 광고주 프로필 이미지 설정
@@ -117,7 +117,7 @@ public class AdvertiserAdminService {
            // 캠페인 이미지 설정 (AdFiles에서)
            AdFiles adFile = imageRepository.findByAdvertisement_AdNo(ad.getAdNo()).orElse(null);
            if (adFile != null) {
-               response.setAdUrl(adFile.getFilePath());
+               response.setAdImageUrl(adFile.getFilePath());
            }
            
            // 광고주 프로필 이미지 설정
